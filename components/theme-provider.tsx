@@ -40,16 +40,19 @@ type ThemeContextValue = {
 const ThemeContext = React.createContext<ThemeContextValue | null>(null);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [primary, setPrimaryState] = React.useState<string>(() => getInitialPrimary());
+  // Avoid hydration mismatch: do not read localStorage during the first render.
+  const [primary, setPrimaryState] = React.useState<string>("");
 
   React.useEffect(() => {
-    if (primary) applyPrimary(primary);
-  }, [primary]);
+    const initial = getInitialPrimary();
+    if (initial) applyPrimary(initial);
+  }, []);
 
   const setPrimary = React.useCallback((next: string) => {
     const value = normalizeColor(next);
     setPrimaryState(value);
     if (value) {
+      applyPrimary(value);
       window.localStorage.setItem(STORAGE_KEY, value);
     }
   }, []);
@@ -58,12 +61,21 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     window.localStorage.removeItem(STORAGE_KEY);
     document.documentElement.style.removeProperty("--primary");
     document.documentElement.style.removeProperty("--ring");
-    setPrimaryState(getInitialPrimary());
+    setPrimaryState("");
   }, []);
 
+  const effectivePrimary = React.useMemo(() => {
+    if (primary) return primary;
+    if (typeof window === "undefined") return "";
+    return (
+      window.getComputedStyle(document.documentElement).getPropertyValue("--primary").trim() ||
+      ""
+    );
+  }, [primary]);
+
   const value = React.useMemo(
-    () => ({ theme: { primary }, setPrimary, resetPrimary }),
-    [primary, resetPrimary, setPrimary],
+    () => ({ theme: { primary: effectivePrimary }, setPrimary, resetPrimary }),
+    [effectivePrimary, resetPrimary, setPrimary],
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
