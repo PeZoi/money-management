@@ -1,4 +1,4 @@
-import React from 'react'
+import React from "react";
 
 export default function DashboardPage() {
   return (
@@ -12,3 +12,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+
