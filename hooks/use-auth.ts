@@ -1,11 +1,9 @@
 "use client";
 
 import { create } from "zustand";
-
 import { createClient } from "@/lib/supabase/browser";
 import { mapSupabaseUserToSnapshot } from "@/lib/auth/map-supabase-user";
 import type { CurrentUserSnapshot } from "@/types/user";
-import { redirect } from "next/navigation";
 
 export type AuthStatus = "idle" | "loading" | "authenticated" | "unauthenticated";
 
@@ -14,37 +12,71 @@ type AuthState = {
   user: CurrentUserSnapshot | null;
   error: string | null;
 
-  /** Call once in a client root (e.g. sidebar/header) */
   init: () => () => void;
   refresh: () => Promise<void>;
   signOut: () => Promise<void>;
 };
 
 let didInit = false;
+let requestId = 0; // 🔥 chống race condition
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   status: "idle",
   user: null,
   error: null,
 
+  // 🔥 function build user duy nhất
   init: () => {
-    if (didInit) return () => {};
+    if (didInit) return () => { };
     didInit = true;
 
     const supabase = createClient();
     set({ status: "loading", error: null });
 
-    // Initial load
-    void get().refresh();
+    const buildUser = async (session: any) => {
+      const currentRequest = ++requestId;
 
-    // Subscribe to auth changes
-    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
-      const nextUser = session?.user ? mapSupabaseUserToSnapshot(session.user) : null;
+      if (!session?.user) {
+        if (currentRequest !== requestId) return;
+        set({
+          user: null,
+          status: "unauthenticated",
+          error: null,
+        });
+        return;
+      }
+
+      let nextUser = mapSupabaseUserToSnapshot(session.user);
+
+      // 🔥 fetch role
+      const { data: role } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", nextUser.id)
+        .maybeSingle();
+
+      if (currentRequest !== requestId) return; // 🛑 tránh race
+
+      nextUser = {
+        ...nextUser,
+        roleLabel: role?.role ?? null,
+      };
+
       set({
         user: nextUser,
-        status: nextUser ? "authenticated" : "unauthenticated",
+        status: "authenticated",
         error: null,
       });
+    };
+
+    // ✅ initial load (không gọi refresh nữa)
+    supabase.auth.getSession().then(({ data }) => {
+      buildUser(data.session);
+    });
+
+    // ✅ subscribe auth change
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      buildUser(session);
     });
 
     return () => {
@@ -57,16 +89,44 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const supabase = createClient();
     set({ status: "loading", error: null });
 
-    const { data, error } = await supabase.auth.getUser();
+    const { data, error } = await supabase.auth.getSession();
+
     if (error) {
-      set({ user: null, status: "unauthenticated", error: error.message });
+      set({
+        user: null,
+        status: "unauthenticated",
+        error: error.message,
+      });
       return;
     }
 
-    const nextUser = data.user ? mapSupabaseUserToSnapshot(data.user) : null;
+    const session = data.session;
+
+    if (!session?.user) {
+      set({
+        user: null,
+        status: "unauthenticated",
+        error: null,
+      });
+      return;
+    }
+
+    let nextUser = mapSupabaseUserToSnapshot(session.user);
+
+    const { data: role } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", nextUser.id)
+      .maybeSingle();
+
+    nextUser = {
+      ...nextUser,
+      roleLabel: role?.role ?? null,
+    };
+
     set({
       user: nextUser,
-      status: nextUser ? "authenticated" : "unauthenticated",
+      status: "authenticated",
       error: null,
     });
   },
@@ -74,18 +134,24 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   signOut: async () => {
     const supabase = createClient();
     const { error } = await supabase.auth.signOut();
+
     if (error) {
       set({ error: error.message });
       return;
     }
-    set({ user: null, status: "unauthenticated", error: null });
-    redirect('/login');
-    cookieStore.delete('sb-jcrytweuxovtwejovjjh-auth-token.0');
-    cookieStore.delete('sb-jcrytweuxovtwejovjjh-auth-token.1');
+
+    set({
+      user: null,
+      status: "unauthenticated",
+      error: null,
+    });
+
+    // ✅ client-safe redirect
+    window.location.href = "/login";
   },
 }));
 
-/** Convenience hook */
+// ✅ hook tiện dụng
 export function useAuth() {
   const status = useAuthStore((s) => s.status);
   const user = useAuthStore((s) => s.user);
@@ -96,4 +162,3 @@ export function useAuth() {
 
   return { status, user, error, init, refresh, signOut };
 }
-

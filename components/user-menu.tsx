@@ -13,22 +13,9 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
-import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/use-auth';
 import type { WorkspaceRole } from '@/types/database';
-import { SupabaseClient } from '@supabase/supabase-js';
-import { createClient } from '@/lib/supabase/server';
-import { useAuth, useAuthStore } from '@/hooks/use-auth';
 import Image from 'next/image';
-
-export type UserMenuProps = {
-  displayName?: string;
-  roleLabel?: string;
-  /** Gán từ DB sau; nếu có thì badge dùng màu chuẩn theo role */
-  workspaceRole?: WorkspaceRole;
-  avatarUrl?: string | null;
-  initials?: string;
-  className?: string;
-};
 
 function initialsFromName(name: string) {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -45,6 +32,19 @@ function inferWorkspaceRole(label: string): WorkspaceRole | undefined {
   return undefined;
 }
 
+function roleMapToVietnamese(role: WorkspaceRole | undefined): string {
+  switch (role) {
+    case 'owner':
+      return 'Chủ sở hữu';
+    case 'admin':
+      return 'Quản trị viên';
+    case 'member':
+      return 'Thành viên';
+    default:
+      return 'Không xác định';
+  }
+}
+
 function workspaceRoleToBadgeVariant(role: WorkspaceRole | undefined): 'owner' | 'admin' | 'member' | 'default' {
   switch (role) {
     case 'owner':
@@ -59,9 +59,9 @@ function workspaceRoleToBadgeVariant(role: WorkspaceRole | undefined): 'owner' |
 }
 
 export function UserMenu() {
-   const { user } = useAuthStore();
+  const { user, signOut } = useAuth();
 
-  const initials =initialsFromName(user?.displayName ?? '');
+  const initials = initialsFromName(user?.displayName ?? '');
   const resolvedRole = inferWorkspaceRole(user?.roleLabel ?? '');
   const badgeVariant = workspaceRoleToBadgeVariant(resolvedRole);
 
@@ -90,7 +90,7 @@ export function UserMenu() {
               <div className="grid min-w-0 flex-1 gap-1 text-left group-data-[collapsible=icon]:hidden">
                 <span className="truncate font-semibold text-sidebar-foreground">{user?.displayName}</span>
                 <Badge variant={badgeVariant} className="max-w-full justify-start">
-                  <span className="truncate">{user?.roleLabel}</span>
+                  <span className="truncate">{roleMapToVietnamese(user?.roleLabel)}</span>
                 </Badge>
               </div>
               <ChevronDownIcon
@@ -115,7 +115,7 @@ export function UserMenu() {
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold leading-tight">{user?.displayName}</p>
                     <Badge variant={badgeVariant} className="mt-1.5 max-w-full">
-                      <span className="truncate">{user?.roleLabel}</span>
+                      <span className="truncate">{roleMapToVietnamese(user?.roleLabel)}</span>
                     </Badge>
                   </div>
                 </div>
@@ -134,7 +134,7 @@ export function UserMenu() {
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem variant="destructive">
+              <DropdownMenuItem variant="destructive" onClick={() => signOut()}>
                 <LogOutIcon />
                 Đăng xuất
               </DropdownMenuItem>
