@@ -14,13 +14,16 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const supabase = createClient();
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
         },
       });
       if (error) setError(error.message);
+      if (data) {
+        localStorage.setItem("auth_state", JSON.stringify(data));
+      }
     } finally {
       setLoading(false);
     }

@@ -3,14 +3,10 @@ import { createServerClient } from "@supabase/ssr";
 
 import { getSupabaseKey, getSupabaseUrl } from "@/lib/supabase/env";
 
-const PUBLIC_PATHS = ["/login", "/auth/callback", "/api/health"];
+const PUBLIC_PATHS = ["/auth/callback", "/api/health"];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-
-  if (PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
-    return NextResponse.next();
-  }
 
   // Skip Next internals/static
   if (pathname.startsWith("/_next") || pathname.startsWith("/favicon")) {
@@ -35,6 +31,19 @@ export async function middleware(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  // Allow /login for signed-out users; redirect signed-in users away from /login
+  if (pathname === "/login") {
+    if (user) {
+      const next = request.nextUrl.searchParams.get("next") ?? "/dashboard";
+      return NextResponse.redirect(new URL(next, request.url));
+    }
+    return response;
+  }
+
+  if (PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
+    return response;
+  }
 
   if (!user) {
     const loginUrl = request.nextUrl.clone();

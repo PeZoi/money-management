@@ -11,10 +11,10 @@ create extension if not exists "pgcrypto";
 -- =====================================================
 
 -- System roles
-create type user_role as enum ('user', 'admin', 'super_admin');
+create type user_role as enum ('user', 'admin');
 
 -- Workspace roles
-create type workspace_role as enum ('owner', 'admin', 'member', 'viewer');
+create type workspace_role as enum ('owner', 'admin', 'member');
 
 -- Transaction types
 create type transaction_type as enum ('expense', 'income');
@@ -43,8 +43,6 @@ create table public.user_roles (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
-
-comment on table public.user_roles is 'System-level roles (admin, super_admin)';
 
 drop trigger if exists trg_user_roles_updated_at on public.user_roles;
 create trigger trg_user_roles_updated_at

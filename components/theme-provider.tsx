@@ -2,7 +2,9 @@
 
 import React from "react";
 
-const STORAGE_KEY = "moneyplus.theme.primary";
+import { THEME_PRIMARY_STORAGE_KEY } from "@/types/theme";
+
+const STORAGE_KEY = THEME_PRIMARY_STORAGE_KEY;
 
 export type ThemeState = {
   primary: string; // any valid CSS color (we store hex)
