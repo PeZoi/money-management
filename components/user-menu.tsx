@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { useAuth } from '@/hooks/use-auth';
-import type { WorkspaceRole } from '@/types/database';
+import type { UserRole } from '@/types/database';
 import Image from 'next/image';
 
 function initialsFromName(name: string) {
@@ -24,37 +24,14 @@ function initialsFromName(name: string) {
   return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
 }
 
-function inferWorkspaceRole(label: string): WorkspaceRole | undefined {
-  const s = label.toLowerCase();
-  if (s.includes('owner') || s.includes('quản trị')) return 'owner';
-  if (s.includes('admin') || s.includes('quản trị')) return 'admin';
-  if (s.includes('member') || s.includes('thành viên')) return 'member';
-  return undefined;
-}
-
-function roleMapToVietnamese(role: WorkspaceRole | undefined): string {
+function roleMapToVietnamese(role: UserRole | undefined): string {
   switch (role) {
-    case 'owner':
-      return 'Chủ sở hữu';
+    case 'user':
+      return 'Người dùng';
     case 'admin':
       return 'Quản trị viên';
-    case 'member':
-      return 'Thành viên';
     default:
       return 'Không xác định';
-  }
-}
-
-function workspaceRoleToBadgeVariant(role: WorkspaceRole | undefined): 'owner' | 'admin' | 'member' | 'default' {
-  switch (role) {
-    case 'owner':
-      return 'owner';
-    case 'admin':
-      return 'admin';
-    case 'member':
-      return 'member';
-    default:
-      return 'default';
   }
 }
 
@@ -62,8 +39,6 @@ export function UserMenu() {
   const { user, signOut } = useAuth();
 
   const initials = initialsFromName(user?.displayName ?? '');
-  const resolvedRole = inferWorkspaceRole(user?.roleLabel ?? '');
-  const badgeVariant = workspaceRoleToBadgeVariant(resolvedRole);
 
   return (
     <SidebarMenu>
@@ -89,8 +64,8 @@ export function UserMenu() {
               </span>
               <div className="grid min-w-0 flex-1 gap-1 text-left group-data-[collapsible=icon]:hidden">
                 <span className="truncate font-semibold text-sidebar-foreground">{user?.displayName}</span>
-                <Badge variant={badgeVariant} className="max-w-full justify-start">
-                  <span className="truncate">{roleMapToVietnamese(user?.roleLabel)}</span>
+                <Badge variant={user?.roleLabel as UserRole} className="max-w-full justify-start">
+                  <span className="truncate">{roleMapToVietnamese(user?.roleLabel as UserRole)}</span>
                 </Badge>
               </div>
               <ChevronDownIcon
@@ -113,9 +88,9 @@ export function UserMenu() {
                     )}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold leading-tight">{user?.displayName}</p>
-                    <Badge variant={badgeVariant} className="mt-1.5 max-w-full">
-                      <span className="truncate">{roleMapToVietnamese(user?.roleLabel)}</span>
+                    <p className="truncate text-sm font-semibold leading-tight text-black">{user?.displayName}</p>
+                    <Badge variant={user?.roleLabel as UserRole} className="mt-1.5 max-w-full">
+                      <span className="truncate">{roleMapToVietnamese(user?.roleLabel as UserRole)}</span>
                     </Badge>
                   </div>
                 </div>

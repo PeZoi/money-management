@@ -10,10 +10,8 @@ const badgeVariants = cva(
       variant: {
         default: "border-transparent bg-secondary text-secondary-foreground",
         outline: "border-border bg-transparent text-foreground",
-        /** Workspace owner — nhấn mạnh màu chủ đạo */
-        owner: "border-primary/35 bg-primary/12 text-primary",
-        admin: "border-blue-500/35 bg-blue-500/10 text-blue-700 dark:text-blue-300",
-        member: "border-border bg-muted/90 text-muted-foreground",
+        user: "border-green-500/35 bg-green-500/10 text-green-700 dark:text-green-300",
+        admin: "border-red-500/35 bg-red-500/10 text-red-700 dark:text-red-300",
       },
     },
     defaultVariants: {

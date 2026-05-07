@@ -4,6 +4,7 @@ import { create } from "zustand";
 import { createClient } from "@/lib/supabase/browser";
 import { mapSupabaseUserToSnapshot } from "@/lib/auth/map-supabase-user";
 import type { CurrentUserSnapshot } from "@/types/user";
+import { Session } from "@supabase/supabase-js";
 
 export type AuthStatus = "idle" | "loading" | "authenticated" | "unauthenticated";
 
@@ -20,7 +21,7 @@ type AuthState = {
 let didInit = false;
 let requestId = 0; // 🔥 chống race condition
 
-export const useAuthStore = create<AuthState>((set, get) => ({
+export const useAuthStore = create<AuthState>((set) => ({
   status: "idle",
   user: null,
   error: null,
@@ -33,7 +34,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const supabase = createClient();
     set({ status: "loading", error: null });
 
-    const buildUser = async (session: any) => {
+    const buildUser = async (session: Session | null) => {
       const currentRequest = ++requestId;
 
       if (!session?.user) {
@@ -46,21 +47,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         return;
       }
 
-      let nextUser = mapSupabaseUserToSnapshot(session.user);
-
-      // 🔥 fetch role
-      const { data: role } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", nextUser.id)
-        .maybeSingle();
-
-      if (currentRequest !== requestId) return; // 🛑 tránh race
-
-      nextUser = {
-        ...nextUser,
-        roleLabel: role?.role ?? null,
-      };
+      const nextUser = mapSupabaseUserToSnapshot(session.user);
+      if (currentRequest !== requestId) return;
 
       set({
         user: nextUser,
@@ -111,18 +99,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       return;
     }
 
-    let nextUser = mapSupabaseUserToSnapshot(session.user);
-
-    const { data: role } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", nextUser.id)
-      .maybeSingle();
-
-    nextUser = {
-      ...nextUser,
-      roleLabel: role?.role ?? null,
-    };
+    const nextUser = mapSupabaseUserToSnapshot(session.user);
 
     set({
       user: nextUser,
