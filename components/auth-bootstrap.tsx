@@ -13,7 +13,7 @@ export function AuthBootstrap() {
   const { init } = useAuth();
 
   React.useEffect(() => {
-    return init();
+    init();
   }, [init]);
 
   return null;

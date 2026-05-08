@@ -1,6 +1,6 @@
 import DashboardPage from "@/app/(private)/dashboard/dashboard-page";
 
-export default function Home() {
-  return (<DashboardPage />
-  );
+export default function Page() {
+  return <DashboardPage />;
 }
+

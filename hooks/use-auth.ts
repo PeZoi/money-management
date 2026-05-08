@@ -1,10 +1,10 @@
 "use client";
 
-import { create } from "zustand";
-import { createClient } from "@/lib/supabase/browser";
+import localStorageFn from "@/functions/localstorage-fn";
 import { mapSupabaseUserToSnapshot } from "@/lib/auth/map-supabase-user";
+import { createClient } from "@/lib/supabase/browser";
 import type { CurrentUserSnapshot } from "@/types/user";
-import { Session } from "@supabase/supabase-js";
+import { create } from "zustand";
 
 export type AuthStatus = "idle" | "loading" | "authenticated" | "unauthenticated";
 
@@ -13,64 +13,46 @@ type AuthState = {
   user: CurrentUserSnapshot | null;
   error: string | null;
 
-  init: () => () => void;
+  init: () => Promise<void>;
   refresh: () => Promise<void>;
   signOut: () => Promise<void>;
 };
 
 let didInit = false;
-let requestId = 0; // 🔥 chống race condition
 
 export const useAuthStore = create<AuthState>((set) => ({
   status: "idle",
   user: null,
   error: null,
 
-  // 🔥 function build user duy nhất
-  init: () => {
-    if (didInit) return () => { };
-    didInit = true;
+  init: async () => {
+    if (didInit) return;
+    set({ status: "loading" });
 
-    const supabase = createClient();
-    set({ status: "loading", error: null });
+    const userLocal = localStorageFn.getLocalStorageItem(localStorageFn.AUTH_KEY.USER);
 
-    const buildUser = async (session: Session | null) => {
-      const currentRequest = ++requestId;
-
-      if (!session?.user) {
-        if (currentRequest !== requestId) return;
-        set({
-          user: null,
-          status: "unauthenticated",
-          error: null,
-        });
-        return;
+    if (userLocal) {
+      set({ user: JSON.parse(userLocal), status: "authenticated" });
+      didInit = true;
+      return;
+    } else {
+      try {
+        const response = await fetch('/api/user/get-current-user');
+        const result = await response.json();
+        if (response.ok && result.data) {
+          set({ user: result.data, status: "authenticated" });
+          localStorageFn.setLocalStorageItem(localStorageFn.AUTH_KEY.USER, JSON.stringify(result.data));
+        } else {
+          set({ user: null, status: "unauthenticated" });
+          localStorageFn.removeLocalStorageItem(localStorageFn.AUTH_KEY.USER);
+        }
+      } catch (error) {
+        console.error("Auth Init Error:", error);
+        set({ user: null, status: "unauthenticated", error: "Failed to fetch user" });
+      } finally {
+        didInit = true;
       }
-
-      const nextUser = mapSupabaseUserToSnapshot(session.user);
-      if (currentRequest !== requestId) return;
-
-      set({
-        user: nextUser,
-        status: "authenticated",
-        error: null,
-      });
-    };
-
-    // ✅ initial load (không gọi refresh nữa)
-    supabase.auth.getSession().then(({ data }) => {
-      buildUser(data.session);
-    });
-
-    // ✅ subscribe auth change
-    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
-      buildUser(session);
-    });
-
-    return () => {
-      didInit = false;
-      data.subscription.unsubscribe();
-    };
+    }
   },
 
   refresh: async () => {
@@ -122,6 +104,10 @@ export const useAuthStore = create<AuthState>((set) => ({
       status: "unauthenticated",
       error: null,
     });
+
+    localStorageFn.removeLocalStorageItem(localStorageFn.AUTH_KEY.USER);
+    cookieStore.delete("sb-jcrytweuxovtwejovjjh-auth-token.0")
+    cookieStore.delete("sb-jcrytweuxovtwejovjjh-auth-token.1")
 
     // ✅ client-safe redirect
     window.location.href = "/login";

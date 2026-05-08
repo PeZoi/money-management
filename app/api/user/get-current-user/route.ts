@@ -5,6 +5,7 @@ import {
   mapSupabaseUserToSnapshot,
   mergeCurrentUserSnapshot,
 } from "@/lib/auth/map-supabase-user";
+import localStorageFn from "@/functions/localstorage-fn";
 
 export async function GET() {
   const supabase = createClient();
@@ -38,4 +39,3 @@ export async function GET() {
 
   return NextResponse.json({ data: currentUser });
 }
-

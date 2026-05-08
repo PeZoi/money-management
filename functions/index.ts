@@ -1,0 +1,1 @@
+import localStorageFn from "./localstorage-fn";
