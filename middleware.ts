@@ -32,6 +32,11 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  /** Tránh render `app/page.tsx` rồi mới redirect — chuyển thẳng sớm hơn. */
+  if (pathname === "/" && user) {
+    return NextResponse.redirect(new URL("/dashboard", request.url));
+  }
+
   // Allow /login for signed-out users; redirect signed-in users away from /login
   if (pathname === "/login") {
     if (user) {

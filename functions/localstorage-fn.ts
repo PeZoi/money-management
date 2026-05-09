@@ -1,8 +1,8 @@
-const PREFIX_KEY = "money-dph-"
+const PREFIX_KEY = "moneyplus."
 
 // ======== AUTH ========
 export const AUTH_KEY = {
-  USER: "user_info",
+  USER: "user.info",
 }
 
 export const setLocalStorageItem = (key: string, value: string) => {
