@@ -48,7 +48,7 @@ export interface CategoryRow {
   id: UuidString;
   workspace_id: UuidString;
   name: string;
-  type: TransactionType;
+  icon: string;
   created_at: IsoDateString;
   updated_at: IsoDateString;
 }
@@ -76,7 +76,7 @@ export type WorkspaceMemberInsert = Pick<
   "workspace_id" | "user_id" | "role"
 >;
 
-export type CategoryInsert = Pick<CategoryRow, "workspace_id" | "name" | "type">;
+export type CategoryInsert = Pick<CategoryRow, "workspace_id" | "name" | "icon">;
 
 export type TransactionInsert = Pick<
   TransactionRow,
@@ -89,7 +89,7 @@ export type WorkspaceUpdate = Partial<Pick<WorkspaceRow, "name" | "is_personal">
 
 export type WorkspaceMemberUpdate = Partial<Pick<WorkspaceMemberRow, "role">>;
 
-export type CategoryUpdate = Partial<Pick<CategoryRow, "name" | "type">>;
+export type CategoryUpdate = Partial<Pick<CategoryRow, "name" | "icon">>;
 
 export type TransactionUpdate = Partial<
   Pick<TransactionRow, "amount" | "type" | "category_id" | "note">
