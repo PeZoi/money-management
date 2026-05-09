@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { ChevronDownIcon, LogOutIcon, SettingsIcon, UserIcon } from 'lucide-react';
 
@@ -16,6 +16,7 @@ import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui
 import { useAuth } from '@/hooks/use-auth';
 import type { UserRole } from '@/types/database';
 import Image from 'next/image';
+import Link from 'next/link';
 
 function initialsFromName(name: string) {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -47,7 +48,7 @@ export function UserMenu() {
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
               size="lg"
-              className="h-auto min-h-14 gap-3 px-3 py-2.5 group-data-[collapsible=icon]:size-11! group-data-[collapsible=icon]:justify-center!"
+              className="h-auto min-h-14 gap-3 px-3 py-2.5 group-data-[collapsible=icon]:size-11! group-data-[collapsible=icon]:justify-center!  cursor-pointer"
             >
               <span className="relative flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-sidebar-border bg-sidebar-accent text-sidebar-accent-foreground">
                 {user?.avatarUrl ? (
@@ -81,8 +82,13 @@ export function UserMenu() {
                 <div className="flex items-center gap-2">
                   <span className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-muted">
                     {user?.avatarUrl ? (
-                      <Image src={user?.avatarUrl} alt={user?.displayName ?? ''} className="size-full object-cover" width={36}
-                      height={36} />
+                      <Image
+                        src={user?.avatarUrl}
+                        alt={user?.displayName ?? ''}
+                        className="size-full object-cover"
+                        width={36}
+                        height={36}
+                      />
                     ) : (
                       <span className="text-xs font-semibold">{initials}</span>
                     )}
@@ -102,14 +108,16 @@ export function UserMenu() {
                 <UserIcon />
                 Hồ sơ
               </DropdownMenuItem>
-              <DropdownMenuItem>
-                <SettingsIcon />
-                Cài đặt
-              </DropdownMenuItem>
+              <Link href="/settings">
+                <DropdownMenuItem>
+                  <SettingsIcon />
+                  Cài đặt
+                </DropdownMenuItem>
+              </Link>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem variant="destructive" onClick={() => signOut()}>
+              <DropdownMenuItem variant="destructive" onClick={() => signOut()} className="cursor-pointer">
                 <LogOutIcon />
                 Đăng xuất
               </DropdownMenuItem>

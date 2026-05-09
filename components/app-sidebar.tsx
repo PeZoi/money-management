@@ -1,71 +1,106 @@
-import * as React from "react"
+'use client';
 
-import { SearchForm } from "@/components/search-form"
-import { VersionSwitcher } from "@/components/version-switcher"
+import * as React from 'react';
+
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarGroup,
-  SidebarGroupContent,
   SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
-} from "@/components/ui/sidebar"
-import Link from "next/link"
-import { UserMenu } from "@/components/user-menu"
+} from '@/components/ui/sidebar';
+import { UserMenu } from '@/components/user-menu';
+import { VersionSwitcher } from '@/components/version-switcher';
+import { ChartPieIcon, LayoutDashboardIcon, SettingsIcon, TagsIcon, WalletIcon } from 'lucide-react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { Separator } from '@/components/ui/separator';
 
-// This is sample data.
-const data = {
-  versions: ["1.0.1", "1.1.0-alpha", "2.0.0-beta1"],
-  navMain: [
-    {
-      title: "Getting Started",
-      url: "#",
-      items: [
-        {
-          title: "Installation",
-          url: "#",
-        },
-        {
-          title: "Project Structure",
-          url: "#",
-        },
-      ],
-    },
-  ],
+type NavItem = {
+  title: string;
+  url: string;
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+  match?: 'exact' | 'prefix';
+};
+
+type NavGroup = {
+  label: string;
+  items: NavItem[];
+};
+
+const versions = ['1.0.1', '1.1.0-alpha', '2.0.0-beta1'];
+
+const navGroups: NavGroup[] = [
+  {
+    label: 'Tổng quan',
+    items: [
+      { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboardIcon, match: 'prefix' },
+      { title: 'Báo cáo', url: '/reports', icon: ChartPieIcon, match: 'prefix' },
+    ],
+  },
+  {
+    label: 'Quản lý',
+    items: [
+      { title: 'Giao dịch', url: '/transactions', icon: WalletIcon, match: 'prefix' },
+      { title: 'Danh mục', url: '/categories', icon: TagsIcon, match: 'prefix' },
+    ],
+  },
+  {
+    label: 'Hệ thống',
+    items: [{ title: 'Cài đặt', url: '/settings', icon: SettingsIcon, match: 'prefix' }],
+  },
+];
+
+function isItemActive(pathname: string, item: NavItem) {
+  if (item.match === 'exact') return pathname === item.url;
+  if (item.url === '/') return pathname === '/';
+  return pathname === item.url || pathname.startsWith(`${item.url}/`);
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const pathname = usePathname();
+
   return (
     <Sidebar {...props}>
       <SidebarHeader>
-        <VersionSwitcher versions={data.versions} defaultVersion={data.versions[0]} />
-        <SearchForm />
+        <VersionSwitcher versions={versions} defaultVersion={versions[0]} />
+        <Separator />
       </SidebarHeader>
       <SidebarContent>
-        {/* We create a SidebarGroup for each parent. */}
-        {data.navMain.map((item) => (
-          <SidebarGroup key={item.title}>
-            <SidebarGroupLabel>{item.title}</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {item.items.map((item) => (
+        {navGroups.map((group) => (
+          <SidebarGroup key={group.label}>
+            <SidebarGroupLabel className="text-xs tracking-wide">{group.label}</SidebarGroupLabel>
+            <SidebarMenu>
+              {group.items.map((item) => {
+                const active = isItemActive(pathname, item);
+                const Icon = item.icon;
+                return (
                   <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild isActive={false}>
-                      <Link href={item.url}>{item.title}</Link>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={active}
+                      tooltip={item.title}
+                      className="data-[active=true]:bg-primary data-[active=true]:text-primary-foreground data-[active=true]:hover:bg-primary/90"
+                    >
+                      <Link href={item.url} className="flex items-center gap-2">
+                        <Icon aria-hidden />
+                        <span>{item.title}</span>
+                      </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
+                );
+              })}
+            </SidebarMenu>
           </SidebarGroup>
         ))}
       </SidebarContent>
       <SidebarFooter>
+        <Separator />
         <UserMenu />
       </SidebarFooter>
       <SidebarRail />
