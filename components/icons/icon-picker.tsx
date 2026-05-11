@@ -108,7 +108,7 @@ function searchNeedlesForQuery(rawQuery: string): readonly string[] {
     });
   };
 
-  ;[folded, compact].forEach(addSynonyms);
+  [folded, compact].forEach(addSynonyms);
   folded.split(/\s+/).forEach((token) => {
     addSynonyms(token);
   });
@@ -179,24 +179,16 @@ function IconPickerFlexRow({
         if (!isLucideRenderableIcon(iconName, Cmp)) return null;
         const active = selected === iconName;
         return (
-          <div
-            key={iconName}
-            className="flex min-h-0 min-w-0 flex-1 flex-col items-stretch justify-center"
-          >
+          <div key={iconName} className="flex min-h-0 min-w-0 flex-1 flex-col items-stretch justify-center">
             <button
               type="button"
               onClick={() => onPick(iconName)}
               className={cn(
                 'box-border flex h-full min-h-0 w-full min-w-0 flex-col items-center justify-center gap-0.5 rounded-lg border px-0.5 pt-1 pb-0.5 transition-all hover:bg-muted active:scale-[0.98]',
-                active
-                  ? 'border-primary bg-primary text-primary-foreground hover:bg-primary/90'
-                  : 'border-border',
+                active ? 'border-primary bg-primary text-primary-foreground hover:bg-primary/90' : 'border-border',
               )}
             >
-              <Cmp className="pointer-events-none size-[18px] shrink-0" aria-hidden />
-              <span className="line-clamp-1 w-full max-w-full text-center text-[8px] leading-none opacity-80 sm:text-[9px]">
-                {iconName}
-              </span>
+              <Cmp className="pointer-events-none size-[30px] shrink-0" aria-hidden />
             </button>
           </div>
         );
@@ -260,8 +252,7 @@ function IconVirtualGrid({
     return Math.min(96, Math.max(56, q + 16));
   }, [columnCount, usableW]);
 
-  const rowCount =
-    columnCount > 0 ? Math.max(1, Math.ceil(iconNames.length / columnCount)) : 1;
+  const rowCount = columnCount > 0 ? Math.max(1, Math.ceil(iconNames.length / columnCount)) : 1;
 
   /** Mobile: thấp hơn một chút; desktop: cao hơn — cùng công thức theo viewport. */
   const gridHeight = Math.min(520, Math.max(260, Math.round(viewportH * (innerWidth < 640 ? 0.42 : 0.5))));
@@ -342,19 +333,10 @@ export default function IconPicker(props: Props) {
       .map(String)
       .sort((a, b) => a.localeCompare(b));
 
-    const filtered = rawSearch
-      ? renderableKeys.filter((name) => iconMatchesQuery(name, rawSearch))
-      : renderableKeys;
+    const filtered = rawSearch ? renderableKeys.filter((name) => iconMatchesQuery(name, rawSearch)) : renderableKeys;
 
     return dedupeIconNames(filtered);
   }, [deferredSearch]);
-
-  const SelectedIcon =
-    selected != null &&
-    selected !== '' &&
-    isLucideRenderableIcon(selected, Icons[selected as keyof typeof Icons])
-      ? (Icons[selected as keyof typeof Icons] as LucideIcon)
-      : null;
 
   function handlePick(iconName: string) {
     setPicked(iconName);
@@ -372,13 +354,6 @@ export default function IconPicker(props: Props) {
         className="mb-3 min-w-0 max-w-full rounded-xl text-base sm:mb-4 sm:text-sm"
       />
 
-      {selected ? (
-        <div className="mb-3 flex items-center gap-2 rounded-xl border bg-muted/40 px-3 py-2 sm:mb-4">
-          {SelectedIcon ? <SelectedIcon className="size-[18px] shrink-0" aria-hidden /> : null}
-          <span className="truncate font-mono text-sm">{selected}</span>
-        </div>
-      ) : null}
-
       {!iconNames.length ? (
         <div className="mt-4 space-y-2 text-center text-sm text-muted-foreground">
           <p>Không tìm thấy icon phù hợp.</p>
@@ -390,12 +365,7 @@ export default function IconPicker(props: Props) {
           </p>
         </div>
       ) : (
-        <IconVirtualGrid
-          listKey={deferredSearch}
-          iconNames={iconNames}
-          selected={selected}
-          onPick={handlePick}
-        />
+        <IconVirtualGrid listKey={deferredSearch} iconNames={iconNames} selected={selected} onPick={handlePick} />
       )}
     </div>
   );

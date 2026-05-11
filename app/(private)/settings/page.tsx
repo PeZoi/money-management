@@ -1,7 +1,9 @@
 "use client";
 
+import { PrivatePageShell } from "@/components/private-page-shell";
 import { useTheme } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
+import { SettingsIcon } from "lucide-react";
 
 const PRESETS: Array<{ name: string; value: string }> = [
   { name: "Xanh lá", value: "#16a34a" },
@@ -17,19 +19,18 @@ export default function SettingsPage() {
   const color = theme.primary || "#16a34a";
 
   return (
-    <div className="min-h-full bg-background text-foreground">
-      <div className="mx-auto w-full max-w-3xl px-6 py-10">
-        <div className="flex items-start justify-between gap-6">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Cài đặt</h1>
-            <p className="mt-1 text-sm text-muted-foreground">Tùy chỉnh màu chủ đạo của ứng dụng.</p>
-          </div>
-          <Button variant="outline" onClick={resetPrimary} type="button">
-            Reset
-          </Button>
-        </div>
-
-        <div className="mt-8 grid gap-6">
+    <PrivatePageShell
+      title="Cài đặt"
+      description="Tùy chỉnh màu chủ đạo của ứng dụng."
+      icon={SettingsIcon}
+      contentClassName="max-w-3xl"
+      headerActions={
+        <Button variant="outline" onClick={resetPrimary} type="button">
+          Reset
+        </Button>
+      }
+    >
+      <div className="mt-8 grid gap-6">
           <section className="rounded-xl border border-border bg-card p-5">
             <h2 className="text-sm font-medium">Màu chủ đạo</h2>
 
@@ -85,8 +86,7 @@ export default function SettingsPage() {
             </div>
           </section>
         </div>
-      </div>
-    </div>
+    </PrivatePageShell>
   );
 }
 

@@ -1,8 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
-import { getSupabaseKey, getSupabaseUrl } from "@/lib/supabase/env";
-
 const PUBLIC_PATHS = ["/auth/callback", "/api/health"];
 
 export async function middleware(request: NextRequest) {
@@ -15,7 +13,24 @@ export async function middleware(request: NextRequest) {
 
   const response = NextResponse.next();
 
-  const supabase = createServerClient(getSupabaseUrl(), getSupabaseKey(), {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey =
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    return NextResponse.json(
+      {
+        error: "Missing Supabase env vars",
+        missing: {
+          NEXT_PUBLIC_SUPABASE_URL: !supabaseUrl,
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY_OR_ANON_KEY: !supabaseKey,
+        },
+      },
+      { status: 500 },
+    );
+  }
+
+  const supabase = createServerClient(supabaseUrl, supabaseKey, {
     cookies: {
       getAll() {
         return request.cookies.getAll().map((c) => ({ name: c.name, value: c.value }));
@@ -28,9 +43,13 @@ export async function middleware(request: NextRequest) {
     },
   });
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  let user: unknown = null;
+  try {
+    const res = await supabase.auth.getUser();
+    user = res.data.user;
+  } catch {
+    user = null;
+  }
 
   /** Tránh render `app/page.tsx` rồi mới redirect — chuyển thẳng sớm hơn. */
   if (pathname === "/" && user) {

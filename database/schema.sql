@@ -99,9 +99,11 @@ create table public.categories (
   workspace_id uuid not null references public.workspaces(id) on delete cascade,
   name text not null,
   icon text not null,
+  color text not null default '#64748b',
+  type transaction_type not null,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  unique (workspace_id, icon, name)
+  unique (workspace_id, type, name)
 );
 
 comment on table public.categories is 'Expense/Income categories per workspace';
@@ -145,7 +147,7 @@ create index idx_transactions_created_at on public.transactions(created_at desc)
 create index idx_transactions_category on public.transactions(category_id);
 create index idx_transactions_created_by on public.transactions(created_by);
 create index idx_categories_workspace on public.categories(workspace_id);
-create index idx_categories_workspace_icon on public.categories(workspace_id, icon);
+create index idx_categories_workspace_type on public.categories(workspace_id, type);
 
 -- =====================================================
 -- ENABLE ROW LEVEL SECURITY (RLS)
