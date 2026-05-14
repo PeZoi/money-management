@@ -41,7 +41,7 @@ export default function CreateCategoryDialog({ open, onOpenChange }: CreateCateg
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl gap-0 p-0">
+      <DialogContent aria-describedby={undefined} className="max-w-xl gap-0 p-0">
         <DialogHeader className="border-b px-5 py-4 sm:px-6">
           <DialogTitle>Tạo danh mục mới</DialogTitle>
         </DialogHeader>

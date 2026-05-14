@@ -58,6 +58,7 @@ export default function IconPickerDialog({ value, onChange, disabled, className 
         </Button>
       </DialogTrigger>
       <DialogContent
+        aria-describedby={undefined}
         showCloseButton
         className="max-h-[min(90dvh,760px)] min-w-0 gap-0 overflow-x-hidden overflow-y-hidden p-0"
       >
