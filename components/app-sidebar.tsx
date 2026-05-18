@@ -15,7 +15,7 @@ import {
   SidebarRail,
 } from '@/components/ui/sidebar';
 import { UserMenu } from '@/components/user-menu';
-import { VersionSwitcher } from '@/components/version-switcher';
+import { WorkspaceSwitcher } from '@/components/workspace-switcher';
 import { ChartPieIcon, LayoutDashboardIcon, SettingsIcon, TagsIcon, WalletIcon } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -32,8 +32,6 @@ type NavGroup = {
   label: string;
   items: NavItem[];
 };
-
-const versions = ['1.0.1', '1.1.0-alpha', '2.0.0-beta1'];
 
 const navGroups: NavGroup[] = [
   {
@@ -68,7 +66,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar {...props}>
       <SidebarHeader>
-        <VersionSwitcher versions={versions} defaultVersion={versions[0]} />
+        <WorkspaceSwitcher />
         <Separator />
       </SidebarHeader>
       <SidebarContent>

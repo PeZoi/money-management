@@ -5,6 +5,7 @@ import {
   mergeCurrentUserSnapshot,
 } from "@/lib/auth/map-supabase-user";
 import { createClient } from "@/lib/supabase/server";
+import type { WorkspaceRole, WorkspaceRow } from "@/types/database";
 
 export async function GET() {
   const supabase = createClient();
@@ -32,8 +33,37 @@ export async function GET() {
     return NextResponse.json({ error: roleError.message }, { status: 500 });
   }
 
+  // Fetch workspaces for the user
+  const { data: workspacesData, error: workspacesError } = await supabase
+    .from("workspace_members")
+    .select(`
+      role,
+      workspaces (
+        id,
+        name,
+        is_personal,
+        created_by
+      )
+    `)
+    .eq("user_id", base.id);
+
+  if (workspacesError) {
+    return NextResponse.json({ error: workspacesError.message }, { status: 500 });
+  }
+
+  type WorkspaceQueryResult = {
+    role: WorkspaceRole;
+    workspaces: Pick<WorkspaceRow, "id" | "name" | "is_personal" | "created_by">;
+  };
+
+  const workspaces = (workspacesData as unknown as WorkspaceQueryResult[])?.map((w) => ({
+    ...w.workspaces,
+    role: w.role,
+  })) ?? [];
+
   const currentUser = mergeCurrentUserSnapshot(base, {
     roleLabel: roleRow?.role ?? undefined,
+    workspaces,
   });
 
   return NextResponse.json({ data: currentUser });

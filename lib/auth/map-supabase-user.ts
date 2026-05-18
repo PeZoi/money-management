@@ -41,7 +41,7 @@ export function mapSupabaseUserToSnapshot(user: User): CurrentUserSnapshot {
  */
 export function mergeCurrentUserSnapshot(
   base: CurrentUserSnapshot,
-  extra: Partial<Pick<CurrentUserSnapshot, "workspaceRole" | "roleLabel">>,
+  extra: Partial<Pick<CurrentUserSnapshot, "workspaceRole" | "roleLabel" | "workspaces">>,
 ): CurrentUserSnapshot {
   return { ...base, ...extra };
 }

@@ -1,24 +1,4 @@
-export type CategoryType = 'expense' | 'income';
-
-export type CategoryUi = {
-  id: string;
-  name: string;
-  icon: string;
-  type: CategoryType;
-  color?: string;
-  colorHint: 'emerald' | 'violet' | 'amber' | 'sky' | 'rose' | 'slate';
-};
-
-export const CATEGORIES_MOCK: CategoryUi[] = [
-  { id: 'c1', name: 'Ăn uống', icon: 'Utensils', type: 'expense', color: '#f59e0b', colorHint: 'amber' },
-  { id: 'c2', name: 'Đi lại', icon: 'Car', type: 'expense', color: '#0ea5e9', colorHint: 'sky' },
-  { id: 'c3', name: 'Mua sắm', icon: 'ShoppingBag', type: 'expense', color: '#8b5cf6', colorHint: 'violet' },
-  { id: 'c4', name: 'Giải trí', icon: 'Popcorn', type: 'expense', color: '#f43f5e', colorHint: 'rose' },
-  { id: 'c5', name: 'Sức khỏe', icon: 'HeartPulse', type: 'expense', color: '#10b981', colorHint: 'emerald' },
-  { id: 'c6', name: 'Nhà ở', icon: 'Home', type: 'expense', color: '#64748b', colorHint: 'slate' },
-  { id: 'c7', name: 'Lương', icon: 'Wallet', type: 'income', color: '#10b981', colorHint: 'emerald' },
-  { id: 'c8', name: 'Thưởng', icon: 'Sparkles', type: 'income', color: '#8b5cf6', colorHint: 'violet' },
-];
+import { CategoryType, CategoryUi } from "@/types/category";
 
 const FALLBACK_HEX = '#64748b';
 

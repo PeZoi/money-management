@@ -166,7 +166,8 @@ alter table public.transactions enable row level security;
 create or replace function public.is_workspace_member(ws_id uuid)
 returns boolean
 language sql
-stable
+security definer
+set search_path = public
 as $$
   select exists (
     select 1 from public.workspace_members wm
@@ -178,7 +179,8 @@ $$;
 create or replace function public.is_workspace_admin(ws_id uuid)
 returns boolean
 language sql
-stable
+security definer
+set search_path = public
 as $$
   select exists (
     select 1 from public.workspace_members wm
@@ -191,7 +193,8 @@ $$;
 create or replace function public.is_workspace_owner(ws_id uuid)
 returns boolean
 language sql
-stable
+security definer
+set search_path = public
 as $$
   select exists (
     select 1 from public.workspace_members wm

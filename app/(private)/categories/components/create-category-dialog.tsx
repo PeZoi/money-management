@@ -1,7 +1,5 @@
 'use client';
 
-import { useState } from 'react';
-
 import IconPickerDialog from '@/components/icons/icon-picker-dialog';
 import IconPreview from '@/components/icons/icon-preview';
 import { Badge } from '@/components/ui/badge';
@@ -11,11 +9,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
-import { SearchIcon, TrendingDownIcon, TrendingUpIcon } from 'lucide-react';
+import { Loader2Icon, SearchIcon, TrendingDownIcon, TrendingUpIcon } from 'lucide-react';
 
-import { type CategoryType, categoryCardAccentStyle, typeBadgeClass, typeLabel } from '../category-ui';
-
-const DEFAULT_CATEGORY_COLOR = '#64748b';
+import { DEFAULT_CATEGORY_COLOR, isValidHex6, useCategoryForm } from '@/hooks/use-categories';
+import { CategoryType } from '@/types/category';
+import { categoryCardAccentStyle, typeBadgeClass, typeLabel } from '../category-ui';
 
 function normalizeHexInput(raw: string): string {
   let s = raw.trim().replace(/[^#0-9a-fA-F]/g, '');
@@ -24,26 +22,50 @@ function normalizeHexInput(raw: string): string {
   return s;
 }
 
-function isValidHex6(hex: string): boolean {
-  return /^#[0-9a-fA-F]{6}$/.test(hex);
-}
-
 type CreateCategoryDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  categoryId?: string;
+  initialData?: {
+    name: string;
+    type: CategoryType;
+    icon: string;
+    color: string;
+  };
+  workspaceId?: string; // Required for creating new categories
+  onSuccess?: () => void;
 };
 
-export default function CreateCategoryDialog({ open, onOpenChange }: CreateCategoryDialogProps) {
-  const [draftName, setDraftName] = useState('');
-  const [draftType, setDraftType] = useState<CategoryType>('expense');
-  const [draftIcon, setDraftIcon] = useState<string>('Tag');
-  const [draftColor, setDraftColor] = useState(DEFAULT_CATEGORY_COLOR);
+export default function CreateCategoryDialog({
+  open,
+  onOpenChange,
+  categoryId,
+  initialData,
+  workspaceId,
+  onSuccess,
+}: CreateCategoryDialogProps) {
+  const {
+    draftName, setDraftName,
+    draftType, setDraftType,
+    draftIcon, setDraftIcon,
+    draftColor, setDraftColor,
+    isSubmitting,
+    isUpdate,
+    handleSubmit,
+  } = useCategoryForm({
+    open,
+    onOpenChange,
+    categoryId,
+    initialData,
+    workspaceId,
+    onSuccess,
+  });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent aria-describedby={undefined} className="max-w-xl gap-0 p-0">
         <DialogHeader className="border-b px-5 py-4 sm:px-6">
-          <DialogTitle>Tạo danh mục mới</DialogTitle>
+          <DialogTitle>{isUpdate ? 'Cập nhật danh mục' : 'Tạo danh mục mới'}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-5 px-5 py-5 sm:px-6">
@@ -60,6 +82,7 @@ export default function CreateCategoryDialog({ open, onOpenChange }: CreateCateg
                 onChange={(e) => setDraftName(e.target.value)}
                 placeholder="Ví dụ: Ăn uống, Di chuyển, Lương…"
                 className="h-11 rounded-xl pl-9"
+                disabled={isSubmitting}
               />
             </div>
           </div>
@@ -70,11 +93,13 @@ export default function CreateCategoryDialog({ open, onOpenChange }: CreateCateg
               <button
                 type="button"
                 onClick={() => setDraftType('expense')}
+                disabled={isSubmitting}
                 className={cn(
                   'flex items-center gap-3 rounded-xl border p-4 text-left transition-all outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
                   draftType === 'expense'
                     ? 'border-rose-500/50 bg-rose-500/10 shadow-sm ring-2 ring-rose-500/25 dark:bg-rose-500/15'
                     : 'border-border bg-card hover:bg-muted/50',
+                  isSubmitting && 'opacity-50 cursor-not-allowed'
                 )}
               >
                 <span
@@ -97,11 +122,13 @@ export default function CreateCategoryDialog({ open, onOpenChange }: CreateCateg
               <button
                 type="button"
                 onClick={() => setDraftType('income')}
+                disabled={isSubmitting}
                 className={cn(
                   'flex items-center gap-3 rounded-xl border p-4 text-left transition-all outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
                   draftType === 'income'
                     ? 'border-emerald-500/50 bg-emerald-500/10 shadow-sm ring-2 ring-emerald-500/25 dark:bg-emerald-500/15'
                     : 'border-border bg-card hover:bg-muted/50',
+                  isSubmitting && 'opacity-50 cursor-not-allowed'
                 )}
               >
                 <span
@@ -139,13 +166,15 @@ export default function CreateCategoryDialog({ open, onOpenChange }: CreateCateg
                     type="color"
                     value={isValidHex6(draftColor) ? draftColor : DEFAULT_CATEGORY_COLOR}
                     onChange={(e) => setDraftColor(e.target.value)}
-                    className="h-11 w-16 shrink-0 cursor-pointer rounded-xl border border-input bg-background p-1 shadow-xs"
+                    disabled={isSubmitting}
+                    className="h-11 w-16 shrink-0 cursor-pointer rounded-xl border border-input bg-background p-1 shadow-xs disabled:opacity-50"
                   />
                   <Input
                     value={draftColor}
                     onChange={(e) => setDraftColor(normalizeHexInput(e.target.value))}
                     placeholder="#64748b"
                     spellCheck={false}
+                    disabled={isSubmitting}
                     className="h-11 max-w-44 rounded-xl font-mono text-sm"
                     maxLength={7}
                   />
@@ -157,7 +186,7 @@ export default function CreateCategoryDialog({ open, onOpenChange }: CreateCateg
               <div className="grid gap-2">
                 <Label>Icon</Label>
                 <div className="flex flex-wrap items-center gap-2">
-                  <IconPickerDialog value={draftIcon} onChange={setDraftIcon} className="rounded-xl" />
+                  <IconPickerDialog value={draftIcon} onChange={setDraftIcon} className="rounded-xl" disabled={isSubmitting} />
                 </div>
               </div>
             </div>
@@ -189,14 +218,14 @@ export default function CreateCategoryDialog({ open, onOpenChange }: CreateCateg
           </div>
           <Separator />
 
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-muted-foreground">Đây là giao diện mẫu (UI-only). Chức năng lưu sẽ nối sau.</p>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
             <div className="flex items-center gap-2">
-              <Button type="button" variant="outline" className="rounded-xl" onClick={() => onOpenChange(false)}>
+              <Button type="button" variant="outline" className="rounded-xl" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
                 Hủy
               </Button>
-              <Button type="button" className="rounded-xl" disabled>
-                Tạo danh mục
+              <Button type="button" className="rounded-xl" onClick={handleSubmit} disabled={isSubmitting || !draftName.trim()}>
+                {isSubmitting && <Loader2Icon className="mr-2 size-4 animate-spin" />}
+                {isUpdate ? 'Lưu thay đổi' : 'Tạo danh mục'}
               </Button>
             </div>
           </div>
