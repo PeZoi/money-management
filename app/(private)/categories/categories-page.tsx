@@ -15,8 +15,6 @@ import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import {
   ChevronDownIcon,
-  LayoutGridIcon,
-  ListIcon,
   PlusIcon,
   SearchIcon,
   SlidersHorizontalIcon,
@@ -25,9 +23,9 @@ import {
 
 import CreateCategoryDialog from '@/app/(private)/categories/components/create-category-dialog';
 import { useCategories } from '@/hooks/use-categories';
+import { CategoryType, CategoryUi } from '@/types/category';
 import { normalizeText, typeLabel } from './category-ui';
 import CategoriesList from './components/categories-list';
-import { CategoryType, CategoryUi } from '@/types/category';
 
 export default function CategoriesPage() {
   const { categories, fetchCategories } = useCategories();
