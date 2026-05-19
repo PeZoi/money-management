@@ -27,8 +27,9 @@ import {
 import CreateTransactionDialog from './components/create-transaction-dialog';
 import TransactionStatsCards from './components/transaction-stats-cards';
 import TransactionsList from './components/transactions-list';
+import UpdateTransactionDialog from './components/update-transaction-dialog';
 import { normalizeText, typeLabel } from './transaction-ui';
-import type { TransactionType } from '@/types/database';
+import type { TransactionType, TransactionWithCategory } from '@/types/database';
 
 type FilterType = 'all' | TransactionType;
 
@@ -49,6 +50,9 @@ export default function TransactionsPage() {
   const [typeFilter, setTypeFilter] = useState<FilterType>('all');
   const [sort, setSort] = useState<SortOption>('newest');
   const [createOpen, setCreateOpen] = useState(false);
+  const [updateOpen, setUpdateOpen] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] = useState<TransactionWithCategory | null>(null);
+
 
   const filtered = useMemo(() => {
     const q = normalizeText(query);
@@ -176,6 +180,10 @@ export default function TransactionsPage() {
             isLoading={isLoading}
             onRequestCreate={() => setCreateOpen(true)}
             onRequestDelete={handleDelete}
+            onRequestUpdate={(t) => {
+              setSelectedTransaction(t);
+              setUpdateOpen(true);
+            }}
           />
         </div>
       </PrivatePageShell>
@@ -183,6 +191,13 @@ export default function TransactionsPage() {
       <CreateTransactionDialog
         open={createOpen}
         onOpenChange={setCreateOpen}
+        onSuccess={fetchTransactions}
+      />
+
+      <UpdateTransactionDialog
+        open={updateOpen}
+        onOpenChange={setUpdateOpen}
+        transaction={selectedTransaction}
         onSuccess={fetchTransactions}
       />
     </>

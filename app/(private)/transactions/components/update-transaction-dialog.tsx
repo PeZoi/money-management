@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
 
 import IconPreview from '@/components/icons/icon-preview';
@@ -12,7 +12,7 @@ import { Separator } from '@/components/ui/separator';
 import { useCategories } from '@/hooks/use-categories';
 import { useTransactionMutation } from '@/hooks/use-transactions';
 import { cn } from '@/lib/utils';
-import type { TransactionType } from '@/types/database';
+import type { TransactionType, TransactionWithCategory } from '@/types/database';
 import {
   Calendar as CalendarIcon,
   HelpCircleIcon,
@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 
 type Props = {
+  transaction: TransactionWithCategory | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
@@ -34,9 +35,9 @@ const formatAmountInput = (val: string) => {
   return Number(clean).toLocaleString('en-US');
 };
 
-export default function CreateTransactionDialog({ open, onOpenChange, onSuccess }: Props) {
+export default function UpdateTransactionDialog({ transaction, open, onOpenChange, onSuccess }: Props) {
   const { categories } = useCategories();
-  const { isSubmitting, createTransaction } = useTransactionMutation();
+  const { isSubmitting, updateTransaction } = useTransactionMutation();
 
   const [amount, setAmount] = useState('');
   const [type, setType] = useState<TransactionType>('expense');
@@ -45,22 +46,32 @@ export default function CreateTransactionDialog({ open, onOpenChange, onSuccess 
   // Sử dụng Date đối tượng trực tiếp thay vì chuỗi
   const [date, setDate] = useState<Date>(() => new Date());
 
+  // Cập nhật giá trị form khi transaction thay đổi hoặc modal được mở
+  useEffect(() => {
+    if (transaction) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setAmount(formatAmountInput(transaction.amount.toString()));
+      setType(transaction.type);
+      setCategoryId(transaction.category_id || '');
+      setNote(transaction.note || '');
+
+      // Chuyển đổi created_at từ DB sang đối tượng Date
+      if (transaction.created_at) {
+        setDate(new Date(transaction.created_at));
+      } else {
+        setDate(new Date());
+      }
+    }
+  }, [transaction, open]);
+
   const filteredCategories = categories.filter((c) => c.type === type);
 
-  const resetForm = () => {
-    setAmount('');
-    setType('expense');
-    setCategoryId('');
-    setNote('');
-    setDate(new Date());
-  };
-
   const handleClose = (open: boolean) => {
-    if (!open) resetForm();
     onOpenChange(open);
   };
 
   const handleSubmit = async () => {
+    if (!transaction) return;
     const numAmount = Number(amount.replace(/[^0-9]/g, ''));
     if (!numAmount || numAmount <= 0) return;
 
@@ -77,7 +88,8 @@ export default function CreateTransactionDialog({ open, onOpenChange, onSuccess 
         ).toISOString()
       : null;
 
-    const ok = await createTransaction(
+    const ok = await updateTransaction(
+      transaction.id,
       {
         amount: numAmount,
         type,
@@ -101,7 +113,7 @@ export default function CreateTransactionDialog({ open, onOpenChange, onSuccess 
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent aria-describedby={undefined} className="max-w-lg gap-0 p-0">
         <DialogHeader className="border-b px-5 py-4 sm:px-6">
-          <DialogTitle>Thêm giao dịch mới</DialogTitle>
+          <DialogTitle>Cập nhật giao dịch</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-5 px-5 py-5 sm:px-6">
@@ -273,7 +285,7 @@ export default function CreateTransactionDialog({ open, onOpenChange, onSuccess 
             </Button>
             <Button type="button" className="rounded-xl" onClick={handleSubmit} disabled={isSubmitting || !isValid}>
               {isSubmitting && <Loader2Icon className="mr-2 size-4 animate-spin" />}
-              Thêm giao dịch
+              Cập nhật giao dịch
             </Button>
           </div>
         </div>

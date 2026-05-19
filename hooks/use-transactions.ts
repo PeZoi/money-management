@@ -85,6 +85,7 @@ export function useTransactionMutation() {
       type: 'expense' | 'income';
       category_id?: string | null;
       note?: string | null;
+      created_at?: string | null;
     },
     options?: { onSuccess?: () => void }
   ) => {
@@ -113,5 +114,38 @@ export function useTransactionMutation() {
     }
   };
 
-  return { isSubmitting, deleteTransaction, createTransaction };
+  const updateTransaction = async (
+    id: string,
+    payload: {
+      amount: number;
+      type: 'expense' | 'income';
+      category_id?: string | null;
+      note?: string | null;
+      created_at?: string | null;
+    },
+    options?: { onSuccess?: () => void }
+  ) => {
+    setIsSubmitting(true);
+    try {
+      const res = await fetch(`/api/transactions/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Cập nhật thất bại');
+      toast.success('Đã cập nhật giao dịch');
+      options?.onSuccess?.();
+      return true;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Không thể cập nhật giao dịch';
+      toast.error(msg);
+      return false;
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return { isSubmitting, deleteTransaction, createTransaction, updateTransaction };
 }
+
