@@ -1,7 +1,7 @@
 'use client';
 
 import { ArrowDownCircleIcon, ArrowUpCircleIcon, ChevronDownIcon, ClockIcon, PlusIcon, ReceiptTextIcon, Trash2Icon } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 import IconPreview from '@/components/icons/icon-preview';
 import { Badge } from '@/components/ui/badge';
@@ -25,6 +25,269 @@ type Props = {
   onRequestDelete: (id: string) => void;
   onRequestUpdate: (transaction: TransactionWithCategory) => void;
 };
+
+// Định dạng ngày giờ chi tiết: HH:mm - dd/MM/yyyy (Chuyển lên global scope để dùng chung)
+const formatTime = (iso: string) => {
+  try {
+    const d = new Date(iso);
+    const hours = String(d.getHours()).padStart(2, '0');
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${hours}:${minutes} - ${day}/${month}/${year}`;
+  } catch {
+    return '';
+  }
+};
+
+// Component hàng giao dịch hỗ trợ kéo thả vuốt trái (Swipe to Delete)
+function TransactionRow({
+  t,
+  onRequestUpdate,
+  onRequestDelete,
+}: {
+  t: TransactionWithCategory;
+  onRequestUpdate: (t: TransactionWithCategory) => void;
+  onRequestDelete: (id: string) => void;
+}) {
+  const rowRef = useRef<HTMLDivElement>(null);
+  const touchStart = useRef({ x: 0, y: 0 });
+  const currentX = useRef(0);
+  const isOpen = useRef(false);
+  const isDragging = useRef(false);
+
+  // Bắt đầu chạm
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    touchStart.current = { x: touch.clientX, y: touch.clientY };
+    isDragging.current = true;
+    
+    // Tắt transition để khi vuốt ngón tay phản hồi ngay lập tức không bị trễ
+    if (rowRef.current) {
+      rowRef.current.style.transition = 'none';
+    }
+  };
+
+  // Kéo di chuyển
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging.current) return;
+    const touch = e.touches[0];
+    const diffX = touch.clientX - touchStart.current.x;
+    const diffY = touch.clientY - touchStart.current.y;
+
+    // Nếu người dùng cuộn dọc nhiều hơn kéo ngang thì bỏ qua
+    if (Math.abs(diffY) > Math.abs(diffX)) {
+      return;
+    }
+
+    // Khoảng cách dịch chuyển thực tế
+    let targetX = isOpen.current ? diffX - 80 : diffX;
+    
+    // Tạo hiệu ứng đàn hồi giảm lực cản (Elastic effect)
+    if (targetX < -80) {
+      targetX = -80 + (targetX + 80) * 0.35;
+    }
+    if (targetX > 0) {
+      targetX = targetX * 0.25;
+    }
+
+    currentX.current = targetX;
+    if (rowRef.current) {
+      rowRef.current.style.transform = `translateX(${targetX}px)`;
+    }
+  };
+
+  // Thả tay
+  const handleTouchEnd = () => {
+    isDragging.current = false;
+    if (rowRef.current) {
+      rowRef.current.style.transition = 'transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)';
+      
+      // Nếu vuốt qua trái hơn nửa chặng đường (-40px) thì mở hoàn toàn nút xóa (-80px)
+      if (currentX.current < -40) {
+        rowRef.current.style.transform = 'translateX(-80px)';
+        isOpen.current = true;
+        currentX.current = -80;
+      } else {
+        rowRef.current.style.transform = 'translateX(0px)';
+        isOpen.current = false;
+        currentX.current = 0;
+      }
+    }
+  };
+
+  // Tự động đóng lại khi người dùng nhấp ra ngoài khu vực hàng đang mở
+  useEffect(() => {
+    const handleGlobalClick = () => {
+      if (isOpen.current && rowRef.current) {
+        rowRef.current.style.transition = 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)';
+        rowRef.current.style.transform = 'translateX(0px)';
+        isOpen.current = false;
+        currentX.current = 0;
+      }
+    };
+    
+    document.addEventListener('click', handleGlobalClick);
+    return () => document.removeEventListener('click', handleGlobalClick);
+  }, []);
+
+  const isIncome = t.type === 'income';
+  const AmountIcon = isIncome ? ArrowUpCircleIcon : ArrowDownCircleIcon;
+  const amountIconClass = isIncome ? 'text-emerald-500' : 'text-rose-500';
+  const iconBgClass = isIncome
+    ? 'bg-emerald-500/10 border-emerald-500/20'
+    : 'bg-rose-500/10 border-rose-500/20';
+
+  return (
+    <div
+      className={cn(
+        "relative overflow-hidden rounded-2xl border border-border/50 bg-gray-200 dark:bg-muted/20 shadow-xs transition-colors duration-300",
+        isIncome ? "hover:border-emerald-500/35" : "hover:border-rose-500/35"
+      )}
+    >
+      {/* Nút Xoá nằm chìm bên dưới (Chỉ hiển thị trên mobile) */}
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onRequestDelete(t.id);
+        }}
+        className="absolute right-0 top-0 bottom-0 z-0 flex w-20 items-center justify-center bg-rose-500 font-semibold text-white transition-colors hover:bg-rose-600 active:bg-rose-700 md:hidden"
+      >
+        <div className="flex flex-col items-center gap-1">
+          <Trash2Icon className="size-5" />
+          <span className="text-[10px] font-medium">Xóa</span>
+        </div>
+      </button>
+
+      {/* Panel nội dung chính nằm phía trên */}
+      <div
+        ref={rowRef}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onClick={(e) => {
+          if (isOpen.current) {
+            e.stopPropagation();
+            rowRef.current!.style.transition = 'transform 0.2s ease';
+            rowRef.current!.style.transform = 'translateX(0px)';
+            isOpen.current = false;
+            currentX.current = 0;
+            return;
+          }
+          onRequestUpdate(t);
+        }}
+        className={cn(
+          'group relative z-10 flex cursor-pointer items-center gap-4 bg-card p-4 transition-all duration-300 select-none',
+          isIncome 
+            ? 'hover:bg-emerald-50/70 dark:hover:bg-emerald-950/30' 
+            : 'hover:bg-rose-50/70 dark:hover:bg-rose-950/30'
+        )}
+      >
+        {/* Icon mờ nghệ thuật (watermark) lớn ở góc dưới bên phải */}
+        <div className="absolute -right-6 -bottom-6 pointer-events-none select-none opacity-[0.04] dark:opacity-[0.02] transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6">
+          {t.category?.icon ? (
+            <IconPreview name={t.category.icon} className={cn('size-28', amountIconClass)} />
+          ) : (
+            <AmountIcon className={cn('size-28', amountIconClass)} aria-hidden />
+          )}
+        </div>
+
+        {/* Bọc chứa Category Icon bo góc mềm mại & sub-badge thu/chi */}
+        <div
+          className={cn(
+            'relative flex size-12 shrink-0 items-center justify-center rounded-2xl border transition-transform duration-300 group-hover:scale-105',
+            iconBgClass,
+          )}
+        >
+          {t.category?.icon ? (
+            <>
+              <IconPreview name={t.category.icon} className={cn('size-5.5', amountIconClass)} />
+              {/* Badge phụ góc dưới bên phải thể hiện thu/chi */}
+              <span className={cn(
+                'absolute -bottom-1 -right-1 flex size-5 items-center justify-center rounded-full border bg-background shadow-xs text-[10px]',
+                isIncome ? 'border-emerald-500/20 text-emerald-500' : 'border-rose-500/20 text-rose-500'
+              )}>
+                <AmountIcon className="size-3" aria-hidden />
+              </span>
+            </>
+          ) : (
+            <AmountIcon className={cn('size-6', amountIconClass)} aria-hidden />
+          )}
+        </div>
+
+        {/* Info phân cấp rõ ràng (Note > Category > Date) */}
+        <div className="min-w-0 flex-1 space-y-2">
+          <div className="flex items-center gap-2">
+            <h4 className="truncate font-semibold text-sm leading-tight text-foreground transition-colors ">
+              {t.note || (t.category?.name ?? 'Khác')}
+            </h4>
+            <Badge
+              className={cn(
+                'rounded-md px-1.5 py-0.5 text-[10px] font-medium border leading-none shrink-0',
+                typeBadgeClass(t.type),
+              )}
+            >
+              {typeLabel(t.type)}
+            </Badge>
+          </div>
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+            {t.note && (
+              <>
+                <span className="font-medium text-foreground/75 truncate max-w-[120px]">
+                  {t.category?.name ?? 'Khác'}
+                </span>
+                <span className="text-muted-foreground/40 font-light select-none">·</span>
+              </>
+            )}
+            {t.account && (
+              <>
+                <span className="inline-flex items-center gap-1 font-medium text-foreground/75">
+                  <span className="text-[11px] leading-none select-none">{t.account.icon}</span>
+                  <span>{t.account.name}</span>
+                </span>
+                <span className="text-muted-foreground/40 font-light select-none">·</span>
+              </>
+            )}
+            <div className="flex items-center gap-1">
+              <ClockIcon className="size-3 shrink-0 opacity-70" aria-hidden />
+              <span>{formatTime(t.created_at)}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Số tiền & Nút xóa slide-in ngang tinh tế */}
+        <div className="flex shrink-0 items-center gap-3">
+          <div className="text-right">
+            <p className={cn('text-base font-bold tracking-tight transition-all duration-300', typeAmountClass(t.type))}>
+              {typeAmountPrefix(t.type)}{formatVnd(t.amount)}
+            </p>
+          </div>
+
+          {/* Nút xóa slide-in thông minh (Chỉ hiện khi hover trên máy tính bàn) */}
+          <div className="hidden md:flex items-center justify-center w-0 opacity-0 overflow-hidden transition-all duration-300 group-hover:w-8 group-hover:opacity-100">
+            <button
+              type="button"
+              aria-label="Xóa giao dịch"
+              onClick={(e) => {
+                e.stopPropagation();
+                onRequestDelete(t.id);
+              }}
+              className={cn(
+                'inline-flex size-8 items-center justify-center rounded-xl border border-border bg-background shadow-xs text-muted-foreground',
+                'transition-all duration-200 hover:scale-105 active:scale-95',
+                'hover:border-rose-500/30 hover:bg-rose-500/10 hover:text-rose-600 dark:hover:bg-rose-500/20',
+              )}
+            >
+              <Trash2Icon className="size-4" aria-hidden />
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function SkeletonRow() {
   return (
@@ -106,21 +369,6 @@ export default function TransactionsList({
     return acc;
   }, []);
 
-  // Định dạng ngày giờ chi tiết: HH : mm - dd/MM/yyyy
-  const formatTime = (iso: string) => {
-    try {
-      const d = new Date(iso);
-      const hours = String(d.getHours()).padStart(2, '0');
-      const minutes = String(d.getMinutes()).padStart(2, '0');
-      const day = String(d.getDate()).padStart(2, '0');
-      const month = String(d.getMonth() + 1).padStart(2, '0');
-      const year = d.getFullYear();
-      return `${hours}:${minutes} - ${day}/${month}/${year}`;
-    } catch {
-      return '';
-    }
-  };
-
   return (
     <div className="space-y-6">
       {groupedTransactions.map((group) => {
@@ -150,126 +398,14 @@ export default function TransactionsList({
 
             {!isCollapsed && (
               <div className="flex flex-col gap-2 animate-in fade-in slide-in-from-top-1 duration-200">
-                {group.items.map((t) => {
-                  const isIncome = t.type === 'income';
-                  const AmountIcon = isIncome ? ArrowUpCircleIcon : ArrowDownCircleIcon;
-                  const amountIconClass = isIncome
-                    ? 'text-emerald-500'
-                    : 'text-rose-500';
-                  const iconBgClass = isIncome
-                    ? 'bg-emerald-500/10 border-emerald-500/20'
-                    : 'bg-rose-500/10 border-rose-500/20';
-
-                  return (
-                    <div
-                      key={t.id}
-                      onClick={() => onRequestUpdate(t)}
-                      className={cn(
-                        'group relative flex cursor-pointer items-center gap-4 overflow-hidden rounded-2xl border border-border/50 bg-muted/30 p-4 shadow-xs transition-all duration-300 hover:-translate-y-0.5 hover:border-border hover:bg-card hover:shadow-md dark:bg-muted/10 dark:hover:bg-card',
-                      )}
-                    >
-                      {/* Icon mờ nghệ thuật (watermark) lớn ở góc dưới bên phải */}
-                      <div className="absolute -right-6 -bottom-6 pointer-events-none select-none opacity-[0.04] dark:opacity-[0.02] transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6">
-                        {t.category?.icon ? (
-                          <IconPreview name={t.category.icon} className={cn('size-28', amountIconClass)} />
-                        ) : (
-                          <AmountIcon className={cn('size-28', amountIconClass)} aria-hidden />
-                        )}
-                      </div>
-
-                      {/* Bọc chứa Category Icon bo góc mềm mại & sub-badge thu/chi */}
-                      <div
-                        className={cn(
-                          'relative flex size-12 shrink-0 items-center justify-center rounded-2xl border transition-transform duration-300 group-hover:scale-105',
-                          iconBgClass,
-                        )}
-                      >
-                        {t.category?.icon ? (
-                          <>
-                            <IconPreview name={t.category.icon} className={cn('size-5.5', amountIconClass)} />
-                            {/* Badge phụ góc dưới bên phải thể hiện thu/chi */}
-                            <span className={cn(
-                              'absolute -bottom-1 -right-1 flex size-5 items-center justify-center rounded-full border bg-background shadow-xs text-[10px]',
-                              isIncome ? 'border-emerald-500/20 text-emerald-500' : 'border-rose-500/20 text-rose-500'
-                            )}>
-                              <AmountIcon className="size-3" aria-hidden />
-                            </span>
-                          </>
-                        ) : (
-                          <AmountIcon className={cn('size-6', amountIconClass)} aria-hidden />
-                        )}
-                      </div>
-
-                      {/* Info phân cấp rõ ràng (Note > Category > Date) */}
-                      <div className="min-w-0 flex-1 space-y-2">
-                        <div className="flex items-center gap-2">
-                          <h4 className="truncate font-semibold text-sm leading-tight text-foreground transition-colors ">
-                            {t.note || (t.category?.name ?? 'Khác')}
-                          </h4>
-                          <Badge
-                            className={cn(
-                              'rounded-md px-1.5 py-0.5 text-[10px] font-medium border leading-none shrink-0',
-                              typeBadgeClass(t.type),
-                            )}
-                          >
-                            {typeLabel(t.type)}
-                          </Badge>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-                          {t.note && (
-                            <>
-                              <span className="font-medium text-foreground/75 truncate max-w-[120px]">
-                                {t.category?.name ?? 'Khác'}
-                              </span>
-                              <span className="text-muted-foreground/40 font-light select-none">·</span>
-                            </>
-                          )}
-                          {t.account && (
-                            <>
-                              <span className="inline-flex items-center gap-1 font-medium text-foreground/75">
-                                <span className="text-[11px] leading-none select-none">{t.account.icon}</span>
-                                <span>{t.account.name}</span>
-                              </span>
-                              <span className="text-muted-foreground/40 font-light select-none">·</span>
-                            </>
-                          )}
-                          <div className="flex items-center gap-1">
-                            <ClockIcon className="size-3 shrink-0 opacity-70" aria-hidden />
-                            <span>{formatTime(t.created_at)}</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Số tiền & Nút xóa slide-in ngang tinh tế */}
-                      <div className="flex shrink-0 items-center gap-3">
-                        <div className="text-right">
-                          <p className={cn('text-base font-bold tracking-tight transition-all duration-300', typeAmountClass(t.type))}>
-                            {typeAmountPrefix(t.type)}{formatVnd(t.amount)}
-                          </p>
-                        </div>
-
-                        {/* Nút xóa slide-in thông minh */}
-                        <div className="flex items-center justify-center w-0 opacity-0 overflow-hidden transition-all duration-300 group-hover:w-8 group-hover:opacity-100">
-                          <button
-                            type="button"
-                            aria-label="Xóa giao dịch"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onRequestDelete(t.id);
-                            }}
-                            className={cn(
-                              'inline-flex size-8 items-center justify-center rounded-xl border border-border bg-background shadow-xs text-muted-foreground',
-                              'transition-all duration-200 hover:scale-105 active:scale-95',
-                              'hover:border-rose-500/30 hover:bg-rose-500/10 hover:text-rose-600 dark:hover:bg-rose-500/20',
-                            )}
-                          >
-                            <Trash2Icon className="size-4" aria-hidden />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+                {group.items.map((t) => (
+                  <TransactionRow
+                    key={t.id}
+                    t={t}
+                    onRequestUpdate={onRequestUpdate}
+                    onRequestDelete={onRequestDelete}
+                  />
+                ))}
               </div>
             )}
           </div>
@@ -278,3 +414,4 @@ export default function TransactionsList({
     </div>
   );
 }
+

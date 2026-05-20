@@ -5,6 +5,7 @@ import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/s
 import Logo from '../assets/images/logo.png';
 import Image from 'next/image';
 import Link from 'next/link';
+import { BottomNav } from '@/components/bottom-nav';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -12,7 +13,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <SidebarProvider>
         <AuthBootstrap />
         <AppSidebar />
-        <SidebarInset>
+        {/* pb-24 md:pb-0 để chừa khoảng trống cho thanh điều hướng dưới cùng trên mobile */}
+        <SidebarInset className="pb-24 md:pb-0">
           <header className="flex h-16 shrink-0 items-center justify-between border-b px-4">
             <div className="flex items-center gap-2">
               <SidebarTrigger className="-ml-1" />
@@ -31,8 +33,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </div>
           </header>
           {children}
+          <BottomNav />
         </SidebarInset>
       </SidebarProvider>
     </>
   );
 }
+

@@ -1,35 +1,26 @@
 'use client';
 
-import { useState } from 'react';
 import { PrivatePageShell } from '@/components/private-page-shell';
 import { Button } from '@/components/ui/button';
-import { useAccounts, useAccountMutation } from '@/hooks/use-accounts';
 import { CreditCardIcon, PlusIcon } from 'lucide-react';
-import type { AccountRow } from '@/types/database';
 import AccountFormDialog from './components/account-form-dialog';
 import AccountsList from './components/accounts-list';
-
-
+import { useAccountsPage } from './hooks/use-accounts-page';
 
 export default function AccountsPage() {
-  const { accounts, activeAccount, isLoading, fetchAccounts } = useAccounts();
-  const { deleteAccount, activateAccount } = useAccountMutation();
-
-  const [createOpen, setCreateOpen] = useState(false);
-  const [editingAccount, setEditingAccount] = useState<AccountRow | null>(null);
-
-  const handleDelete = async (id: string) => {
-    const confirmed = window.confirm('Bạn chắc chắn muốn xóa tài khoản này?');
-    if (!confirmed) return;
-    await deleteAccount(id, { onSuccess: fetchAccounts });
-  };
-
-  const handleActivate = async (id: string) => {
-    await activateAccount(id, { onSuccess: fetchAccounts });
-  };
-
-  // Tổng số dư toàn bộ tài khoản
-  const totalBalance = accounts.reduce((sum, a) => sum + Number(a.balance), 0);
+  const {
+    accounts,
+    activeAccount,
+    isLoading,
+    fetchAccounts,
+    createOpen,
+    setCreateOpen,
+    editingAccount,
+    setEditingAccount,
+    handleDelete,
+    handleActivate,
+    totalBalance,
+  } = useAccountsPage();
 
   return (
     <>

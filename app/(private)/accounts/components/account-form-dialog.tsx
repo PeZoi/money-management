@@ -48,6 +48,17 @@ function normalizeHexInput(raw: string): string {
   return s;
 }
 
+// Định dạng số tiền sang hiển thị dạng phân tách hàng nghìn (ví dụ: 100,000 hoặc -100,000)
+function formatAmountInput(val: string | number): string {
+  const str = String(val);
+  // Lấy ra dấu trừ nếu có ở đầu để hỗ trợ tài khoản ghi nợ (số dư âm)
+  const isNegative = str.startsWith('-');
+  const clean = str.replace(/[^0-9]/g, '');
+  if (!clean) return isNegative ? '-' : '';
+  const formatted = Number(clean).toLocaleString('en-US');
+  return isNegative ? `-${formatted}` : formatted;
+}
+
 export default function AccountFormDialog({
   open,
   onOpenChange,
@@ -59,7 +70,7 @@ export default function AccountFormDialog({
 
   const [name, setName] = useState(account?.name ?? '');
   const [type, setType] = useState<typeof ACCOUNT_TYPES[number]['value']>(account?.type ?? 'cash');
-  const [balance, setBalance] = useState(String(account?.balance ?? '0'));
+  const [balance, setBalance] = useState(() => account ? formatAmountInput(account.balance) : '0');
   const [icon, setIcon] = useState(account?.icon ?? '💰');
   const [color, setColor] = useState(account?.color ?? '#6366f1');
 
@@ -68,7 +79,7 @@ export default function AccountFormDialog({
     if (val) {
       setName(account?.name ?? '');
       setType(account?.type ?? 'cash');
-      setBalance(String(account?.balance ?? '0'));
+      setBalance(account ? formatAmountInput(account.balance) : '0');
       setIcon(account?.icon ?? '💰');
       setColor(account?.color ?? '#6366f1');
     }
@@ -170,9 +181,8 @@ export default function AccountFormDialog({
                 inputMode="numeric"
                 value={balance}
                 onChange={(e) => {
-                  // Chỉ cho nhập số, dấu trừ
-                  const val = e.target.value.replace(/[^0-9-]/g, '');
-                  setBalance(val);
+                  // Định dạng số tiền khi người dùng gõ nhập, giữ lại dấu trừ nếu có
+                  setBalance(formatAmountInput(e.target.value));
                 }}
                 className="h-11 rounded-xl pl-8"
                 disabled={isSubmitting}
@@ -280,7 +290,7 @@ export default function AccountFormDialog({
               </div>
               <div className="relative text-right">
                 <p className="text-sm font-bold tabular-nums">
-                  {Number(balance || 0).toLocaleString('vi-VN')}₫
+                  {(Number(balance.replace(/[^0-9-]/g, '')) || 0).toLocaleString('vi-VN')}₫
                 </p>
               </div>
             </div>

@@ -1,7 +1,5 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-
 import { PrivatePageShell } from '@/components/private-page-shell';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -22,27 +20,22 @@ import {
 } from 'lucide-react';
 
 import CreateCategoryDialog from '@/app/(private)/categories/components/create-category-dialog';
-import { useCategories } from '@/hooks/use-categories';
-import { CategoryType, CategoryUi } from '@/types/category';
-import { normalizeText, typeLabel } from './category-ui';
 import CategoriesList from './components/categories-list';
+import { useCategoriesPage } from './hooks/use-categories-page';
 
 export default function CategoriesPage() {
-  const { categories, fetchCategories } = useCategories();
-  const [query, setQuery] = useState('');
-  const [typeFilter, setTypeFilter] = useState<'all' | CategoryType>('all');
-  const [createOpen, setCreateOpen] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<CategoryUi | null>(null);
-
-  const filtered = useMemo(() => {
-    const q = normalizeText(query);
-    return categories.filter((c) => {
-      if (typeFilter !== 'all' && c.type !== typeFilter) return false;
-      if (!q) return true;
-      const hay = normalizeText(`${c.name} ${c.icon} ${typeLabel(c.type)}`);
-      return hay.includes(q);
-    });
-  }, [query, typeFilter, categories]);
+  const {
+    fetchCategories,
+    query,
+    setQuery,
+    typeFilter,
+    setTypeFilter,
+    createOpen,
+    setCreateOpen,
+    editingCategory,
+    setEditingCategory,
+    filtered,
+  } = useCategoriesPage();
 
   return (
     <>
