@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { AccountRow } from '@/types/database';
 import { useAccountMutation } from '@/hooks/use-accounts';
 import { Button } from '@/components/ui/button';
@@ -74,17 +74,16 @@ export default function AccountFormDialog({
   const [icon, setIcon] = useState(account?.icon ?? '💰');
   const [color, setColor] = useState(account?.color ?? '#6366f1');
 
-  // Reset form khi dialog mở
-  const handleOpenChange = (val: boolean) => {
-    if (val) {
+  // Reset form khi dialog được mở (theo dõi prop `open` và `account`)
+  useEffect(() => {
+    if (open) {
       setName(account?.name ?? '');
       setType(account?.type ?? 'cash');
       setBalance(account ? formatAmountInput(account.balance) : '0');
       setIcon(account?.icon ?? '💰');
       setColor(account?.color ?? '#6366f1');
     }
-    onOpenChange(val);
-  };
+  }, [open, account]);
 
   const handleSubmit = async () => {
     const payload = {
@@ -105,7 +104,7 @@ export default function AccountFormDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent aria-describedby={undefined} className="max-w-xl gap-0 p-0">
         <DialogHeader className="border-b px-5 py-4 sm:px-6">
           <DialogTitle>{isUpdate ? 'Cập nhật tài khoản' : 'Thêm tài khoản mới'}</DialogTitle>

@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useEffect, useRef } from 'react';
 import { useTransactionMutation, useTransactions } from '@/hooks/use-transactions';
+import { useConfirm } from '@/hooks/use-confirm';
 import type { TransactionType, TransactionWithCategory } from '@/types/database';
 import { normalizeText, typeLabel } from '../transaction-ui';
 
@@ -11,6 +12,7 @@ export type SortOption = 'newest' | 'oldest' | 'amount_desc' | 'amount_asc';
 export function useTransactionsPage() {
   const { transactions, isLoading, fetchTransactions, month, setMonth } = useTransactions();
   const { deleteTransaction } = useTransactionMutation();
+  const confirm = useConfirm();
 
   const [query, setQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<FilterType>('all');
@@ -127,6 +129,14 @@ export function useTransactionsPage() {
   }, [transactions, query, typeFilter, sort]);
 
   const handleDelete = async (id: string) => {
+    const confirmed = await confirm({
+      title: 'Xóa giao dịch',
+      message: 'Bạn có chắc chắn muốn xóa giao dịch này không? Số dư tài khoản liên kết sẽ tự động được hoàn lại.',
+      confirmText: 'Xóa',
+      cancelText: 'Hủy',
+      variant: 'destructive',
+    });
+    if (!confirmed) return;
     await deleteTransaction(id, { onSuccess: fetchTransactions });
   };
 

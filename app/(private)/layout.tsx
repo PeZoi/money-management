@@ -6,6 +6,7 @@ import Logo from '../assets/images/logo.png';
 import Image from 'next/image';
 import Link from 'next/link';
 import { BottomNav } from '@/components/bottom-nav';
+import { ConfirmDialog } from '@/components/confirm-dialog';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -36,6 +37,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <BottomNav />
         </SidebarInset>
       </SidebarProvider>
+      <ConfirmDialog />
     </>
   );
 }

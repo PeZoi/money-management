@@ -1,5 +1,6 @@
 'use client';
 
+import { useRef, useEffect } from 'react';
 import type { AccountRow } from '@/types/database';
 import { useAccountMutation } from '@/hooks/use-accounts';
 import { Badge } from '@/components/ui/badge';
@@ -104,116 +105,251 @@ function AccountCard({ account, isSubmitting, onEdit, onDelete, onActivate }: Ac
   const balance = Number(account.balance);
   const isNegative = balance < 0;
 
+  const rowRef = useRef<HTMLDivElement>(null);
+  const touchStart = useRef({ x: 0, y: 0 });
+  const currentX = useRef(0);
+  const isOpen = useRef(false);
+  const isDragging = useRef(false);
+
+  // Bắt đầu chạm
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    touchStart.current = { x: touch.clientX, y: touch.clientY };
+    isDragging.current = true;
+    
+    // Tắt transition để khi vuốt ngón tay phản hồi ngay lập tức không bị trễ
+    if (rowRef.current) {
+      rowRef.current.style.transition = 'none';
+    }
+  };
+
+  // Kéo di chuyển
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging.current) return;
+    const touch = e.touches[0];
+    const diffX = touch.clientX - touchStart.current.x;
+    const diffY = touch.clientY - touchStart.current.y;
+
+    // Nếu người dùng cuộn dọc nhiều hơn kéo ngang thì bỏ qua
+    if (Math.abs(diffY) > Math.abs(diffX)) {
+      return;
+    }
+
+    // Khoảng cách dịch chuyển thực tế
+    let targetX = isOpen.current ? diffX - 80 : diffX;
+    
+    // Tạo hiệu ứng đàn hồi giảm lực cản (Elastic effect)
+    if (targetX < -80) {
+      targetX = -80 + (targetX + 80) * 0.35;
+    }
+    if (targetX > 0) {
+      targetX = targetX * 0.25;
+    }
+
+    currentX.current = targetX;
+    if (rowRef.current) {
+      rowRef.current.style.transform = `translateX(${targetX}px)`;
+    }
+  };
+
+  // Thả tay
+  const handleTouchEnd = () => {
+    isDragging.current = false;
+    if (rowRef.current) {
+      rowRef.current.style.transition = 'transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)';
+      
+      // Nếu vuốt qua trái hơn nửa chặng đường (-40px) thì mở hoàn toàn nút xóa (-80px)
+      if (currentX.current < -40) {
+        rowRef.current.style.transform = 'translateX(-80px)';
+        isOpen.current = true;
+        currentX.current = -80;
+      } else {
+        rowRef.current.style.transform = 'translateX(0px)';
+        isOpen.current = false;
+        currentX.current = 0;
+      }
+    }
+  };
+
+  // Tự động đóng lại khi người dùng nhấp ra ngoài khu vực hàng đang mở
+  useEffect(() => {
+    const handleGlobalClick = () => {
+      if (isOpen.current && rowRef.current) {
+        rowRef.current.style.transition = 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)';
+        rowRef.current.style.transform = 'translateX(0px)';
+        isOpen.current = false;
+        currentX.current = 0;
+      }
+    };
+    
+    document.addEventListener('click', handleGlobalClick);
+    return () => document.removeEventListener('click', handleGlobalClick);
+  }, []);
+
   return (
     <div
       className={cn(
-        'group relative overflow-hidden rounded-2xl border bg-card shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5',
+        'group relative overflow-hidden rounded-2xl border bg-gray-200 dark:bg-muted/10 shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5',
         account.is_active && 'ring-2 ring-primary/50 border-primary/30'
       )}
       style={{ borderColor: account.is_active ? undefined : `${account.color}30` }}
     >
-      {/* Accent gradient */}
+      {/* Nút Xoá nằm chìm bên dưới (Chỉ hiển thị trên mobile) */}
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onDelete();
+        }}
+        className="absolute right-0 top-0 bottom-0 z-0 flex w-20 items-center justify-center bg-rose-500 font-semibold text-white transition-colors hover:bg-rose-600 active:bg-rose-700 md:hidden"
+      >
+        <div className="flex flex-col items-center gap-1">
+          <Trash2Icon className="size-5" />
+          <span className="text-[10px] font-medium">Xóa</span>
+        </div>
+      </button>
+
+      {/* Panel nội dung chính nằm phía trên, click để chỉnh sửa */}
       <div
-        className="pointer-events-none absolute inset-0 opacity-[0.08]"
-        style={{ background: `linear-gradient(135deg, ${account.color}, transparent 60%)` }}
-        aria-hidden
-      />
+        ref={rowRef}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onClick={(e) => {
+          if (isOpen.current) {
+            e.stopPropagation();
+            rowRef.current!.style.transition = 'transform 0.2s ease';
+            rowRef.current!.style.transform = 'translateX(0px)';
+            isOpen.current = false;
+            currentX.current = 0;
+            return;
+          }
+          onEdit();
+        }}
+        className="group relative z-10 flex cursor-pointer flex-col bg-card p-4 transition-all duration-300 select-none"
+      >
+        {/* Accent gradient */}
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.08]"
+          style={{ background: `linear-gradient(135deg, ${account.color}, transparent 60%)` }}
+          aria-hidden
+        />
 
-      {/* Active badge */}
-      {account.is_active && (
-        <div className="absolute right-3 top-3 z-10">
-          <Badge className="gap-1 rounded-xl bg-primary/15 px-2 py-0.5 text-primary text-[10px] font-semibold border-primary/20">
-            <CheckCircle2Icon className="size-3" />
-            Active
-          </Badge>
-        </div>
-      )}
-
-      {/* Menu */}
-      <div className="absolute left-3 top-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="outline"
-              size="icon"
-              className="size-7 rounded-lg border-muted-foreground/20 bg-background/80 backdrop-blur-sm shadow-sm"
-              disabled={isSubmitting}
-            >
-              <MoreVerticalIcon className="size-3.5" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="min-w-44 rounded-xl">
-            {!account.is_active && (
-              <DropdownMenuItem onClick={onActivate} className="rounded-lg cursor-pointer gap-2">
-                <CheckCircle2Icon className="size-4 text-primary" />
-                <span>Đặt làm active</span>
-              </DropdownMenuItem>
-            )}
-            <DropdownMenuItem onClick={onEdit} className="rounded-lg cursor-pointer gap-2">
-              <EditIcon className="size-4" />
-              <span>Chỉnh sửa</span>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={onDelete}
-              className="rounded-lg cursor-pointer gap-2 text-destructive focus:text-destructive focus:bg-destructive/10"
-            >
-              <Trash2Icon className="size-4" />
-              <span>Xóa tài khoản</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-
-      {/* Card content */}
-      <div className="relative p-4">
-        <div className="flex items-start gap-3">
-          {/* Icon */}
-          <div
-            className="flex size-12 shrink-0 items-center justify-center rounded-xl text-2xl border shadow-sm"
-            style={{ backgroundColor: `${account.color}18`, borderColor: `${account.color}30` }}
-          >
-            {account.icon}
+        {/* Active badge */}
+        {account.is_active && (
+          <div className="absolute right-3 top-3 z-10">
+            <Badge className="gap-1 rounded-xl bg-primary/15 px-2 py-0.5 text-primary text-[10px] font-semibold border-primary/20">
+              <CheckCircle2Icon className="size-3" />
+              Active
+            </Badge>
           </div>
+        )}
 
-          <div className="min-w-0 flex-1 pt-1">
-            <p className="truncate font-semibold text-base leading-tight">{account.name}</p>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              {ACCOUNT_TYPE_LABELS[account.type] ?? account.type} · {account.currency}
-            </p>
-          </div>
-        </div>
-
-        {/* Balance */}
-        <div className="mt-4 flex items-end justify-between">
-          <div>
-            <p className="text-[10px] uppercase tracking-widest text-muted-foreground/70 mb-0.5">
-              Số dư
-            </p>
-            <p
-              className={cn(
-                'text-xl font-bold tabular-nums tracking-tight',
-                isNegative ? 'text-rose-500' : 'text-emerald-600 dark:text-emerald-400'
+        {/* Menu (Chỉ hiển thị hover trên desktop) */}
+        <div className="absolute right-3 top-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                className="size-7 rounded-lg border-muted-foreground/20 bg-background/80 backdrop-blur-sm shadow-sm"
+                disabled={isSubmitting}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <MoreVerticalIcon className="size-3.5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="min-w-44 rounded-xl">
+              {!account.is_active && (
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onActivate();
+                  }}
+                  className="rounded-lg cursor-pointer gap-2"
+                >
+                  <CheckCircle2Icon className="size-4 text-primary" />
+                  <span>Đặt làm active</span>
+                </DropdownMenuItem>
               )}
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit();
+                }}
+                className="rounded-lg cursor-pointer gap-2"
+              >
+                <EditIcon className="size-4" />
+                <span>Chỉnh sửa</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete();
+                }}
+                className="rounded-lg cursor-pointer gap-2 text-destructive focus:text-destructive focus:bg-destructive/10"
+              >
+                <Trash2Icon className="size-4" />
+                <span>Xóa tài khoản</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
+        {/* Card content */}
+        <div className="relative p-4 pb-0 pl-0 pr-0 pt-0">
+          <div className="flex items-start gap-3">
+            {/* Icon */}
+            <div
+              className="flex size-12 shrink-0 items-center justify-center rounded-xl text-2xl border shadow-sm"
+              style={{ backgroundColor: `${account.color}18`, borderColor: `${account.color}30` }}
             >
-              {isNegative ? '-' : '+'}
-              {Math.abs(balance).toLocaleString('vi-VN')}₫
-            </p>
+              {account.icon}
+            </div>
+
+            <div className="min-w-0 flex-1 pt-1">
+              <p className="truncate font-semibold text-base leading-tight">{account.name}</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {ACCOUNT_TYPE_LABELS[account.type] ?? account.type} · {account.currency}
+              </p>
+            </div>
           </div>
 
-          {/* Quick activate button if not active */}
-          {!account.is_active && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-8 rounded-xl text-xs border-muted-foreground/20 hover:border-primary hover:bg-primary/10 hover:text-primary transition-all"
-              onClick={onActivate}
-              disabled={isSubmitting}
-            >
-              Chọn
-            </Button>
-          )}
+          {/* Balance */}
+          <div className="mt-4 flex items-end justify-between">
+            <div>
+              <p className="text-[10px] uppercase tracking-widest text-muted-foreground/70 mb-0.5">
+                Số dư
+              </p>
+              <p
+                className={cn(
+                  'text-xl font-bold tabular-nums tracking-tight',
+                  isNegative ? 'text-rose-500' : 'text-emerald-600 dark:text-emerald-400'
+                )}
+              >
+                {isNegative ? '-' : '+'}
+                {Math.abs(balance).toLocaleString('vi-VN')}₫
+              </p>
+            </div>
+
+            {/* Quick activate button if not active */}
+            {!account.is_active && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-8 rounded-xl text-xs border-muted-foreground/20 hover:border-primary hover:bg-primary/10 hover:text-primary transition-all"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onActivate();
+                }}
+                disabled={isSubmitting}
+              >
+                Kích hoạt
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     </div>
