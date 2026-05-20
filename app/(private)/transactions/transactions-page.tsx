@@ -2,8 +2,8 @@
 
 import { useMemo, useState } from 'react';
 
+import { MonthPicker } from '@/components/month-picker';
 import { PrivatePageShell } from '@/components/private-page-shell';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -13,23 +13,22 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
-import { useTransactions, useTransactionMutation } from '@/hooks/use-transactions';
+import { useTransactionMutation, useTransactions } from '@/hooks/use-transactions';
 import { cn } from '@/lib/utils';
 import {
   ArrowLeftRightIcon,
   CalendarIcon,
   ChevronDownIcon,
   PlusIcon,
-  SearchIcon,
-  SlidersHorizontalIcon,
+  SearchIcon
 } from 'lucide-react';
 
+import type { TransactionType, TransactionWithCategory } from '@/types/database';
 import CreateTransactionDialog from './components/create-transaction-dialog';
 import TransactionStatsCards from './components/transaction-stats-cards';
 import TransactionsList from './components/transactions-list';
 import UpdateTransactionDialog from './components/update-transaction-dialog';
 import { normalizeText, typeLabel } from './transaction-ui';
-import type { TransactionType, TransactionWithCategory } from '@/types/database';
 
 type FilterType = 'all' | TransactionType;
 
@@ -43,7 +42,7 @@ const SORT_OPTIONS = [
 type SortOption = (typeof SORT_OPTIONS)[number]['value'];
 
 export default function TransactionsPage() {
-  const { transactions, isLoading, fetchTransactions } = useTransactions();
+  const { transactions, isLoading, fetchTransactions, month, setMonth } = useTransactions();
   const { deleteTransaction } = useTransactionMutation();
 
   const [query, setQuery] = useState('');
@@ -102,73 +101,101 @@ export default function TransactionsPage() {
         </div>
 
         {/* Filter / Search bar */}
-        <div className="mt-5 rounded-2xl border bg-card/70 p-3 shadow-sm backdrop-blur supports-backdrop-filter:bg-card/60 sm:p-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-5 space-y-4 rounded-2xl border bg-card/75 p-4 shadow-sm backdrop-blur-md supports-backdrop-filter:bg-card/60 sm:p-5 animate-in fade-in slide-in-from-top-2 duration-300">
+          {/* Row 1: Search & Month navigation */}
+          <div className="flex flex-col gap-3 md:flex-row md:items-center">
             {/* Search */}
-            <div className="relative w-full sm:max-w-md">
+            <div className="relative flex-1">
               <SearchIcon
-                className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 opacity-50"
+                className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/75"
                 aria-hidden
               />
               <Input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Tìm theo danh mục, ghi chú…"
-                className="h-11 rounded-xl pl-9"
+                className="h-11 rounded-xl pl-10 bg-background/40 border-muted-foreground/20 focus:bg-background/80 transition-all text-sm"
               />
             </div>
 
-            {/* Right controls */}
-            <div className="flex flex-wrap items-center gap-2">
-              {/* Type filter */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button type="button" variant="outline" className="rounded-xl">
-                    <SlidersHorizontalIcon className="mr-2 size-4" aria-hidden />
-                    {typeFilter === 'all' ? 'Tất cả' : typeFilter === 'income' ? 'Thu nhập' : 'Chi tiêu'}
-                    <ChevronDownIcon className="ml-2 size-4 opacity-60" aria-hidden />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="min-w-44">
-                  <DropdownMenuItem onClick={() => setTypeFilter('all')}>
-                    <span className={cn('mr-2 inline-flex size-2 rounded-full bg-muted-foreground/40', typeFilter === 'all' && 'bg-primary')} />
-                    Tất cả
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setTypeFilter('expense')}>
-                    <span className={cn('mr-2 inline-flex size-2 rounded-full bg-muted-foreground/40', typeFilter === 'expense' && 'bg-rose-500')} />
-                    Chi tiêu
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setTypeFilter('income')}>
-                    <span className={cn('mr-2 inline-flex size-2 rounded-full bg-muted-foreground/40', typeFilter === 'income' && 'bg-emerald-500')} />
-                    Thu nhập
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+            {/* Month picker */}
+            <div className="flex items-center justify-start md:justify-end">
+              <MonthPicker value={month} onChange={setMonth} />
+            </div>
+          </div>
 
-              {/* Sort */}
+          <Separator className="opacity-60" />
+
+          {/* Row 2: Segment filters, Sort, and Stats */}
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-wrap items-center gap-3">
+              {/* Type filter pill switcher */}
+              <div className="flex p-1 rounded-xl bg-muted/50 border border-muted-foreground/10 gap-0.5 shadow-inner">
+                <button
+                  type="button"
+                  onClick={() => setTypeFilter('all')}
+                  className={cn(
+                    "px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all active:scale-95",
+                    typeFilter === 'all'
+                      ? "bg-background text-foreground shadow-xs"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  Tất cả
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTypeFilter('expense')}
+                  className={cn(
+                    "px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all active:scale-95",
+                    typeFilter === 'expense'
+                      ? "bg-rose-500/10 text-rose-500"
+                      : "text-muted-foreground hover:text-rose-500"
+                  )}
+                >
+                  Chi tiêu
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTypeFilter('income')}
+                  className={cn(
+                    "px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all active:scale-95",
+                    typeFilter === 'income'
+                      ? "bg-emerald-500/10 text-emerald-500"
+                      : "text-muted-foreground hover:text-emerald-500"
+                  )}
+                >
+                  Thu nhập
+                </button>
+              </div>
+
+              {/* Sort dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button type="button" variant="outline" className="rounded-xl">
-                    <CalendarIcon className="mr-2 size-4" aria-hidden />
-                    {currentSortLabel}
-                    <ChevronDownIcon className="ml-2 size-4 opacity-60" aria-hidden />
+                  <Button type="button" variant="outline" size="sm" className="h-9 px-3 rounded-xl border-muted-foreground/20 text-xs font-medium gap-1.5 hover:bg-accent bg-background/30 transition-all active:scale-95">
+                    <CalendarIcon className="size-3.5 text-muted-foreground/75" aria-hidden />
+                    <span>Xếp theo: {currentSortLabel}</span>
+                    <ChevronDownIcon className="size-3.5 opacity-60" aria-hidden />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="min-w-52">
+                <DropdownMenuContent align="start" className="min-w-48 rounded-xl shadow-lg border">
                   {SORT_OPTIONS.map((o) => (
-                    <DropdownMenuItem key={o.value} onClick={() => setSort(o.value)}>
-                      <span className={cn('mr-2 inline-flex size-2 rounded-full bg-muted-foreground/40', sort === o.value && 'bg-primary')} />
+                    <DropdownMenuItem key={o.value} onClick={() => setSort(o.value)} className="rounded-lg text-xs py-2 cursor-pointer">
+                      <span className={cn('mr-2 inline-flex size-1.5 rounded-full bg-muted-foreground/30', sort === o.value && 'bg-primary')} />
                       {o.label}
                     </DropdownMenuItem>
                   ))}
                 </DropdownMenuContent>
               </DropdownMenu>
+            </div>
 
-              <Separator orientation="vertical" className="hidden h-6 sm:block" />
-
-              <Badge className="rounded-xl px-3 py-2 text-sm">
-                {filtered.length} giao dịch
-              </Badge>
+            {/* Stats */}
+            <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground px-1">
+              <span>Tìm thấy</span>
+              <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-md bg-muted text-foreground font-semibold border border-muted-foreground/10">
+                {filtered.length}
+              </span>
+              <span>giao dịch</span>
             </div>
           </div>
         </div>

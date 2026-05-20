@@ -37,6 +37,7 @@ export async function GET(req: Request) {
 
   const { searchParams } = new URL(req.url);
   const workspaceId = searchParams.get("workspace_id");
+  const monthParam = searchParams.get("month"); // "YYYY-MM" hoặc "all"
 
   if (!isUuid(workspaceId)) {
     return NextResponse.json(
@@ -45,12 +46,34 @@ export async function GET(req: Request) {
     );
   }
 
-  const { data, error } = await session.supabase
+  let query = session.supabase
     .from("transactions")
     .select("*, category:categories(*)")
-    .eq("workspace_id", workspaceId)
+    .eq("workspace_id", workspaceId);
+
+  // Mặc định lọc theo tháng hiện tại nếu không chỉ định, trừ khi chọn "all"
+  if (monthParam !== "all") {
+    let targetMonth = monthParam;
+    if (!targetMonth) {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, "0");
+      targetMonth = `${y}-${m}`;
+    }
+
+    if (/^\d{4}-\d{2}$/.test(targetMonth)) {
+      const [year, month] = targetMonth.split("-").map(Number);
+      // Điểm bắt đầu và kết thúc của tháng dựa trên múi giờ địa phương của máy chủ (dev chạy máy local)
+      const startDate = new Date(year, month - 1, 1, 0, 0, 0, 0).toISOString();
+      const endDate = new Date(year, month, 1, 0, 0, 0, 0).toISOString();
+
+      query = query.gte("created_at", startDate).lt("created_at", endDate);
+    }
+  }
+
+  const { data, error } = await query
     .order("created_at", { ascending: false })
-    .limit(200);
+    .limit(500);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

@@ -1,8 +1,8 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
-import { useWorkspaceStore } from './use-workspace';
 import type { TransactionWithCategory } from '@/types/database';
+import { useWorkspaceStore } from './use-workspace';
 
 export type TransactionFilter = {
   type?: 'all' | 'expense' | 'income';
@@ -16,6 +16,12 @@ export function useTransactions() {
   const { activeWorkspaceId } = useWorkspaceStore();
   const [transactions, setTransactions] = useState<TransactionWithCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [month, setMonth] = useState<string>(() => {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    return `${y}-${m}`;
+  });
 
   const fetchTransactions = useCallback(async () => {
     if (!activeWorkspaceId) {
@@ -26,7 +32,8 @@ export function useTransactions() {
 
     setIsLoading(true);
     try {
-      const res = await fetch(`/api/transactions?workspace_id=${activeWorkspaceId}`);
+      const url = `/api/transactions?workspace_id=${activeWorkspaceId}${month ? `&month=${month}` : ''}`;
+      const res = await fetch(url);
       if (res.ok) {
         const json = await res.json();
         setTransactions(json.data || []);
@@ -36,9 +43,10 @@ export function useTransactions() {
     } finally {
       setIsLoading(false);
     }
-  }, [activeWorkspaceId]);
+  }, [activeWorkspaceId, month]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchTransactions();
   }, [fetchTransactions]);
 
@@ -46,6 +54,8 @@ export function useTransactions() {
     transactions,
     isLoading,
     fetchTransactions,
+    month,
+    setMonth,
   };
 }
 
