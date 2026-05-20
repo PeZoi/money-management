@@ -21,6 +21,7 @@ async function requireUser() {
 /**
  * DELETE /api/transactions/[id]
  * Xóa giao dịch theo id (chỉ xóa được giao dịch trong workspace mà user là thành viên).
+ * Balance tài khoản được cập nhật tự động bởi trigger trg_sync_account_balance.
  */
 export async function DELETE(
   _req: Request,
@@ -55,6 +56,9 @@ function isUuid(v: unknown): v is string {
 /**
  * PUT /api/transactions/[id]
  * Cập nhật giao dịch theo ID.
+ * Balance tài khoản được cập nhật tự động bởi trigger trg_sync_account_balance:
+ *   - Hoàn tác tác động cũ (OLD row) lên tài khoản cũ
+ *   - Áp dụng tác động mới (NEW row) lên tài khoản mới
  */
 export async function PUT(
   req: Request,
@@ -86,7 +90,7 @@ export async function PUT(
     return NextResponse.json({ error: "type phải là 'expense' hoặc 'income'." }, { status: 400 });
   }
 
-  // Cập nhật thông tin giao dịch trong bảng transactions
+  // Cập nhật giao dịch — trigger DB sẽ tự động điều chỉnh balance tài khoản
   const { data, error } = await session.supabase
     .from("transactions")
     .update({
@@ -107,4 +111,3 @@ export async function PUT(
 
   return NextResponse.json({ data });
 }
-
