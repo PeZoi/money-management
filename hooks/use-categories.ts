@@ -2,8 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
 
 import { useWorkspaceStore } from './use-workspace';
-import type { CategoryUi } from '@/app/(private)/categories/category-ui';
-import { CategoryType } from '@/types/category';
+import { CategoryType, CategoryUi } from '@/types/category';
 
 /**
  * Hook chuyên xử lý việc lấy danh sách danh mục (GET)
