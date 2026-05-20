@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/sidebar';
 import { UserMenu } from '@/components/user-menu';
 import { WorkspaceSwitcher } from '@/components/workspace-switcher';
-import { ChartPieIcon, LayoutDashboardIcon, SettingsIcon, TagsIcon, WalletIcon } from 'lucide-react';
+import { ChartPieIcon, CreditCardIcon, LayoutDashboardIcon, SettingsIcon, TagsIcon, WalletIcon } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Separator } from '@/components/ui/separator';
@@ -45,6 +45,7 @@ const navGroups: NavGroup[] = [
     label: 'Quản lý',
     items: [
       { title: 'Giao dịch', url: '/transactions', icon: WalletIcon, match: 'prefix' },
+      { title: 'Tài khoản', url: '/accounts', icon: CreditCardIcon, match: 'prefix' },
       { title: 'Danh mục', url: '/categories', icon: TagsIcon, match: 'prefix' },
     ],
   },

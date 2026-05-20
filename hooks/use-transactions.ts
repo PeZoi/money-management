@@ -94,6 +94,7 @@ export function useTransactionMutation() {
       amount: number;
       type: 'expense' | 'income';
       category_id?: string | null;
+      account_id?: string | null;
       note?: string | null;
       created_at?: string | null;
     },
@@ -130,6 +131,7 @@ export function useTransactionMutation() {
       amount: number;
       type: 'expense' | 'income';
       category_id?: string | null;
+      account_id?: string | null;
       note?: string | null;
       created_at?: string | null;
     },

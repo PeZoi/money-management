@@ -224,6 +224,15 @@ export default function TransactionsList({
                               <span className="text-muted-foreground/40 font-light select-none">·</span>
                             </>
                           )}
+                          {t.account && (
+                            <>
+                              <span className="inline-flex items-center gap-1 font-medium text-foreground/75">
+                                <span className="text-[11px] leading-none select-none">{t.account.icon}</span>
+                                <span>{t.account.name}</span>
+                              </span>
+                              <span className="text-muted-foreground/40 font-light select-none">·</span>
+                            </>
+                          )}
                           <div className="flex items-center gap-1">
                             <ClockIcon className="size-3 shrink-0 opacity-70" aria-hidden />
                             <span>{formatTime(t.created_at)}</span>

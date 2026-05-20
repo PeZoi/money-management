@@ -14,6 +14,9 @@ export type WorkspaceRole = "owner" | "admin" | "member";
 /** Enum `public.transaction_type` */
 export type TransactionType = "expense" | "income";
 
+/** Enum `public.account_type` */
+export type AccountType = "cash" | "bank" | "e_wallet" | "investment" | "other";
+
 export type UuidString = string;
 
 /** `numeric(14,0)` — VND, không phần lẻ */
@@ -55,12 +58,28 @@ export interface CategoryRow {
   updated_at: IsoDateString;
 }
 
+export interface AccountRow {
+  id: UuidString;
+  workspace_id: UuidString;
+  name: string;
+  type: AccountType;
+  balance: VndAmount;
+  currency: string;
+  icon: string;
+  color: string;
+  is_active: boolean;
+  created_by: UuidString;
+  created_at: IsoDateString;
+  updated_at: IsoDateString;
+}
+
 export interface TransactionRow {
   id: UuidString;
   workspace_id: UuidString;
   amount: VndAmount;
   type: TransactionType;
   category_id: UuidString | null;
+  account_id: UuidString | null;
   note: string | null;
   created_by: UuidString;
   created_at: IsoDateString;
@@ -94,10 +113,16 @@ export type WorkspaceMemberUpdate = Partial<Pick<WorkspaceMemberRow, "role">>;
 export type CategoryUpdate = Partial<Pick<CategoryRow, "name" | "icon" | "color" | "type">>;
 
 export type TransactionUpdate = Partial<
-  Pick<TransactionRow, "amount" | "type" | "category_id" | "note">
+  Pick<TransactionRow, "amount" | "type" | "category_id" | "account_id" | "note">
 >;
+
+export type AccountInsert = Pick<AccountRow, "workspace_id" | "name" | "type" | "icon" | "color" | "created_by"> &
+  Partial<Pick<AccountRow, "balance" | "currency" | "is_active">>;
+
+export type AccountUpdate = Partial<Pick<AccountRow, "name" | "type" | "balance" | "icon" | "color" | "is_active" | "currency">>;
 
 /** Relations phổ biến trong UI */
 export type TransactionWithCategory = TransactionRow & {
   category: CategoryRow | null;
+  account: AccountRow | null;
 };

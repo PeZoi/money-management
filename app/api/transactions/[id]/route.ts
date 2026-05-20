@@ -75,6 +75,7 @@ export async function PUT(
   const amount = typeof body.amount === "number" ? body.amount : Number(body.amount);
   const type = body.type === "income" || body.type === "expense" ? body.type : null;
   const category_id = isUuid(body.category_id) ? body.category_id : null;
+  const account_id = isUuid(body.account_id) ? body.account_id : null;
   const note = typeof body.note === "string" ? body.note.trim() : null;
   const created_at = typeof body.created_at === "string" && !isNaN(Date.parse(body.created_at)) ? body.created_at : null;
 
@@ -92,11 +93,12 @@ export async function PUT(
       amount,
       type,
       category_id: category_id || null,
+      account_id: account_id || null,
       note: note || null,
       ...(created_at && { created_at }),
     })
     .eq("id", id)
-    .select("*, category:categories(*)")
+    .select("*, category:categories(*), account:accounts(*)")
     .single();
 
   if (error) {

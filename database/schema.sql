@@ -342,3 +342,6 @@ for each row execute procedure public.handle_new_user();
 -- =====================================================
 -- END OF FILE
 -- =====================================================
+-- NOTE: accounts table and account_id in transactions
+-- are added via Supabase migration: create_accounts_table
+-- See: database/migrations/create_accounts_table.sql

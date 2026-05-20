@@ -11,15 +11,19 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Separator } from '@/components/ui/separator';
 import { useCategories } from '@/hooks/use-categories';
 import { useTransactionMutation } from '@/hooks/use-transactions';
+import { useAccounts } from '@/hooks/use-accounts';
 import { cn } from '@/lib/utils';
 import type { TransactionType, TransactionWithCategory } from '@/types/database';
 import {
   Calendar as CalendarIcon,
+  ChevronsUpDown,
+  CreditCardIcon,
   HelpCircleIcon,
   Loader2Icon,
   TrendingDownIcon,
   TrendingUpIcon,
 } from 'lucide-react';
+import Link from 'next/link';
 
 type Props = {
   transaction: TransactionWithCategory | null;
@@ -38,6 +42,7 @@ const formatAmountInput = (val: string) => {
 export default function UpdateTransactionDialog({ transaction, open, onOpenChange, onSuccess }: Props) {
   const { categories } = useCategories();
   const { isSubmitting, updateTransaction } = useTransactionMutation();
+  const { accounts, activeAccount } = useAccounts();
 
   const [amount, setAmount] = useState('');
   const [type, setType] = useState<TransactionType>('expense');
@@ -45,6 +50,7 @@ export default function UpdateTransactionDialog({ transaction, open, onOpenChang
   const [note, setNote] = useState('');
   // Sử dụng Date đối tượng trực tiếp thay vì chuỗi
   const [date, setDate] = useState<Date>(() => new Date());
+  const [accountId, setAccountId] = useState<string>('');
 
   // Cập nhật giá trị form khi transaction thay đổi hoặc modal được mở
   useEffect(() => {
@@ -54,6 +60,7 @@ export default function UpdateTransactionDialog({ transaction, open, onOpenChang
       setType(transaction.type);
       setCategoryId(transaction.category_id || '');
       setNote(transaction.note || '');
+      setAccountId(transaction.account_id || '');
 
       // Chuyển đổi created_at từ DB sang đối tượng Date
       if (transaction.created_at) {
@@ -63,6 +70,8 @@ export default function UpdateTransactionDialog({ transaction, open, onOpenChang
       }
     }
   }, [transaction, open]);
+
+  const selectedAccount = accounts.find((a) => a.id === accountId) || activeAccount;
 
   const filteredCategories = categories.filter((c) => c.type === type);
 
@@ -96,6 +105,7 @@ export default function UpdateTransactionDialog({ transaction, open, onOpenChang
         category_id: categoryId || null,
         note: note.trim() || null,
         created_at: formattedCreatedAt,
+        account_id: accountId || null,
       },
       {
         onSuccess: () => {
@@ -190,6 +200,68 @@ export default function UpdateTransactionDialog({ transaction, open, onOpenChang
               className="h-12 rounded-xl text-lg font-semibold"
               disabled={isSubmitting}
             />
+          </div>
+
+          {/* Tài khoản */}
+          <div className="grid gap-2">
+            <Label htmlFor="tx-account">Tài khoản</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  id="tx-account"
+                  variant="outline"
+                  className={cn(
+                    'h-11 justify-between text-left font-normal rounded-xl border-border bg-card',
+                    !accountId && 'text-muted-foreground'
+                  )}
+                  disabled={isSubmitting}
+                >
+                  <div className="flex items-center gap-2">
+                    <CreditCardIcon className="size-4 text-muted-foreground" />
+                    {selectedAccount ? (
+                      <span className="font-medium text-foreground">
+                        {selectedAccount.icon} {selectedAccount.name}
+                      </span>
+                    ) : (
+                      <span>Chọn tài khoản</span>
+                    )}
+                  </div>
+                  <ChevronsUpDown className="size-4 opacity-50 shrink-0" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-(--radix-popover-trigger-width) p-1" align="start">
+                <div className="max-h-[200px] overflow-y-auto space-y-1">
+                  {accounts.length === 0 ? (
+                    <p className="text-xs text-muted-foreground p-2 text-center">
+                      Không có tài khoản nào. Hãy tạo tài khoản mới trước. <Link href="/accounts" className="text-blue-500">Quản lý tài khoản</Link>
+                    </p>
+                  ) : (
+                    accounts.map((acc) => {
+                      const isSelected = accountId === acc.id;
+                      return (
+                        <button
+                          key={acc.id}
+                          type="button"
+                          onClick={() => setAccountId(acc.id)}
+                          className={cn(
+                            'flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-sm transition-colors hover:bg-muted text-left',
+                            isSelected && 'bg-primary/5 text-primary font-medium'
+                          )}
+                        >
+                          <span className="text-base select-none">{acc.icon}</span>
+                          <span className="flex-1 truncate">{acc.name}</span>
+                          {acc.id === activeAccount?.id && (
+                            <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium shrink-0">
+                              Mặc định
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
 
           {/* Category */}

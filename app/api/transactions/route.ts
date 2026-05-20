@@ -48,7 +48,7 @@ export async function GET(req: Request) {
 
   let query = session.supabase
     .from("transactions")
-    .select("*, category:categories(*)")
+    .select("*, category:categories(*), account:accounts(*)")
     .eq("workspace_id", workspaceId);
 
   // Mặc định lọc theo tháng hiện tại nếu không chỉ định, trừ khi chọn "all"
@@ -98,6 +98,7 @@ export async function POST(req: Request) {
     typeof body.amount === "number" ? body.amount : Number(body.amount);
   const type = parseType(body.type);
   const category_id = isUuid(body.category_id) ? body.category_id : null;
+  const account_id = isUuid(body.account_id) ? body.account_id : null;
   const note = typeof body.note === "string" && body.note.trim() ? body.note.trim() : null;
   const created_at = typeof body.created_at === "string" && !isNaN(Date.parse(body.created_at)) ? body.created_at : null;
 
@@ -128,12 +129,13 @@ export async function POST(req: Request) {
         amount,
         type,
         category_id,
+        account_id,
         note,
         created_by: session.user.id,
         ...(created_at && { created_at }),
       },
     ])
-    .select("*, category:categories(*)")
+    .select("*, category:categories(*), account:accounts(*)")
     .single();
 
   if (error) {
