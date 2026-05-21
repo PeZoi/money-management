@@ -17,15 +17,19 @@ import type { TransactionWithCategory } from '@/types/database';
 import { formatVnd } from '../transaction-ui';
 import { cn } from '@/lib/utils';
 
+import type { FilterType } from '../hooks/use-transactions-page';
+
 type Props = {
   transactions: TransactionWithCategory[];
   isLoading: boolean;
+  activeFilter?: FilterType;
+  onFilterType?: (type: FilterType) => void;
 };
 
-export default function TransactionStatsCards({ transactions, isLoading }: Props) {
+export default function TransactionStatsCards({ transactions, isLoading, activeFilter, onFilterType }: Props) {
   const [isMounted, setIsMounted] = useState(false);
   const [showBalance, setShowBalance] = useState(true);
-
+  
   // Khôi phục tùy chọn ẩn/hiện số dư từ localStorage và đánh dấu mounted
   useEffect(() => {
     const saved = localStorage.getItem('money-management-show-balance');
@@ -134,7 +138,7 @@ export default function TransactionStatsCards({ transactions, isLoading }: Props
     <div className="w-full rounded-3xl border bg-card/60 backdrop-blur-md shadow-lg p-5 sm:p-6 transition-all hover:shadow-xl duration-300">
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-stretch">
         {/* 📊 LEFT SECTION: Monthly Net Result Spotlight */}
-        <div className="md:col-span-5 flex flex-col justify-between relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-50/50 via-slate-50 to-emerald-50/30 dark:from-indigo-950/30 dark:via-slate-900/40 dark:to-emerald-950/20 p-5 shadow-xs border border-muted/80 dark:border-white/5 min-h-[190px] group/spotlight">
+        <div className="md:col-span-5 flex flex-col justify-between relative overflow-hidden rounded-2xl bg-linear-to-br from-indigo-50/50 via-slate-50 to-emerald-50/30 dark:from-indigo-950/30 dark:via-slate-900/40 dark:to-emerald-950/20 p-5 shadow-xs border border-muted/80 dark:border-white/5 min-h-[190px] group/spotlight">
           {/* Họa tiết vòng tròn mờ phản quang tạo độ sâu */}
           <div className="absolute -right-6 -top-6 size-32 rounded-full bg-indigo-500/10 dark:bg-indigo-500/15 blur-xl group-hover/spotlight:scale-110 transition-transform duration-500 pointer-events-none" />
           <div className="absolute -left-6 -bottom-6 size-32 rounded-full bg-emerald-500/5 dark:bg-emerald-500/10 blur-xl group-hover/spotlight:scale-110 transition-transform duration-500 pointer-events-none" />
@@ -206,7 +210,17 @@ export default function TransactionStatsCards({ transactions, isLoading }: Props
             </div>
 
             {/* Income Stream */}
-            <div className="flex items-center justify-between p-2 rounded-xl hover:bg-muted/40 transition-all duration-200 group/item">
+            <button
+              type="button"
+              onClick={() => onFilterType?.(activeFilter === 'income' ? 'all' : 'income')}
+              className={cn(
+                'w-full flex items-center justify-between p-2 rounded-xl transition-all duration-200 group/item text-left',
+                onFilterType && 'cursor-pointer',
+                activeFilter === 'income'
+                  ? 'bg-emerald-500/10 ring-1 ring-emerald-500/30'
+                  : 'hover:bg-muted/40',
+              )}
+            >
               <div className="flex items-center gap-3">
                 <span className="flex size-9 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 shadow-xs shadow-emerald-500/5 group-hover/item:scale-105 transition-transform duration-200">
                   <TrendingUpIcon className="size-4" />
@@ -219,10 +233,20 @@ export default function TransactionStatsCards({ transactions, isLoading }: Props
               <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
                 {showBalance ? `+${formatVnd(totalIncome)}` : '•••••• ₫'}
               </p>
-            </div>
+            </button>
 
             {/* Expense Stream */}
-            <div className="flex items-center justify-between p-2 rounded-xl hover:bg-muted/40 transition-all duration-200 group/item">
+            <button
+              type="button"
+              onClick={() => onFilterType?.(activeFilter === 'expense' ? 'all' : 'expense')}
+              className={cn(
+                'w-full flex items-center justify-between p-2 rounded-xl transition-all duration-200 group/item text-left',
+                onFilterType && 'cursor-pointer',
+                activeFilter === 'expense'
+                  ? 'bg-rose-500/10 ring-1 ring-rose-500/30'
+                  : 'hover:bg-muted/40',
+              )}
+            >
               <div className="flex items-center gap-3">
                 <span className="flex size-9 items-center justify-center rounded-xl bg-rose-500/10 text-rose-500 border border-rose-500/20 shadow-xs shadow-rose-500/5 group-hover/item:scale-105 transition-transform duration-200">
                   <TrendingDownIcon className="size-4" />
@@ -235,10 +259,20 @@ export default function TransactionStatsCards({ transactions, isLoading }: Props
               <p className="text-sm font-bold text-rose-600 dark:text-rose-400">
                 {showBalance ? `-${formatVnd(totalExpense)}` : '•••••• ₫'}
               </p>
-            </div>
+            </button>
 
             {/* Transfer Stream */}
-            <div className="flex items-center justify-between p-2 rounded-xl hover:bg-muted/40 transition-all duration-200 group/item">
+            <button
+              type="button"
+              onClick={() => onFilterType?.(activeFilter === 'transfer' ? 'all' : 'transfer')}
+              className={cn(
+                'w-full flex items-center justify-between p-2 rounded-xl transition-all duration-200 group/item text-left',
+                onFilterType && 'cursor-pointer',
+                activeFilter === 'transfer'
+                  ? 'bg-blue-500/10 ring-1 ring-blue-500/30'
+                  : 'hover:bg-muted/40',
+              )}
+            >
               <div className="flex items-center gap-3">
                 <span className="flex size-9 items-center justify-center rounded-xl bg-blue-500/10 text-blue-500 border border-blue-500/20 shadow-xs shadow-blue-500/5 group-hover/item:scale-105 transition-transform duration-200">
                   <ArrowRightLeftIcon className="size-4" />
@@ -251,7 +285,7 @@ export default function TransactionStatsCards({ transactions, isLoading }: Props
               <p className="text-sm font-bold text-blue-600 dark:text-blue-400">
                 {showBalance ? formatVnd(totalTransfer) : '•••••• ₫'}
               </p>
-            </div>
+            </button>
           </div>
 
           {/* Spend Performance progress bar & feedback text */}

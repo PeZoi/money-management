@@ -406,13 +406,20 @@ export default function TransactionsList({
     <div className="space-y-6">
       {groupedTransactions.map((group) => {
         const isCollapsed = collapsedGroups[group.title];
+
+        // Tính tổng net của ngày: income - expense (bỏ transfer vì không ảnh hưởng số dư ròng)
+        const dayIncome = group.items.filter((t) => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0);
+        const dayExpense = group.items.filter((t) => t.type === 'expense').reduce((s, t) => s + Number(t.amount), 0);
+        const dayNet = dayIncome - dayExpense;
+        const hasOnlyTransfer = dayIncome === 0 && dayExpense === 0;
+
         return (
           <div key={group.title} className="space-y-3">
             {/* Tiêu đề Section (Ngày giao dịch) được thiết kế thành nút bấm đóng/mở thông minh */}
             <button
               type="button"
               onClick={() => toggleGroup(group.title)}
-              className="flex w-full items-center gap-3 px-1 py-1 text-left select-none group/header hover:opacity-85 transition-opacity"
+              className="flex w-full items-center gap-3 px-1 py-1 text-left select-none group/header hover:opacity-85 transition-opacity cursor-pointer"
             >
               <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider transition-colors group-hover/header:text-foreground">
                 {group.title}
@@ -425,6 +432,21 @@ export default function TransactionsList({
               />
               <div className="h-px flex-1 bg-border/40" />
               <span className="text-[11px] font-medium text-muted-foreground/60">{group.items.length} giao dịch</span>
+              {/* Tổng tiền net của ngày */}
+              {!hasOnlyTransfer && (
+                <span
+                  className={cn(
+                    'text-[11px] font-semibold tabular-nums',
+                    dayNet > 0
+                      ? 'text-emerald-600 dark:text-emerald-400'
+                      : dayNet < 0
+                        ? 'text-rose-600 dark:text-rose-400'
+                        : 'text-muted-foreground/60',
+                  )}
+                >
+                  {dayNet > 0 ? '+' : ''}{formatVnd(dayNet)}
+                </span>
+              )}
             </button>
 
             {!isCollapsed && (

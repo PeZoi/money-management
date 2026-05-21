@@ -148,6 +148,14 @@ export function MonthPicker({ value, onChange, className }: MonthPickerProps) {
     return null;
   }, [value, currentYear]);
 
+  // Tháng thực tế của hôm nay (để hiển thị dấu hiệu "tháng hiện tại")
+  const today = React.useMemo(() => {
+    const now = new Date();
+    return { year: now.getFullYear(), month: now.getMonth() + 1 };
+  }, []);
+
+  const isTodayYear = currentYear === today.year;
+
   return (
     <div className={cn("flex items-center gap-1.5", className)}>
       {/* Nút lùi 1 tháng */}
@@ -177,7 +185,14 @@ export function MonthPicker({ value, onChange, className }: MonthPickerProps) {
               <CalendarIcon className="h-4 w-4 text-primary/70" />
               <span>{displayLabel}</span>
             </div>
-            <ChevronRightIcon className="h-3 w-3 opacity-40 rotate-90" />
+            <div className="flex items-center gap-1.5">
+              {isCurrentMonthSelected && (
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-primary/10 text-primary text-[9px] font-bold uppercase tracking-wider leading-none">
+                  Now
+                </span>
+              )}
+              <ChevronRightIcon className="h-3 w-3 opacity-40 rotate-90" />
+            </div>
           </Button>
         </PopoverTrigger>
         <PopoverContent align="center" className="w-[280px] p-4 rounded-2xl border shadow-xl bg-popover/95 backdrop-blur-md">
@@ -210,21 +225,31 @@ export function MonthPicker({ value, onChange, className }: MonthPickerProps) {
           <div className="grid grid-cols-3 gap-2 py-4">
             {MONTHS.map((m) => {
               const isSelected = selectedMonthNum === m.value;
+              // Ô tháng hiện tại của hệ thống (không phụ thuộc vào isSelected)
+              const isToday = isTodayYear && today.month === m.value;
               return (
                 <button
                   key={m.value}
                   type="button"
                   onClick={() => handleMonthSelect(m.value)}
                   className={cn(
-                    "h-10 text-xs font-medium rounded-xl transition-all relative flex items-center justify-center border border-transparent",
+                    "h-10 text-xs font-medium rounded-xl transition-all duration-200 relative flex flex-col items-center justify-center gap-0.5 border",
                     isSelected
-                      ? "bg-primary text-primary-foreground shadow-sm font-semibold scale-[1.03]"
-                      : "hover:bg-accent hover:border-accent-foreground/10 text-muted-foreground hover:text-foreground active:scale-95"
+                      ? "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-md shadow-primary/30 font-bold scale-[1.08] border-primary/20 ring-2 ring-primary/30 ring-offset-1 ring-offset-popover"
+                      : isToday
+                        ? "border-primary/40 text-primary bg-primary/5 hover:bg-primary/10 hover:scale-[1.03] active:scale-95"
+                        : "border-transparent hover:bg-accent hover:border-accent-foreground/10 text-muted-foreground hover:text-foreground active:scale-95"
                   )}
                 >
-                  {m.label}
-                  {isSelected && (
-                    <span className="absolute bottom-1 right-1 size-1 bg-primary-foreground rounded-full" />
+                  <span>{m.label}</span>
+                  {/* Dot chấm nhỏ: primary-foreground khi selected, primary khi là tháng hiện tại */}
+                  {(isSelected || isToday) && (
+                    <span
+                      className={cn(
+                        "size-1 rounded-full shrink-0",
+                        isSelected ? "bg-primary-foreground/70" : "bg-primary animate-pulse"
+                      )}
+                    />
                   )}
                 </button>
               );

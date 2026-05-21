@@ -70,7 +70,12 @@ export default function TransactionsPage() {
       >
         {/* Stats summary cards */}
         <div className="mt-5">
-          <TransactionStatsCards transactions={transactions} isLoading={isLoading} />
+          <TransactionStatsCards
+            transactions={transactions}
+            isLoading={isLoading}
+            activeFilter={typeFilter}
+            onFilterType={setTypeFilter}
+          />
         </div>
 
         {/* Filter / Search bar - Tối ưu hóa bố cục mobile để không bị lệch */}
