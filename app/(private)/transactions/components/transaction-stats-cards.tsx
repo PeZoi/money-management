@@ -63,10 +63,7 @@ export default function TransactionStatsCards({ transactions, isLoading }: Props
     return (
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         {Array.from({ length: 3 }).map((_, i) => (
-          <div
-            key={i}
-            className="rounded-2xl border bg-card p-5 shadow-sm"
-          >
+          <div key={i} className="rounded-2xl border bg-card p-5 shadow-sm">
             <div className="flex items-start justify-between">
               <Skeleton className="h-4 w-24" />
               <Skeleton className="size-10 rounded-xl" />
@@ -93,13 +90,13 @@ export default function TransactionStatsCards({ transactions, isLoading }: Props
 
             <div className="relative flex items-start justify-between">
               <p className="text-sm font-medium text-muted-foreground">{card.label}</p>
-              <span className={`inline-flex size-10 items-center justify-center rounded-xl border ${card.borderClass} ${card.bgClass}`}>
+              <span
+                className={`inline-flex size-10 items-center justify-center rounded-xl border ${card.borderClass} ${card.bgClass}`}
+              >
                 <Icon className={`size-5 ${card.colorClass}`} aria-hidden />
               </span>
             </div>
-            <p className={`relative mt-3 text-2xl font-bold tracking-tight ${card.colorClass}`}>
-              {card.value}
-            </p>
+            <p className={`relative mt-3 text-2xl font-bold tracking-tight ${card.colorClass}`}>{card.value}</p>
             <p className="relative mt-1 text-xs text-muted-foreground">{card.sub}</p>
           </div>
         );

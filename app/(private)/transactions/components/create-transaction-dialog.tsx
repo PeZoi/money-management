@@ -92,7 +92,7 @@ export default function CreateTransactionDialog({ open, onOpenChange, onSuccess 
           date.getDate(),
           now.getHours(),
           now.getMinutes(),
-          now.getSeconds()
+          now.getSeconds(),
         ).toISOString()
       : null;
 
@@ -110,7 +110,7 @@ export default function CreateTransactionDialog({ open, onOpenChange, onSuccess 
           onSuccess?.();
           handleClose(false);
         },
-      }
+      },
     );
     if (!ok) return;
   };
@@ -136,7 +136,10 @@ export default function CreateTransactionDialog({ open, onOpenChange, onSuccess 
                   <button
                     key={t}
                     type="button"
-                    onClick={() => { setType(t); setCategoryId(''); }}
+                    onClick={() => {
+                      setType(t);
+                      setCategoryId('');
+                    }}
                     disabled={isSubmitting}
                     className={cn(
                       'flex items-center gap-3 rounded-xl border p-4 text-left transition-all outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
@@ -149,17 +152,27 @@ export default function CreateTransactionDialog({ open, onOpenChange, onSuccess 
                     <span
                       className={cn(
                         'flex size-10 shrink-0 items-center justify-center rounded-xl border shadow-sm',
-                        isSelected && isInc && 'border-emerald-500/30 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400',
+                        isSelected &&
+                          isInc &&
+                          'border-emerald-500/30 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400',
                         isSelected && !isInc && 'border-rose-500/30 bg-rose-500/15 text-rose-600 dark:text-rose-400',
                         !isSelected && 'border-border bg-muted/40 text-muted-foreground',
                       )}
                     >
-                      {isInc
-                        ? <TrendingUpIcon className="size-5" aria-hidden />
-                        : <TrendingDownIcon className="size-5" aria-hidden />}
+                      {isInc ? (
+                        <TrendingUpIcon className="size-5" aria-hidden />
+                      ) : (
+                        <TrendingDownIcon className="size-5" aria-hidden />
+                      )}
                     </span>
                     <div>
-                      <p className={cn('font-semibold', isSelected && isInc && 'text-emerald-700 dark:text-emerald-300', isSelected && !isInc && 'text-rose-700 dark:text-rose-300')}>
+                      <p
+                        className={cn(
+                          'font-semibold',
+                          isSelected && isInc && 'text-emerald-700 dark:text-emerald-300',
+                          isSelected && !isInc && 'text-rose-700 dark:text-rose-300',
+                        )}
+                      >
                         {isInc ? 'Thu nhập' : 'Chi tiêu'}
                       </p>
                       <p className="mt-0.5 text-xs text-muted-foreground">
@@ -210,7 +223,7 @@ export default function CreateTransactionDialog({ open, onOpenChange, onSuccess 
                   variant="outline"
                   className={cn(
                     'h-11 justify-between text-left font-normal rounded-xl border-border bg-card',
-                    !accountId && 'text-muted-foreground'
+                    !accountId && 'text-muted-foreground',
                   )}
                   disabled={isSubmitting}
                 >
@@ -231,7 +244,10 @@ export default function CreateTransactionDialog({ open, onOpenChange, onSuccess 
                 <div className="max-h-[200px] overflow-y-auto space-y-1">
                   {accounts.length === 0 ? (
                     <p className="text-xs text-muted-foreground p-2 text-center">
-                      Không có tài khoản nào. Hãy tạo tài khoản mới trước. <Link href="/accounts" className="text-blue-500">Quản lý tài khoản</Link>
+                      Không có tài khoản nào. Hãy tạo tài khoản mới trước.{' '}
+                      <Link href="/accounts" className="text-blue-500">
+                        Quản lý tài khoản
+                      </Link>
                     </p>
                   ) : (
                     accounts.map((acc) => {
@@ -243,7 +259,7 @@ export default function CreateTransactionDialog({ open, onOpenChange, onSuccess 
                           onClick={() => setAccountId(acc.id)}
                           className={cn(
                             'flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-sm transition-colors hover:bg-muted text-left',
-                            isSelected && 'bg-primary/5 text-primary font-medium'
+                            isSelected && 'bg-primary/5 text-primary font-medium',
                           )}
                         >
                           <span className="text-base select-none">{acc.icon}</span>
@@ -279,10 +295,14 @@ export default function CreateTransactionDialog({ open, onOpenChange, onSuccess 
                   isSubmitting && 'cursor-not-allowed opacity-50',
                 )}
               >
-                <span className={cn(
-                  'flex size-10 shrink-0 items-center justify-center rounded-xl border transition-colors',
-                  !categoryId ? 'border-primary/20 bg-primary/10 text-primary' : 'border-border bg-muted/40 text-muted-foreground group-hover:bg-muted'
-                )}>
+                <span
+                  className={cn(
+                    'flex size-10 shrink-0 items-center justify-center rounded-xl border transition-colors',
+                    !categoryId
+                      ? 'border-primary/20 bg-primary/10 text-primary'
+                      : 'border-border bg-muted/40 text-muted-foreground group-hover:bg-muted',
+                  )}
+                >
                   <HelpCircleIcon className="size-5" />
                 </span>
                 <span className="text-xs font-semibold truncate max-w-full">Khác</span>
@@ -305,10 +325,14 @@ export default function CreateTransactionDialog({ open, onOpenChange, onSuccess 
                       isSubmitting && 'cursor-not-allowed opacity-50',
                     )}
                   >
-                    <span className={cn(
-                      'flex size-10 shrink-0 items-center justify-center rounded-xl border transition-colors',
-                      isSelected ? 'border-primary/20 bg-primary/10 text-primary' : 'border-border bg-muted/40 text-muted-foreground group-hover:bg-muted'
-                    )}>
+                    <span
+                      className={cn(
+                        'flex size-10 shrink-0 items-center justify-center rounded-xl border transition-colors',
+                        isSelected
+                          ? 'border-primary/20 bg-primary/10 text-primary'
+                          : 'border-border bg-muted/40 text-muted-foreground group-hover:bg-muted',
+                      )}
+                    >
                       <IconPreview name={c.icon} className="size-5" />
                     </span>
                     <span className="text-xs font-semibold truncate max-w-full">{c.name}</span>
@@ -328,7 +352,7 @@ export default function CreateTransactionDialog({ open, onOpenChange, onSuccess 
                   variant="outline"
                   className={cn(
                     'h-11 justify-start text-left font-normal rounded-xl border-border bg-card',
-                    !date && 'text-muted-foreground'
+                    !date && 'text-muted-foreground',
                   )}
                   disabled={isSubmitting}
                 >
@@ -350,7 +374,13 @@ export default function CreateTransactionDialog({ open, onOpenChange, onSuccess 
           <Separator />
 
           <div className="flex items-center justify-end gap-2">
-            <Button type="button" variant="outline" className="rounded-xl" onClick={() => handleClose(false)} disabled={isSubmitting}>
+            <Button
+              type="button"
+              variant="outline"
+              className="rounded-xl"
+              onClick={() => handleClose(false)}
+              disabled={isSubmitting}
+            >
               Hủy
             </Button>
             <Button type="button" className="rounded-xl" onClick={handleSubmit} disabled={isSubmitting || !isValid}>

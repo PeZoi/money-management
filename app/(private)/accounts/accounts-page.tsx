@@ -37,12 +37,7 @@ export default function AccountsPage() {
       >
         {/* Summary bar */}
         <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-3 animate-in fade-in slide-in-from-top-2 duration-300">
-          <SummaryCard
-            label="Tổng tài sản"
-            value={totalBalance}
-            color="text-foreground"
-            icon="🏦"
-          />
+          <SummaryCard label="Tổng tài sản" value={totalBalance} color="text-foreground" icon="🏦" />
           <SummaryCard
             label="Tài khoản active"
             value={activeAccount ? Number(activeAccount.balance) : null}
@@ -127,7 +122,8 @@ function SummaryCard({ label, value, valueLabel, sublabel, color = 'text-foregro
             <p className={`mt-0.5 text-lg font-bold ${color}`}>{valueLabel}</p>
           ) : value !== null && value !== undefined ? (
             <p className={`mt-0.5 text-lg font-bold tabular-nums ${color}`}>
-              {value < 0 ? '-' : ''}{Math.abs(value).toLocaleString('vi-VN')}₫
+              {value < 0 ? '-' : ''}
+              {Math.abs(value).toLocaleString('vi-VN')}₫
             </p>
           ) : (
             <p className="mt-0.5 text-sm text-muted-foreground italic">—</p>

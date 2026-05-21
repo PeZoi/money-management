@@ -9,27 +9,33 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
-import {
-  BanknoteIcon,
-  BuildingIcon,
-  Loader2Icon,
-  PiggyBankIcon,
-  SmartphoneIcon,
-  WalletIcon,
-} from 'lucide-react';
+import { BanknoteIcon, BuildingIcon, Loader2Icon, PiggyBankIcon, SmartphoneIcon, WalletIcon } from 'lucide-react';
 
 const ACCOUNT_TYPES = [
   { value: 'cash', label: 'Tiền mặt', icon: WalletIcon, color: '#10b981', description: 'Tiền trong ví, tay' },
   { value: 'bank', label: 'Ngân hàng', icon: BuildingIcon, color: '#6366f1', description: 'Tài khoản ngân hàng' },
   { value: 'e_wallet', label: 'Ví điện tử', icon: SmartphoneIcon, color: '#f59e0b', description: 'MoMo, ZaloPay...' },
-  { value: 'investment', label: 'Đầu tư', icon: PiggyBankIcon, color: '#ec4899', description: 'Chứng khoán, tiết kiệm' },
+  {
+    value: 'investment',
+    label: 'Đầu tư',
+    icon: PiggyBankIcon,
+    color: '#ec4899',
+    description: 'Chứng khoán, tiết kiệm',
+  },
   { value: 'other', label: 'Khác', icon: BanknoteIcon, color: '#64748b', description: 'Loại tài khoản khác' },
 ] as const;
 
 const PRESET_COLORS = [
-  '#6366f1', '#8b5cf6', '#ec4899', '#ef4444',
-  '#f59e0b', '#10b981', '#06b6d4', '#3b82f6',
-  '#84cc16', '#64748b',
+  '#6366f1',
+  '#8b5cf6',
+  '#ec4899',
+  '#ef4444',
+  '#f59e0b',
+  '#10b981',
+  '#06b6d4',
+  '#3b82f6',
+  '#84cc16',
+  '#64748b',
 ];
 
 const PRESET_ICONS = ['💰', '🏦', '💳', '👛', '💵', '🏧', '📱', '💹', '🐷', '💎'];
@@ -59,24 +65,20 @@ function formatAmountInput(val: string | number): string {
   return isNegative ? `-${formatted}` : formatted;
 }
 
-export default function AccountFormDialog({
-  open,
-  onOpenChange,
-  account,
-  onSuccess,
-}: AccountFormDialogProps) {
+export default function AccountFormDialog({ open, onOpenChange, account, onSuccess }: AccountFormDialogProps) {
   const isUpdate = !!account;
   const { isSubmitting, createAccount, updateAccount } = useAccountMutation();
 
   const [name, setName] = useState(account?.name ?? '');
-  const [type, setType] = useState<typeof ACCOUNT_TYPES[number]['value']>(account?.type ?? 'cash');
-  const [balance, setBalance] = useState(() => account ? formatAmountInput(account.balance) : '0');
+  const [type, setType] = useState<(typeof ACCOUNT_TYPES)[number]['value']>(account?.type ?? 'cash');
+  const [balance, setBalance] = useState(() => (account ? formatAmountInput(account.balance) : '0'));
   const [icon, setIcon] = useState(account?.icon ?? '💰');
   const [color, setColor] = useState(account?.color ?? '#6366f1');
 
   // Reset form khi dialog được mở (theo dõi prop `open` và `account`)
   useEffect(() => {
     if (open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setName(account?.name ?? '');
       setType(account?.type ?? 'cash');
       setBalance(account ? formatAmountInput(account.balance) : '0');
@@ -142,7 +144,7 @@ export default function AccountFormDialog({
                       isSelected
                         ? 'border-primary/50 bg-primary/10 shadow-sm ring-2 ring-primary/25'
                         : 'border-border bg-card hover:bg-muted/50',
-                      isSubmitting && 'opacity-50 cursor-not-allowed'
+                      isSubmitting && 'opacity-50 cursor-not-allowed',
                     )}
                   >
                     <span
@@ -150,15 +152,13 @@ export default function AccountFormDialog({
                         'flex size-10 shrink-0 items-center justify-center rounded-xl border shadow-sm',
                         isSelected
                           ? 'border-primary/30 bg-primary/15 text-primary'
-                          : 'border-border bg-muted/40 text-muted-foreground'
+                          : 'border-border bg-muted/40 text-muted-foreground',
                       )}
                     >
                       <Icon className="size-4.5" aria-hidden />
                     </span>
                     <div className="min-w-0">
-                      <div className={cn('text-sm font-semibold', isSelected && 'text-primary')}>
-                        {t.label}
-                      </div>
+                      <div className={cn('text-sm font-semibold', isSelected && 'text-primary')}>{t.label}</div>
                       <p className="mt-0.5 text-xs text-muted-foreground">{t.description}</p>
                     </div>
                   </button>
@@ -209,7 +209,7 @@ export default function AccountFormDialog({
                       'size-10 flex items-center justify-center rounded-xl border text-xl transition-all',
                       icon === ic
                         ? 'border-primary bg-primary/10 shadow-sm ring-2 ring-primary/30'
-                        : 'border-border bg-card hover:bg-muted/50'
+                        : 'border-border bg-card hover:bg-muted/50',
                     )}
                   >
                     {ic}
@@ -253,7 +253,7 @@ export default function AccountFormDialog({
                     style={{ backgroundColor: c }}
                     className={cn(
                       'size-7 rounded-lg border-2 transition-all',
-                      color === c ? 'border-foreground scale-110' : 'border-transparent'
+                      color === c ? 'border-foreground scale-110' : 'border-transparent',
                     )}
                     aria-label={c}
                   />
@@ -307,12 +307,7 @@ export default function AccountFormDialog({
             >
               Hủy
             </Button>
-            <Button
-              type="button"
-              className="rounded-xl"
-              onClick={handleSubmit}
-              disabled={isSubmitting || !name.trim()}
-            >
+            <Button type="button" className="rounded-xl" onClick={handleSubmit} disabled={isSubmitting || !name.trim()}>
               {isSubmitting && <Loader2Icon className="mr-2 size-4 animate-spin" />}
               {isUpdate ? 'Lưu thay đổi' : 'Tạo tài khoản'}
             </Button>

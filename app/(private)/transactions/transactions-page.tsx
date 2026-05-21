@@ -12,13 +12,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
-import {
-  ArrowLeftRightIcon,
-  CalendarIcon,
-  ChevronDownIcon,
-  PlusIcon,
-  SearchIcon
-} from 'lucide-react';
+import { ArrowLeftRightIcon, CalendarIcon, ChevronDownIcon, PlusIcon, SearchIcon } from 'lucide-react';
 
 import CreateTransactionDialog from './components/create-transaction-dialog';
 import TransactionStatsCards from './components/transaction-stats-cards';
@@ -114,10 +108,10 @@ export default function TransactionsPage() {
                   type="button"
                   onClick={() => setTypeFilter('all')}
                   className={cn(
-                    "flex-1 sm:flex-none px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all active:scale-95 text-center",
+                    'flex-1 sm:flex-none px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all active:scale-95 text-center',
                     typeFilter === 'all'
-                      ? "bg-background text-foreground shadow-xs"
-                      : "text-muted-foreground hover:text-foreground"
+                      ? 'bg-background text-foreground shadow-xs'
+                      : 'text-muted-foreground hover:text-foreground',
                   )}
                 >
                   Tất cả
@@ -126,10 +120,10 @@ export default function TransactionsPage() {
                   type="button"
                   onClick={() => setTypeFilter('expense')}
                   className={cn(
-                    "flex-1 sm:flex-none px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all active:scale-95 text-center",
+                    'flex-1 sm:flex-none px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all active:scale-95 text-center',
                     typeFilter === 'expense'
-                      ? "bg-rose-500/10 text-rose-500"
-                      : "text-muted-foreground hover:text-rose-500"
+                      ? 'bg-rose-500/10 text-rose-500'
+                      : 'text-muted-foreground hover:text-rose-500',
                   )}
                 >
                   Chi tiêu
@@ -138,10 +132,10 @@ export default function TransactionsPage() {
                   type="button"
                   onClick={() => setTypeFilter('income')}
                   className={cn(
-                    "flex-1 sm:flex-none px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all active:scale-95 text-center",
+                    'flex-1 sm:flex-none px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all active:scale-95 text-center',
                     typeFilter === 'income'
-                      ? "bg-emerald-500/10 text-emerald-500"
-                      : "text-muted-foreground hover:text-emerald-500"
+                      ? 'bg-emerald-500/10 text-emerald-500'
+                      : 'text-muted-foreground hover:text-emerald-500',
                   )}
                 >
                   Thu nhập
@@ -153,7 +147,12 @@ export default function TransactionsPage() {
                 {/* Sort dropdown */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button type="button" variant="outline" size="sm" className="h-9 px-3 rounded-xl border-muted-foreground/20 text-xs font-medium gap-1.5 hover:bg-accent bg-background/30 transition-all active:scale-95 flex-1 sm:flex-none justify-center">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-9 px-3 rounded-xl border-muted-foreground/20 text-xs font-medium gap-1.5 hover:bg-accent bg-background/30 transition-all active:scale-95 flex-1 sm:flex-none justify-center"
+                    >
                       <CalendarIcon className="size-3.5 text-muted-foreground/75" aria-hidden />
                       <span>Xếp: {currentSortLabel}</span>
                       <ChevronDownIcon className="size-3.5 opacity-60" aria-hidden />
@@ -161,8 +160,17 @@ export default function TransactionsPage() {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="min-w-48 rounded-xl shadow-lg border">
                     {SORT_OPTIONS.map((o) => (
-                      <DropdownMenuItem key={o.value} onClick={() => setSort(o.value)} className="rounded-lg text-xs py-2 cursor-pointer">
-                        <span className={cn('mr-2 inline-flex size-1.5 rounded-full bg-muted-foreground/30', sort === o.value && 'bg-primary')} />
+                      <DropdownMenuItem
+                        key={o.value}
+                        onClick={() => setSort(o.value)}
+                        className="rounded-lg text-xs py-2 cursor-pointer"
+                      >
+                        <span
+                          className={cn(
+                            'mr-2 inline-flex size-1.5 rounded-full bg-muted-foreground/30',
+                            sort === o.value && 'bg-primary',
+                          )}
+                        />
                         {o.label}
                       </DropdownMenuItem>
                     ))}
@@ -221,11 +229,7 @@ export default function TransactionsPage() {
         <PlusIcon className="size-6 pointer-events-none" />
       </button>
 
-      <CreateTransactionDialog
-        open={createOpen}
-        onOpenChange={setCreateOpen}
-        onSuccess={fetchTransactions}
-      />
+      <CreateTransactionDialog open={createOpen} onOpenChange={setCreateOpen} onSuccess={fetchTransactions} />
 
       <UpdateTransactionDialog
         open={updateOpen}
@@ -236,5 +240,3 @@ export default function TransactionsPage() {
     </>
   );
 }
-
-

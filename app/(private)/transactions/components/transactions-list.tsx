@@ -1,6 +1,14 @@
 'use client';
 
-import { ArrowDownCircleIcon, ArrowUpCircleIcon, ChevronDownIcon, ClockIcon, PlusIcon, ReceiptTextIcon, Trash2Icon } from 'lucide-react';
+import {
+  ArrowDownCircleIcon,
+  ArrowUpCircleIcon,
+  ChevronDownIcon,
+  ClockIcon,
+  PlusIcon,
+  ReceiptTextIcon,
+  Trash2Icon,
+} from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 
 import IconPreview from '@/components/icons/icon-preview';
@@ -10,13 +18,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import type { TransactionWithCategory } from '@/types/database';
 
-import {
-  formatVnd,
-  typeAmountClass,
-  typeAmountPrefix,
-  typeBadgeClass,
-  typeLabel
-} from '../transaction-ui';
+import { formatVnd, typeAmountClass, typeAmountPrefix, typeBadgeClass, typeLabel } from '../transaction-ui';
 
 type Props = {
   transactions: TransactionWithCategory[];
@@ -62,7 +64,7 @@ function TransactionRow({
     const touch = e.touches[0];
     touchStart.current = { x: touch.clientX, y: touch.clientY };
     isDragging.current = true;
-    
+
     // Tắt transition để khi vuốt ngón tay phản hồi ngay lập tức không bị trễ
     if (rowRef.current) {
       rowRef.current.style.transition = 'none';
@@ -83,7 +85,7 @@ function TransactionRow({
 
     // Khoảng cách dịch chuyển thực tế
     let targetX = isOpen.current ? diffX - 80 : diffX;
-    
+
     // Tạo hiệu ứng đàn hồi giảm lực cản (Elastic effect)
     if (targetX < -80) {
       targetX = -80 + (targetX + 80) * 0.35;
@@ -103,7 +105,7 @@ function TransactionRow({
     isDragging.current = false;
     if (rowRef.current) {
       rowRef.current.style.transition = 'transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)';
-      
+
       // Nếu vuốt qua trái hơn nửa chặng đường (-40px) thì mở hoàn toàn nút xóa (-80px)
       if (currentX.current < -40) {
         rowRef.current.style.transform = 'translateX(-80px)';
@@ -127,7 +129,7 @@ function TransactionRow({
         currentX.current = 0;
       }
     };
-    
+
     document.addEventListener('click', handleGlobalClick);
     return () => document.removeEventListener('click', handleGlobalClick);
   }, []);
@@ -135,15 +137,13 @@ function TransactionRow({
   const isIncome = t.type === 'income';
   const AmountIcon = isIncome ? ArrowUpCircleIcon : ArrowDownCircleIcon;
   const amountIconClass = isIncome ? 'text-emerald-500' : 'text-rose-500';
-  const iconBgClass = isIncome
-    ? 'bg-emerald-500/10 border-emerald-500/20'
-    : 'bg-rose-500/10 border-rose-500/20';
+  const iconBgClass = isIncome ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-rose-500/10 border-rose-500/20';
 
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-2xl border border-border/50 bg-gray-200 dark:bg-muted/20 shadow-xs transition-colors duration-300",
-        isIncome ? "hover:border-emerald-500/35" : "hover:border-rose-500/35"
+        'relative overflow-hidden rounded-2xl border border-border/50 bg-gray-200 dark:bg-muted/20 shadow-xs transition-colors duration-300',
+        isIncome ? 'hover:border-emerald-500/35' : 'hover:border-rose-500/35',
       )}
     >
       {/* Nút Xoá nằm chìm bên dưới (Chỉ hiển thị trên mobile) */}
@@ -180,9 +180,9 @@ function TransactionRow({
         }}
         className={cn(
           'group relative z-10 flex cursor-pointer items-center gap-4 bg-card p-4 transition-all duration-300 select-none',
-          isIncome 
-            ? 'hover:bg-emerald-50/70 dark:hover:bg-emerald-950/30' 
-            : 'hover:bg-rose-50/70 dark:hover:bg-rose-950/30'
+          isIncome
+            ? 'hover:bg-emerald-50/70 dark:hover:bg-emerald-950/30'
+            : 'hover:bg-rose-50/70 dark:hover:bg-rose-950/30',
         )}
       >
         {/* Icon mờ nghệ thuật (watermark) lớn ở góc dưới bên phải */}
@@ -205,10 +205,12 @@ function TransactionRow({
             <>
               <IconPreview name={t.category.icon} className={cn('size-5.5', amountIconClass)} />
               {/* Badge phụ góc dưới bên phải thể hiện thu/chi */}
-              <span className={cn(
-                'absolute -bottom-1 -right-1 flex size-5 items-center justify-center rounded-full border bg-background shadow-xs text-[10px]',
-                isIncome ? 'border-emerald-500/20 text-emerald-500' : 'border-rose-500/20 text-rose-500'
-              )}>
+              <span
+                className={cn(
+                  'absolute -bottom-1 -right-1 flex size-5 items-center justify-center rounded-full border bg-background shadow-xs text-[10px]',
+                  isIncome ? 'border-emerald-500/20 text-emerald-500' : 'border-rose-500/20 text-rose-500',
+                )}
+              >
                 <AmountIcon className="size-3" aria-hidden />
               </span>
             </>
@@ -260,8 +262,11 @@ function TransactionRow({
         {/* Số tiền & Nút xóa slide-in ngang tinh tế */}
         <div className="flex shrink-0 items-center gap-3">
           <div className="text-right">
-            <p className={cn('text-base font-bold tracking-tight transition-all duration-300', typeAmountClass(t.type))}>
-              {typeAmountPrefix(t.type)}{formatVnd(t.amount)}
+            <p
+              className={cn('text-base font-bold tracking-tight transition-all duration-300', typeAmountClass(t.type))}
+            >
+              {typeAmountPrefix(t.type)}
+              {formatVnd(t.amount)}
             </p>
           </div>
 
@@ -386,14 +391,12 @@ export default function TransactionsList({
               </span>
               <ChevronDownIcon
                 className={cn(
-                  "size-3.5 text-muted-foreground/60 transition-transform duration-300 group-hover/header:text-foreground",
-                  isCollapsed && "-rotate-90 text-muted-foreground/40"
+                  'size-3.5 text-muted-foreground/60 transition-transform duration-300 group-hover/header:text-foreground',
+                  isCollapsed && '-rotate-90 text-muted-foreground/40',
                 )}
               />
               <div className="h-px flex-1 bg-border/40" />
-              <span className="text-[11px] font-medium text-muted-foreground/60">
-                {group.items.length} giao dịch
-              </span>
+              <span className="text-[11px] font-medium text-muted-foreground/60">{group.items.length} giao dịch</span>
             </button>
 
             {!isCollapsed && (
@@ -414,4 +417,3 @@ export default function TransactionsList({
     </div>
   );
 }
-

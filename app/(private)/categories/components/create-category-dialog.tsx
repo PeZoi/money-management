@@ -45,10 +45,14 @@ export default function CreateCategoryDialog({
   onSuccess,
 }: CreateCategoryDialogProps) {
   const {
-    draftName, setDraftName,
-    draftType, setDraftType,
-    draftIcon, setDraftIcon,
-    draftColor, setDraftColor,
+    draftName,
+    setDraftName,
+    draftType,
+    setDraftType,
+    draftIcon,
+    setDraftIcon,
+    draftColor,
+    setDraftColor,
     isSubmitting,
     isUpdate,
     handleSubmit,
@@ -99,7 +103,7 @@ export default function CreateCategoryDialog({
                   draftType === 'expense'
                     ? 'border-rose-500/50 bg-rose-500/10 shadow-sm ring-2 ring-rose-500/25 dark:bg-rose-500/15'
                     : 'border-border bg-card hover:bg-muted/50',
-                  isSubmitting && 'opacity-50 cursor-not-allowed'
+                  isSubmitting && 'opacity-50 cursor-not-allowed',
                 )}
               >
                 <span
@@ -128,7 +132,7 @@ export default function CreateCategoryDialog({
                   draftType === 'income'
                     ? 'border-emerald-500/50 bg-emerald-500/10 shadow-sm ring-2 ring-emerald-500/25 dark:bg-emerald-500/15'
                     : 'border-border bg-card hover:bg-muted/50',
-                  isSubmitting && 'opacity-50 cursor-not-allowed'
+                  isSubmitting && 'opacity-50 cursor-not-allowed',
                 )}
               >
                 <span
@@ -186,7 +190,12 @@ export default function CreateCategoryDialog({
               <div className="grid gap-2">
                 <Label>Icon</Label>
                 <div className="flex flex-wrap items-center gap-2">
-                  <IconPickerDialog value={draftIcon} onChange={setDraftIcon} className="rounded-xl" disabled={isSubmitting} />
+                  <IconPickerDialog
+                    value={draftIcon}
+                    onChange={setDraftIcon}
+                    className="rounded-xl"
+                    disabled={isSubmitting}
+                  />
                 </div>
               </div>
             </div>
@@ -220,10 +229,21 @@ export default function CreateCategoryDialog({
 
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
             <div className="flex items-center gap-2">
-              <Button type="button" variant="outline" className="rounded-xl" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-xl"
+                onClick={() => onOpenChange(false)}
+                disabled={isSubmitting}
+              >
                 Hủy
               </Button>
-              <Button type="button" className="rounded-xl" onClick={handleSubmit} disabled={isSubmitting || !draftName.trim()}>
+              <Button
+                type="button"
+                className="rounded-xl"
+                onClick={handleSubmit}
+                disabled={isSubmitting || !draftName.trim()}
+              >
                 {isSubmitting && <Loader2Icon className="mr-2 size-4 animate-spin" />}
                 {isUpdate ? 'Lưu thay đổi' : 'Tạo danh mục'}
               </Button>

@@ -1,13 +1,13 @@
-import { PrivatePageShell } from "@/components/private-page-shell";
-import { createClient } from "@/lib/supabase/server";
-import { LayoutDashboardIcon } from "lucide-react";
-import { redirect } from "next/navigation";
+import { PrivatePageShell } from '@/components/private-page-shell';
+import { createClient } from '@/lib/supabase/server';
+import { LayoutDashboardIcon } from 'lucide-react';
+import { redirect } from 'next/navigation';
 
 export default async function DashboardPage() {
   const supabase = createClient();
   const { data, error } = await supabase.auth.getUser();
   if (error) {
-    redirect("/login");
+    redirect('/login');
   }
   console.log({ data });
 
@@ -28,4 +28,3 @@ export default async function DashboardPage() {
     </PrivatePageShell>
   );
 }
-

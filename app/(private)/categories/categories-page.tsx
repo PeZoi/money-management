@@ -11,13 +11,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import {
-  ChevronDownIcon,
-  PlusIcon,
-  SearchIcon,
-  SlidersHorizontalIcon,
-  SparklesIcon
-} from 'lucide-react';
+import { ChevronDownIcon, PlusIcon, SearchIcon, SlidersHorizontalIcon, SparklesIcon } from 'lucide-react';
 
 import CreateCategoryDialog from '@/app/(private)/categories/components/create-category-dialog';
 import CategoriesList from './components/categories-list';
@@ -134,11 +128,11 @@ export default function CategoriesPage() {
         initialData={
           editingCategory
             ? {
-              name: editingCategory.name,
-              type: editingCategory.type,
-              icon: editingCategory.icon,
-              color: editingCategory.color || '',
-            }
+                name: editingCategory.name,
+                type: editingCategory.type,
+                icon: editingCategory.icon,
+                color: editingCategory.color || '',
+              }
             : undefined
         }
         onSuccess={() => {

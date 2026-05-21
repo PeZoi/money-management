@@ -16,8 +16,12 @@ type CategoriesListProps = {
   onRequestEdit: (category: CategoryUi) => void;
 };
 
-export default function CategoriesList({ categories, onClearSearch, onRequestCreate, onRequestEdit }: CategoriesListProps) {
-
+export default function CategoriesList({
+  categories,
+  onClearSearch,
+  onRequestCreate,
+  onRequestEdit,
+}: CategoriesListProps) {
   if (!categories.length) {
     return (
       <div className="rounded-2xl border bg-card p-10 text-center shadow-sm">
@@ -73,14 +77,12 @@ export default function CategoriesList({ categories, onClearSearch, onRequestCre
                     Icon: <span className="font-mono">{c.icon}</span>
                   </p>
                 </div>
-                <Badge className={cn('shrink-0 rounded-xl border', typeBadgeClass(c.type))}>
-                  {typeLabel(c.type)}
-                </Badge>
+                <Badge className={cn('shrink-0 rounded-xl border', typeBadgeClass(c.type))}>{typeLabel(c.type)}</Badge>
               </div>
             </div>
           </div>
         </div>
       ))}
     </div>
-  )
+  );
 }

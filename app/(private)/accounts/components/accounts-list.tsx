@@ -7,13 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import {
-  CheckCircle2Icon,
-  EditIcon,
-  MoreVerticalIcon,
-  PlusIcon,
-  Trash2Icon,
-} from 'lucide-react';
+import { CheckCircle2Icon, EditIcon, MoreVerticalIcon, PlusIcon, Trash2Icon } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -116,7 +110,7 @@ function AccountCard({ account, isSubmitting, onEdit, onDelete, onActivate }: Ac
     const touch = e.touches[0];
     touchStart.current = { x: touch.clientX, y: touch.clientY };
     isDragging.current = true;
-    
+
     // Tắt transition để khi vuốt ngón tay phản hồi ngay lập tức không bị trễ
     if (rowRef.current) {
       rowRef.current.style.transition = 'none';
@@ -137,7 +131,7 @@ function AccountCard({ account, isSubmitting, onEdit, onDelete, onActivate }: Ac
 
     // Khoảng cách dịch chuyển thực tế
     let targetX = isOpen.current ? diffX - 80 : diffX;
-    
+
     // Tạo hiệu ứng đàn hồi giảm lực cản (Elastic effect)
     if (targetX < -80) {
       targetX = -80 + (targetX + 80) * 0.35;
@@ -157,7 +151,7 @@ function AccountCard({ account, isSubmitting, onEdit, onDelete, onActivate }: Ac
     isDragging.current = false;
     if (rowRef.current) {
       rowRef.current.style.transition = 'transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)';
-      
+
       // Nếu vuốt qua trái hơn nửa chặng đường (-40px) thì mở hoàn toàn nút xóa (-80px)
       if (currentX.current < -40) {
         rowRef.current.style.transform = 'translateX(-80px)';
@@ -181,7 +175,7 @@ function AccountCard({ account, isSubmitting, onEdit, onDelete, onActivate }: Ac
         currentX.current = 0;
       }
     };
-    
+
     document.addEventListener('click', handleGlobalClick);
     return () => document.removeEventListener('click', handleGlobalClick);
   }, []);
@@ -190,7 +184,7 @@ function AccountCard({ account, isSubmitting, onEdit, onDelete, onActivate }: Ac
     <div
       className={cn(
         'group relative overflow-hidden rounded-2xl border bg-gray-200 dark:bg-muted/10 shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5',
-        account.is_active && 'ring-2 ring-primary/50 border-primary/30'
+        account.is_active && 'ring-2 ring-primary/50 border-primary/30',
       )}
       style={{ borderColor: account.is_active ? undefined : `${account.color}30` }}
     >
@@ -319,13 +313,11 @@ function AccountCard({ account, isSubmitting, onEdit, onDelete, onActivate }: Ac
           {/* Balance */}
           <div className="mt-4 flex items-end justify-between">
             <div>
-              <p className="text-[10px] uppercase tracking-widest text-muted-foreground/70 mb-0.5">
-                Số dư
-              </p>
+              <p className="text-[10px] uppercase tracking-widest text-muted-foreground/70 mb-0.5">Số dư</p>
               <p
                 className={cn(
                   'text-xl font-bold tabular-nums tracking-tight',
-                  isNegative ? 'text-rose-500' : 'text-emerald-600 dark:text-emerald-400'
+                  isNegative ? 'text-rose-500' : 'text-emerald-600 dark:text-emerald-400',
                 )}
               >
                 {isNegative ? '-' : '+'}
