@@ -5,6 +5,7 @@ import QueryProvider from '@/providers/query-provider';
 import { cn } from '@/lib/utils';
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono, Inter } from 'next/font/google';
+import IosInstallPrompt from '@/components/ios-install-prompt';
 import './globals.css';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
@@ -22,6 +23,11 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: 'Money+',
   description: 'Quản lý tài chính cá nhân an toàn, nhanh — chỉ cần tài khoản Google.',
+  appleWebApp: {
+    capable: true,
+    title: 'Money+',
+    statusBarStyle: 'default',
+  },
 };
 
 export default function RootLayout({
@@ -40,6 +46,7 @@ export default function RootLayout({
             <TooltipProvider>{children}</TooltipProvider>
           </QueryProvider>
           <Toaster />
+          <IosInstallPrompt />
         </ThemeProvider>
       </body>
     </html>

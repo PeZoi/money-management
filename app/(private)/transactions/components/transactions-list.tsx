@@ -149,11 +149,7 @@ function TransactionRow({
     <div
       className={cn(
         'relative overflow-hidden rounded-2xl border border-border/50 bg-gray-200 dark:bg-muted/20 shadow-xs transition-colors duration-300',
-        isTransfer
-          ? 'hover:border-blue-500/35'
-          : isIncome
-            ? 'hover:border-emerald-500/35'
-            : 'hover:border-rose-500/35',
+        isTransfer ? 'hover:border-blue-500/35' : isIncome ? 'hover:border-emerald-500/35' : 'hover:border-rose-500/35',
       )}
     >
       {/* Nút Xoá nằm chìm bên dưới (Chỉ hiển thị trên mobile) */}
@@ -220,7 +216,11 @@ function TransactionRow({
               <span
                 className={cn(
                   'absolute -bottom-1 -right-1 flex size-5 items-center justify-center rounded-full border bg-background shadow-xs text-[10px]',
-                  isIncome ? 'border-emerald-500/20 text-emerald-500' : isTransfer ? 'border-blue-500/20 text-blue-500' : 'border-rose-500/20 text-rose-500',
+                  isIncome
+                    ? 'border-emerald-500/20 text-emerald-500'
+                    : isTransfer
+                      ? 'border-blue-500/20 text-blue-500'
+                      : 'border-rose-500/20 text-rose-500',
                 )}
               >
                 <AmountIcon className="size-3" aria-hidden />
@@ -444,7 +444,8 @@ export default function TransactionsList({
                         : 'text-muted-foreground/60',
                   )}
                 >
-                  {dayNet > 0 ? '+' : ''}{formatVnd(dayNet)}
+                  {dayNet > 0 ? '+' : ''}
+                  {formatVnd(dayNet)}
                 </span>
               )}
             </button>
