@@ -53,24 +53,31 @@ function DialogContent({
       <DialogNS.Content
         data-slot="dialog-content"
         className={cn(
-          'fixed top-[50%] left-[50%] z-50 flex w-[calc(100%-1.5rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 flex-col gap-4 border border-border bg-popover bg-clip-padding p-0 text-popover-foreground shadow-lg outline-none duration-200 sm:max-w-xl sm:w-full',
-          'rounded-2xl',
-          'data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95',
-          'data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95',
+          'fixed z-50 flex flex-col bg-popover text-popover-foreground shadow-lg outline-none duration-200 border-border bg-clip-padding p-0 transition-all',
+          // Mobile: Bottom sheet trượt từ dưới lên, bo góc trên, giới hạn chiều cao tối đa
+          'bottom-0 top-auto left-1/2 -translate-x-1/2 translate-y-0 w-full rounded-t-3xl rounded-b-none border-t border-x max-h-[92dvh] gap-0 overflow-hidden',
+          // Desktop/Laptop: Modal căn giữa màn hình, giới hạn chiều cao chống cắt hai đầu
+          'sm:top-1/2 sm:bottom-auto sm:-translate-y-1/2 sm:w-[calc(100%-2rem)] sm:max-w-xl sm:rounded-2xl sm:border sm:max-h-[85vh]',
+          // Hiệu ứng chuyển động mượt mà
+          'data-open:animate-in data-open:fade-in-0 data-open:slide-in-from-bottom-10 sm:data-open:zoom-in-95 sm:data-open:slide-in-from-bottom-0',
+          'data-closed:animate-out data-closed:fade-out-0 data-closed:slide-out-to-bottom-10 sm:data-closed:zoom-out-95 sm:data-closed:slide-out-to-bottom-0',
           className,
         )}
         {...props}
       >
+        {/* Thanh giả lập kéo (drag handle) chỉ hiển thị trên thiết bị di động */}
+        <div className="mx-auto my-3 h-1.5 w-12 shrink-0 rounded-full bg-muted-foreground/20 sm:hidden" />
+        
         {children}
         {showCloseButton ? (
           <DialogNS.Close asChild>
             <Button
               type="button"
               variant="ghost"
-              className="absolute top-3 right-3"
+              className="absolute top-3 right-3 z-10 rounded-full hover:bg-muted"
               size="icon-sm"
             >
-              <XIcon />
+              <XIcon className="size-4" />
               <span className="sr-only">Đóng</span>
             </Button>
           </DialogNS.Close>

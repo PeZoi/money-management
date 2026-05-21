@@ -8,7 +8,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import type { TransactionType, TransactionWithCategory } from '@/types/database';
 import {
@@ -107,7 +106,8 @@ export default function UpdateTransactionDialog({ transaction, open, onOpenChang
           </div>
         </DialogHeader>
 
-        <div className="space-y-5 px-5 py-5 sm:px-6">
+        {/* Phần thân form chứa các trường nhập liệu có khả năng cuộn độc lập */}
+        <div className="flex-1 overflow-y-auto px-5 py-5 sm:px-6 space-y-5">
           {/* Tên giao dịch (Lưu trữ ở cột note) */}
           <div className="grid gap-2">
             <Label htmlFor="tx-note">Tên giao dịch</Label>
@@ -135,14 +135,12 @@ export default function UpdateTransactionDialog({ transaction, open, onOpenChang
               placeholder="0"
               className={cn(
                 'h-12 rounded-xl text-lg font-semibold transition-all duration-200',
-                form.formState.errors.amount && 'border-destructive focus-visible:ring-destructive text-destructive'
+                form.formState.errors.amount && 'border-destructive focus-visible:ring-destructive text-destructive',
               )}
               disabled={isSubmitting}
             />
             {form.formState.errors.amount && (
-              <p className="text-xs font-medium text-destructive mt-0.5">
-                {form.formState.errors.amount.message}
-              </p>
+              <p className="text-xs font-medium text-destructive mt-0.5">{form.formState.errors.amount.message}</p>
             )}
           </div>
 
@@ -429,24 +427,23 @@ export default function UpdateTransactionDialog({ transaction, open, onOpenChang
               </PopoverContent>
             </Popover>
           </div>
+        </div>
 
-          <Separator />
-
-          <div className="flex items-center justify-end gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              className="rounded-xl"
-              onClick={() => handleClose(false)}
-              disabled={isSubmitting}
-            >
-              Hủy
-            </Button>
-            <Button type="button" className="rounded-xl" onClick={onSubmit} disabled={isSubmitting || !isValid}>
-              {isSubmitting && <Loader2Icon className="mr-2 size-4 animate-spin" />}
-              Cập nhật giao dịch
-            </Button>
-          </div>
+        {/* Phần nút điều khiển (Footer) được cố định ở chân dialog */}
+        <div className="border-t px-5 py-4 sm:px-6 bg-muted/10 shrink-0 flex items-center justify-end gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            className="rounded-xl"
+            onClick={() => handleClose(false)}
+            disabled={isSubmitting}
+          >
+            Hủy
+          </Button>
+          <Button type="button" className="rounded-xl" onClick={onSubmit} disabled={isSubmitting || !isValid}>
+            {isSubmitting && <Loader2Icon className="mr-2 size-4 animate-spin" />}
+            Cập nhật giao dịch
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

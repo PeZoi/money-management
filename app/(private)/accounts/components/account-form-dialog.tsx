@@ -76,8 +76,9 @@ export default function AccountFormDialog({ open, onOpenChange, account, onSucce
           <DialogTitle>{isUpdate ? 'Cập nhật tài khoản' : 'Thêm tài khoản mới'}</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={onSubmit}>
-          <div className="space-y-5 px-5 py-5 sm:px-6 max-h-[80vh] overflow-y-auto">
+        <form onSubmit={onSubmit} className="flex-1 flex flex-col overflow-hidden">
+          {/* Vùng nhập liệu của tài khoản có thể cuộn độc lập */}
+          <div className="flex-1 overflow-y-auto px-5 py-5 sm:px-6 space-y-5">
             {/* Tên tài khoản */}
             <div className="grid gap-2">
               <Label htmlFor="account-name">Tên tài khoản</Label>
@@ -272,10 +273,11 @@ export default function AccountFormDialog({ open, onOpenChange, account, onSucce
                 </div>
               </div>
             </div>
-            <Separator />
+          </div>
 
-            {/* Actions */}
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
+          {/* Phần nút điều khiển (Footer) được cố định ở chân dialog */}
+          <div className="border-t px-5 py-4 sm:px-6 bg-muted/10 shrink-0 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
+            <div className="flex items-center gap-2 justify-end">
               <Button
                 type="button"
                 variant="outline"

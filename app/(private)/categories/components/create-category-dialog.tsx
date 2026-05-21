@@ -72,7 +72,8 @@ export default function CreateCategoryDialog({
           <DialogTitle>{isUpdate ? 'Cập nhật danh mục' : 'Tạo danh mục mới'}</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-5 px-5 py-5 sm:px-6">
+        {/* Phần thân form chứa các trường nhập liệu có khả năng cuộn độc lập */}
+        <div className="flex-1 overflow-y-auto px-5 py-5 sm:px-6 space-y-5">
           <div className="grid gap-2">
             <Label htmlFor="category-name">Tên danh mục</Label>
             <div className="relative">
@@ -225,29 +226,29 @@ export default function CreateCategoryDialog({
               </div>
             </div>
           </div>
-          <Separator />
+        </div>
 
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
-            <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                className="rounded-xl"
-                onClick={() => onOpenChange(false)}
-                disabled={isSubmitting}
-              >
-                Hủy
-              </Button>
-              <Button
-                type="button"
-                className="rounded-xl"
-                onClick={handleSubmit}
-                disabled={isSubmitting || !draftName.trim()}
-              >
-                {isSubmitting && <Loader2Icon className="mr-2 size-4 animate-spin" />}
-                {isUpdate ? 'Lưu thay đổi' : 'Tạo danh mục'}
-              </Button>
-            </div>
+        {/* Phần nút điều khiển (Footer) được cố định ở chân dialog */}
+        <div className="border-t px-5 py-4 sm:px-6 bg-muted/10 shrink-0 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
+          <div className="flex items-center gap-2 justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              className="rounded-xl"
+              onClick={() => onOpenChange(false)}
+              disabled={isSubmitting}
+            >
+              Hủy
+            </Button>
+            <Button
+              type="button"
+              className="rounded-xl"
+              onClick={handleSubmit}
+              disabled={isSubmitting || !draftName.trim()}
+            >
+              {isSubmitting && <Loader2Icon className="mr-2 size-4 animate-spin" />}
+              {isUpdate ? 'Lưu thay đổi' : 'Tạo danh mục'}
+            </Button>
           </div>
         </div>
       </DialogContent>
