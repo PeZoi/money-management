@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
+import { useEffect, useState } from 'react';
 
 import IconPreview from '@/components/icons/icon-preview';
 import { Button } from '@/components/ui/button';
@@ -9,9 +9,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Separator } from '@/components/ui/separator';
+import { useAccounts } from '@/hooks/use-accounts';
 import { useCategories } from '@/hooks/use-categories';
 import { useTransactionMutation } from '@/hooks/use-transactions';
-import { useAccounts } from '@/hooks/use-accounts';
 import { cn } from '@/lib/utils';
 import type { TransactionType, TransactionWithCategory } from '@/types/database';
 import {
@@ -21,7 +21,6 @@ import {
   CreditCardIcon,
   HelpCircleIcon,
   Loader2Icon,
-  LockIcon,
   TrendingDownIcon,
   TrendingUpIcon,
   WalletIcon,
@@ -82,6 +81,33 @@ export default function UpdateTransactionDialog({ transaction, open, onOpenChang
   const [openAccount, setOpenAccount] = useState(false);
 
   const isTransfer = type === 'transfer';
+
+  // Hàm helper lấy class CSS cho danh mục dựa vào loại giao dịch (Chi tiêu = Đỏ, Thu nhập = Xanh)
+  const getCategoryClasses = (isSelected: boolean) => {
+    if (!isSelected) {
+      return {
+        button: 'border-border bg-card hover:bg-muted/50 text-muted-foreground',
+        iconSpan: 'border-border bg-muted/40 text-muted-foreground group-hover:bg-muted',
+      };
+    }
+    if (type === 'expense') {
+      return {
+        button: 'border-rose-500 bg-rose-500/5 text-rose-600 dark:text-rose-400 shadow-sm ring-1 ring-rose-500/20',
+        iconSpan: 'border-rose-500/20 bg-rose-500/10 text-rose-600 dark:text-rose-400',
+      };
+    }
+    if (type === 'income') {
+      return {
+        button:
+          'border-emerald-500 bg-emerald-500/5 text-emerald-600 dark:text-emerald-400 shadow-sm ring-1 ring-emerald-500/20',
+        iconSpan: 'border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
+      };
+    }
+    return {
+      button: 'border-primary bg-primary/5 text-primary shadow-sm ring-1 ring-primary/20',
+      iconSpan: 'border-primary/20 bg-primary/10 text-primary',
+    };
+  };
 
   // Cập nhật giá trị form khi transaction thay đổi hoặc modal được mở
   useEffect(() => {
@@ -168,32 +194,21 @@ export default function UpdateTransactionDialog({ transaction, open, onOpenChang
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent aria-describedby={undefined} className="max-w-lg gap-0 p-0">
-        <DialogHeader className="border-b px-5 py-4 sm:px-6">
+        <DialogHeader className="border-b px-5 py-4 sm:px-6 flex flex-row items-center gap-4">
           <DialogTitle>Cập nhật giao dịch</DialogTitle>
+          <div
+            className={cn(
+              'flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold select-none',
+              typeConfig.badgeBg,
+              typeConfig.badgeText,
+            )}
+          >
+            <TypeIcon className="size-3.5" />
+            <span>{typeConfig.label}</span>
+          </div>
         </DialogHeader>
 
         <div className="space-y-5 px-5 py-5 sm:px-6">
-          {/* Type selector (Read-only khi Update) */}
-          <div className="grid gap-2">
-            <Label>Loại giao dịch</Label>
-            <div className="flex items-center gap-3">
-              <div
-                className={cn(
-                  'flex items-center gap-2 px-3.5 py-2.5 rounded-2xl border font-semibold text-sm',
-                  typeConfig.badgeBg,
-                  typeConfig.badgeText,
-                )}
-              >
-                <TypeIcon className="size-4 mr-1" />
-                <span>{typeConfig.label}</span>
-              </div>
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted px-3 py-1.5 rounded-xl border">
-                <LockIcon className="size-3.5 text-muted-foreground/75" />
-                <span>Không thể thay đổi loại giao dịch</span>
-              </div>
-            </div>
-          </div>
-
           {/* Tên giao dịch (Lưu trữ ở cột note) */}
           <div className="grid gap-2">
             <Label htmlFor="tx-note">Tên giao dịch</Label>
@@ -414,34 +429,36 @@ export default function UpdateTransactionDialog({ transaction, open, onOpenChang
               <Label>Danh mục</Label>
               <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
                 {/* Option "Khác" (mặc định / không chọn) */}
-                <button
-                  type="button"
-                  onClick={() => setCategoryId('')}
-                  disabled={isSubmitting}
-                  className={cn(
-                    'group flex flex-col items-center justify-center gap-1.5 rounded-2xl border p-3 aspect-square text-center transition-all outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-                    !categoryId
-                      ? 'border-primary bg-primary/5 text-primary shadow-sm ring-1 ring-primary/20'
-                      : 'border-border bg-card hover:bg-muted/50 text-muted-foreground',
-                    isSubmitting && 'cursor-not-allowed opacity-50',
-                  )}
-                >
-                  <span
-                    className={cn(
-                      'flex size-10 shrink-0 items-center justify-center rounded-xl border transition-colors',
-                      !categoryId
-                        ? 'border-primary/20 bg-primary/10 text-primary'
-                        : 'border-border bg-muted/40 text-muted-foreground group-hover:bg-muted',
-                    )}
-                  >
-                    <HelpCircleIcon className="size-5" />
-                  </span>
-                  <span className="text-xs font-semibold truncate max-w-full">Khác</span>
-                </button>
+                {(() => {
+                  const classes = getCategoryClasses(!categoryId);
+                  return (
+                    <button
+                      type="button"
+                      onClick={() => setCategoryId('')}
+                      disabled={isSubmitting}
+                      className={cn(
+                        'group flex flex-col items-center justify-center gap-1.5 rounded-2xl border p-3 aspect-square text-center transition-all outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+                        classes.button,
+                        isSubmitting && 'cursor-not-allowed opacity-50',
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          'flex size-10 shrink-0 items-center justify-center rounded-xl border transition-colors',
+                          classes.iconSpan,
+                        )}
+                      >
+                        <HelpCircleIcon className="size-5" />
+                      </span>
+                      <span className="text-xs font-semibold truncate max-w-full">Khác</span>
+                    </button>
+                  );
+                })()}
 
                 {/* Danh sách danh mục đã lọc */}
                 {filteredCategories.map((c) => {
                   const isSelected = categoryId === c.id;
+                  const classes = getCategoryClasses(isSelected);
                   return (
                     <button
                       key={c.id}
@@ -450,18 +467,14 @@ export default function UpdateTransactionDialog({ transaction, open, onOpenChang
                       disabled={isSubmitting}
                       className={cn(
                         'group flex flex-col items-center justify-center gap-1.5 rounded-2xl border p-3 aspect-square text-center transition-all outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-                        isSelected
-                          ? 'border-primary bg-primary/5 text-primary shadow-sm ring-1 ring-primary/20'
-                          : 'border-border bg-card hover:bg-muted/50 text-muted-foreground',
+                        classes.button,
                         isSubmitting && 'cursor-not-allowed opacity-50',
                       )}
                     >
                       <span
                         className={cn(
                           'flex size-10 shrink-0 items-center justify-center rounded-xl border transition-colors',
-                          isSelected
-                            ? 'border-primary/20 bg-primary/10 text-primary'
-                            : 'border-border bg-muted/40 text-muted-foreground group-hover:bg-muted',
+                          classes.iconSpan,
                         )}
                       >
                         <IconPreview name={c.icon} className="size-5" />

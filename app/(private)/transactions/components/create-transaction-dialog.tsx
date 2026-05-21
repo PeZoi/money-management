@@ -212,6 +212,32 @@ export default function CreateTransactionDialog({ open, onOpenChange, onSuccess 
   // Tài khoản đích cho giao dịch chuyển tiền
   const [toAccountId, setToAccountId] = useState<string>('');
 
+  // Hàm helper lấy class CSS cho danh mục dựa vào loại giao dịch (Chi tiêu = Đỏ, Thu nhập = Xanh)
+  const getCategoryClasses = (isSelected: boolean) => {
+    if (!isSelected) {
+      return {
+        button: 'border-border bg-card hover:bg-muted/50 text-muted-foreground',
+        iconSpan: 'border-border bg-muted/40 text-muted-foreground group-hover:bg-muted',
+      };
+    }
+    if (type === 'expense') {
+      return {
+        button: 'border-rose-500 bg-rose-500/5 text-rose-600 dark:text-rose-400 shadow-sm ring-1 ring-rose-500/20',
+        iconSpan: 'border-rose-500/20 bg-rose-500/10 text-rose-600 dark:text-rose-400',
+      };
+    }
+    if (type === 'income') {
+      return {
+        button: 'border-emerald-500 bg-emerald-500/5 text-emerald-600 dark:text-emerald-400 shadow-sm ring-1 ring-emerald-500/20',
+        iconSpan: 'border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
+      };
+    }
+    return {
+      button: 'border-primary bg-primary/5 text-primary shadow-sm ring-1 ring-primary/20',
+      iconSpan: 'border-primary/20 bg-primary/10 text-primary',
+    };
+  };
+
   // Tự động gán active account làm mặc định khi load xong dữ liệu tài khoản
   useEffect(() => {
     if (activeAccount && !accountId) {
@@ -476,34 +502,36 @@ export default function CreateTransactionDialog({ open, onOpenChange, onSuccess 
               <Label>Danh mục</Label>
               <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
                 {/* Option "Khác" (mặc định / không chọn) */}
-                <button
-                  type="button"
-                  onClick={() => setCategoryId('')}
-                  disabled={isSubmitting}
-                  className={cn(
-                    'group flex flex-col items-center justify-center gap-1.5 rounded-2xl border p-3 aspect-square text-center transition-all outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-                    !categoryId
-                      ? 'border-primary bg-primary/5 text-primary shadow-sm ring-1 ring-primary/20'
-                      : 'border-border bg-card hover:bg-muted/50 text-muted-foreground',
-                    isSubmitting && 'cursor-not-allowed opacity-50',
-                  )}
-                >
-                  <span
-                    className={cn(
-                      'flex size-10 shrink-0 items-center justify-center rounded-xl border transition-colors',
-                      !categoryId
-                        ? 'border-primary/20 bg-primary/10 text-primary'
-                        : 'border-border bg-muted/40 text-muted-foreground group-hover:bg-muted',
-                    )}
-                  >
-                    <HelpCircleIcon className="size-5" />
-                  </span>
-                  <span className="text-xs font-semibold truncate max-w-full">Khác</span>
-                </button>
+                {(() => {
+                  const classes = getCategoryClasses(!categoryId);
+                  return (
+                    <button
+                      type="button"
+                      onClick={() => setCategoryId('')}
+                      disabled={isSubmitting}
+                      className={cn(
+                        'group flex flex-col items-center justify-center gap-1.5 rounded-2xl border p-3 aspect-square text-center transition-all outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+                        classes.button,
+                        isSubmitting && 'cursor-not-allowed opacity-50',
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          'flex size-10 shrink-0 items-center justify-center rounded-xl border transition-colors',
+                          classes.iconSpan,
+                        )}
+                      >
+                        <HelpCircleIcon className="size-5" />
+                      </span>
+                      <span className="text-xs font-semibold truncate max-w-full">Khác</span>
+                    </button>
+                  );
+                })()}
 
                 {/* Danh sách danh mục đã lọc */}
                 {filteredCategories.map((c) => {
                   const isSelected = categoryId === c.id;
+                  const classes = getCategoryClasses(isSelected);
                   return (
                     <button
                       key={c.id}
@@ -512,18 +540,14 @@ export default function CreateTransactionDialog({ open, onOpenChange, onSuccess 
                       disabled={isSubmitting}
                       className={cn(
                         'group flex flex-col items-center justify-center gap-1.5 rounded-2xl border p-3 aspect-square text-center transition-all outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-                        isSelected
-                          ? 'border-primary bg-primary/5 text-primary shadow-sm ring-1 ring-primary/20'
-                          : 'border-border bg-card hover:bg-muted/50 text-muted-foreground',
+                        classes.button,
                         isSubmitting && 'cursor-not-allowed opacity-50',
                       )}
                     >
                       <span
                         className={cn(
                           'flex size-10 shrink-0 items-center justify-center rounded-xl border transition-colors',
-                          isSelected
-                            ? 'border-primary/20 bg-primary/10 text-primary'
-                            : 'border-border bg-muted/40 text-muted-foreground group-hover:bg-muted',
+                          classes.iconSpan,
                         )}
                       >
                         <IconPreview name={c.icon} className="size-5" />
