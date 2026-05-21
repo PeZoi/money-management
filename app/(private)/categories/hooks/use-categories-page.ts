@@ -6,7 +6,7 @@ import type { CategoryType, CategoryUi } from '@/types/category';
 import { normalizeText, typeLabel } from '../category-ui';
 
 export function useCategoriesPage() {
-  const { categories, fetchCategories } = useCategories();
+  const { categories, isLoading, fetchCategories } = useCategories();
   const [query, setQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<'all' | CategoryType>('all');
   const [createOpen, setCreateOpen] = useState(false);
@@ -25,6 +25,7 @@ export function useCategoriesPage() {
 
   return {
     categories,
+    isLoading, // Trả về trạng thái tải để hiển thị Skeleton
     fetchCategories,
     query,
     setQuery,
@@ -37,3 +38,4 @@ export function useCategoriesPage() {
     filtered,
   };
 }
+
