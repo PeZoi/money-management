@@ -16,13 +16,12 @@ import {
 } from "@/components/ui/sidebar"
 import { useAuthStore } from "@/hooks/use-auth"
 import { useWorkspaceStore } from "@/hooks/use-workspace"
-import type { WorkspaceInfo } from "@/types/user"
 
 export function WorkspaceSwitcher() {
   const { user } = useAuthStore()
   const { activeWorkspaceId, setActiveWorkspaceId } = useWorkspaceStore()
 
-  const workspaces = user?.workspaces ?? []
+  const workspaces = React.useMemo(() => user?.workspaces ?? [], [user?.workspaces])
 
   // Auto-select first workspace if no active workspace is set
   React.useEffect(() => {

@@ -1,8 +1,18 @@
 import { useState, useCallback, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 
 import { useWorkspaceStore } from './use-workspace';
 import { CategoryType, CategoryUi } from '@/types/category';
+import {
+  categorySchema,
+  categoryDefaultValues,
+  type CategoryFormValues,
+  DEFAULT_CATEGORY_COLOR,
+  isValidHex6,
+} from '@/lib/validations/category-schema';
+
 
 /**
  * Hook chuyên xử lý việc lấy danh sách danh mục (GET)
@@ -117,14 +127,13 @@ export function useCategoryMutation() {
   };
 }
 
-export const DEFAULT_CATEGORY_COLOR = '#64748b';
 
-export function isValidHex6(hex: string): boolean {
-  return /^#[0-9a-fA-F]{6}$/.test(hex);
-}
+// Re-export từ schema mới để giữ backward compatibility
+export { DEFAULT_CATEGORY_COLOR, isValidHex6 } from '@/lib/validations/category-schema';
 
 /**
  * Hook quản lý toàn bộ state và logic submit của form danh mục
+ * Sử dụng React Hook Form + Zod validation
  */
 export function useCategoryForm(options: {
   open: boolean;
@@ -132,7 +141,7 @@ export function useCategoryForm(options: {
   categoryId?: string;
   initialData?: {
     name: string;
-    type: CategoryType; // Type will be inferred correctly where used
+    type: CategoryType;
     icon: string;
     color: string;
   };
@@ -143,11 +152,14 @@ export function useCategoryForm(options: {
   const isUpdate = !!categoryId;
   const { isSubmitting, saveCategory } = useCategoryMutation();
 
-  const [draftName, setDraftName] = useState(initialData?.name || '');
-  const [draftType, setDraftType] = useState<CategoryType>(initialData?.type || 'expense');
-  const [draftIcon, setDraftIcon] = useState<string>(initialData?.icon || 'Tag');
-  const [draftColor, setDraftColor] = useState(initialData?.color || DEFAULT_CATEGORY_COLOR);
+  const form = useForm<CategoryFormValues>({
+    resolver: zodResolver(categorySchema),
+    defaultValues: initialData
+      ? { name: initialData.name, type: initialData.type, icon: initialData.icon, color: initialData.color }
+      : categoryDefaultValues,
+  });
 
+  // Reset form khi dialog mở hoặc initialData thay đổi
   const [prevOpen, setPrevOpen] = useState(open);
   const [prevInitialData, setPrevInitialData] = useState(initialData);
 
@@ -156,24 +168,26 @@ export function useCategoryForm(options: {
     setPrevInitialData(initialData);
 
     if (open) {
-      setDraftName(initialData?.name || '');
-      setDraftType(initialData?.type || 'expense');
-      setDraftIcon(initialData?.icon || 'Tag');
-      setDraftColor(initialData?.color || DEFAULT_CATEGORY_COLOR);
+      form.reset(
+        initialData
+          ? { name: initialData.name, type: initialData.type, icon: initialData.icon, color: initialData.color }
+          : categoryDefaultValues,
+      );
     }
   }
 
   const handleSubmit = async () => {
-    if (!draftName.trim()) {
-      toast.error('Vui lòng nhập tên danh mục');
-      return;
-    }
+    // Trigger validation trước
+    const isValid = await form.trigger();
+    if (!isValid) return;
+
+    const data = form.getValues();
 
     const payload = {
-      name: draftName.trim(),
-      icon: draftIcon,
-      color: isValidHex6(draftColor) ? draftColor : DEFAULT_CATEGORY_COLOR,
-      type: draftType,
+      name: data.name.trim(),
+      icon: data.icon,
+      color: isValidHex6(data.color) ? data.color : DEFAULT_CATEGORY_COLOR,
+      type: data.type,
     };
 
     await saveCategory(payload, {
@@ -187,13 +201,22 @@ export function useCategoryForm(options: {
     });
   };
 
+  // Giữ backward compatibility: expose các setter/getter quen thuộc
+  // eslint-disable-next-line react-hooks/incompatible-library
+  const draftName = form.watch('name');
+  const draftType = form.watch('type');
+  const draftIcon = form.watch('icon');
+  const draftColor = form.watch('color');
+
   return {
-    draftName, setDraftName,
-    draftType, setDraftType,
-    draftIcon, setDraftIcon,
-    draftColor, setDraftColor,
+    form,
+    draftName, setDraftName: (v: string) => form.setValue('name', v),
+    draftType, setDraftType: (v: CategoryType) => form.setValue('type', v),
+    draftIcon, setDraftIcon: (v: string) => form.setValue('icon', v),
+    draftColor, setDraftColor: (v: string) => form.setValue('color', v, { shouldValidate: true }),
     isSubmitting,
     isUpdate,
     handleSubmit,
   };
 }
+

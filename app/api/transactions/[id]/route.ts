@@ -86,6 +86,9 @@ export async function PUT(
   if (!Number.isFinite(amount) || amount <= 0) {
     return NextResponse.json({ error: "amount phải là số dương." }, { status: 400 });
   }
+  if (amount > 9999999999999) {
+    return NextResponse.json({ error: "Số tiền quá lớn (tối đa 9,999,999,999,999đ)." }, { status: 400 });
+  }
 
   // Cập nhật giao dịch — type không được thay đổi, trigger DB sẽ tự động điều chỉnh balance
   const { data, error } = await session.supabase
@@ -103,7 +106,11 @@ export async function PUT(
     .single();
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    let message = error.message;
+    if (message.includes("numeric field overflow")) {
+      message = "Số tiền giao dịch hoặc số dư vượt quá giới hạn tối đa của hệ thống.";
+    }
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 
   return NextResponse.json({ data });

@@ -115,6 +115,12 @@ export async function POST(req: Request) {
       { status: 400 },
     );
   }
+  if (amount > 9999999999999) {
+    return NextResponse.json(
+      { error: "Số tiền quá lớn (tối đa 9,999,999,999,999đ)." },
+      { status: 400 },
+    );
+  }
   if (!type) {
     return NextResponse.json(
       { error: "type phải là 'expense', 'income' hoặc 'transfer'." },
@@ -157,7 +163,11 @@ export async function POST(req: Request) {
     .single();
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    let message = error.message;
+    if (message.includes("numeric field overflow")) {
+      message = "Số tiền giao dịch hoặc số dư vượt quá giới hạn tối đa của hệ thống.";
+    }
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 
   return NextResponse.json({ data }, { status: 201 });

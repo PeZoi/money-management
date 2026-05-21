@@ -1,1 +1,1 @@
-import localStorageFn from "./localstorage-fn";
+export { default as localStorageFn } from "./localstorage-fn";

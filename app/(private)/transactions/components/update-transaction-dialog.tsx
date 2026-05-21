@@ -1,5 +1,5 @@
 import { format } from 'date-fns';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import IconPreview from '@/components/icons/icon-preview';
 import { Button } from '@/components/ui/button';
@@ -9,9 +9,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Separator } from '@/components/ui/separator';
-import { useAccounts } from '@/hooks/use-accounts';
-import { useCategories } from '@/hooks/use-categories';
-import { useTransactionMutation } from '@/hooks/use-transactions';
 import { cn } from '@/lib/utils';
 import type { TransactionType, TransactionWithCategory } from '@/types/database';
 import {
@@ -27,18 +24,13 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 
+import { useUpdateTransactionForm } from '../hooks/use-update-transaction-form';
+
 type Props = {
   transaction: TransactionWithCategory | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
-};
-
-// Định dạng số tiền sang dạng hiển thị có dấu phẩy (ví dụ: 100,000)
-const formatAmountInput = (val: string) => {
-  const clean = val.replace(/[^0-9]/g, '');
-  if (!clean) return '';
-  return Number(clean).toLocaleString('en-US');
 };
 
 const TYPE_CONFIG = {
@@ -63,132 +55,39 @@ const TYPE_CONFIG = {
 };
 
 export default function UpdateTransactionDialog({ transaction, open, onOpenChange, onSuccess }: Props) {
-  const { categories } = useCategories();
-  const { isSubmitting, updateTransaction } = useTransactionMutation();
-  const { accounts, activeAccount } = useAccounts();
+  const {
+    form,
+    type,
+    accountId,
+    toAccountId,
+    amount,
+    categoryId,
+    isTransfer,
+    filteredCategories,
+    isDuplicateTransfer,
+    isValid,
+    isSubmitting,
+    accounts,
+    activeAccount,
+    setAmount,
+    handleClose,
+    onSubmit,
+    getCategoryClasses,
+  } = useUpdateTransactionForm({ transaction, open, onOpenChange, onSuccess });
 
-  const [amount, setAmount] = useState('');
-  const [type, setType] = useState<TransactionType>('expense');
-  const [categoryId, setCategoryId] = useState<string>('');
-  const [note, setNote] = useState('');
-  // Sử dụng Date đối tượng trực tiếp thay vì chuỗi
-  const [date, setDate] = useState<Date>(() => new Date());
-  const [accountId, setAccountId] = useState<string>('');
-  const [toAccountId, setToAccountId] = useState<string>('');
+  const note = form.watch('note');
+  const date = form.watch('date');
 
+  // State cho popover tài khoản
   const [openFrom, setOpenFrom] = useState(false);
   const [openTo, setOpenTo] = useState(false);
   const [openAccount, setOpenAccount] = useState(false);
-
-  const isTransfer = type === 'transfer';
-
-  // Hàm helper lấy class CSS cho danh mục dựa vào loại giao dịch (Chi tiêu = Đỏ, Thu nhập = Xanh)
-  const getCategoryClasses = (isSelected: boolean) => {
-    if (!isSelected) {
-      return {
-        button: 'border-border bg-card hover:bg-muted/50 text-muted-foreground',
-        iconSpan: 'border-border bg-muted/40 text-muted-foreground group-hover:bg-muted',
-      };
-    }
-    if (type === 'expense') {
-      return {
-        button: 'border-rose-500 bg-rose-500/5 text-rose-600 dark:text-rose-400 shadow-sm ring-1 ring-rose-500/20',
-        iconSpan: 'border-rose-500/20 bg-rose-500/10 text-rose-600 dark:text-rose-400',
-      };
-    }
-    if (type === 'income') {
-      return {
-        button:
-          'border-emerald-500 bg-emerald-500/5 text-emerald-600 dark:text-emerald-400 shadow-sm ring-1 ring-emerald-500/20',
-        iconSpan: 'border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
-      };
-    }
-    return {
-      button: 'border-primary bg-primary/5 text-primary shadow-sm ring-1 ring-primary/20',
-      iconSpan: 'border-primary/20 bg-primary/10 text-primary',
-    };
-  };
-
-  // Cập nhật giá trị form khi transaction thay đổi hoặc modal được mở
-  useEffect(() => {
-    if (transaction) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setAmount(formatAmountInput(transaction.amount.toString()));
-      setType(transaction.type);
-      setCategoryId(transaction.category_id || '');
-      setNote(transaction.note || '');
-      setAccountId(transaction.account_id || '');
-      setToAccountId(transaction.to_account_id || '');
-
-      // Chuyển đổi created_at từ DB sang đối tượng Date
-      if (transaction.created_at) {
-        setDate(new Date(transaction.created_at));
-      } else {
-        setDate(new Date());
-      }
-    }
-  }, [transaction, open]);
+  const [openCalendar, setOpenCalendar] = useState(false);
 
   const selectedAccount = accounts.find((a) => a.id === accountId);
   const selectedToAccount = accounts.find((a) => a.id === toAccountId);
 
-  const filteredCategories = categories.filter((c) => c.type === type);
-
-  const handleClose = (open: boolean) => {
-    onOpenChange(open);
-  };
-
-  const handleSubmit = async () => {
-    if (!transaction) return;
-    const numAmount = Number(amount.replace(/[^0-9]/g, ''));
-    if (!numAmount || numAmount <= 0) return;
-
-    // Validate transfer
-    if (isTransfer) {
-      if (!accountId || !toAccountId) return;
-      if (toAccountId === accountId) return;
-    }
-
-    // Tránh lệch múi giờ, đồng thời lấy chính xác giờ phút giây hiện tại thay vì mặc định 12:00:00
-    const now = new Date();
-    const formattedCreatedAt = date
-      ? new Date(
-          date.getFullYear(),
-          date.getMonth(),
-          date.getDate(),
-          now.getHours(),
-          now.getMinutes(),
-          now.getSeconds(),
-        ).toISOString()
-      : null;
-
-    const ok = await updateTransaction(
-      transaction.id,
-      {
-        amount: numAmount,
-        category_id: isTransfer ? null : categoryId || null,
-        note: note.trim() || null,
-        created_at: formattedCreatedAt,
-        account_id: accountId || null,
-        to_account_id: isTransfer ? toAccountId || null : null,
-      },
-      {
-        onSuccess: () => {
-          onSuccess?.();
-          handleClose(false);
-        },
-      },
-    );
-    if (!ok) return;
-  };
-
-  const isDuplicateTransfer = isTransfer && accountId && toAccountId && accountId === toAccountId;
-
-  const isValid =
-    Number(amount.replace(/[^0-9]/g, '')) > 0 &&
-    (isTransfer ? accountId && toAccountId && !isDuplicateTransfer : accountId);
-
-  const typeConfig = TYPE_CONFIG[type];
+  const typeConfig = TYPE_CONFIG[type as TransactionType];
   const TypeIcon = typeConfig.icon;
 
   return (
@@ -215,7 +114,7 @@ export default function UpdateTransactionDialog({ transaction, open, onOpenChang
             <Input
               id="tx-note"
               value={note}
-              onChange={(e) => setNote(e.target.value)}
+              onChange={(e) => form.setValue('note', e.target.value)}
               placeholder={isTransfer ? 'Ví dụ: Chuyển sang VPBank, rút ATM…' : 'Ví dụ: Ăn trưa, xăng xe, mua sắm…'}
               className="h-11 rounded-xl"
               disabled={isSubmitting}
@@ -224,17 +123,27 @@ export default function UpdateTransactionDialog({ transaction, open, onOpenChang
 
           {/* Amount */}
           <div className="grid gap-2">
-            <Label htmlFor="tx-amount">Số tiền (VND)</Label>
+            <Label htmlFor="tx-amount" className={cn(form.formState.errors.amount && 'text-destructive')}>
+              Số tiền (VND)
+            </Label>
             <Input
               id="tx-amount"
               type="text"
               inputMode="numeric"
               value={amount}
-              onChange={(e) => setAmount(formatAmountInput(e.target.value))}
+              onChange={(e) => setAmount(e.target.value)}
               placeholder="0"
-              className="h-12 rounded-xl text-lg font-semibold"
+              className={cn(
+                'h-12 rounded-xl text-lg font-semibold transition-all duration-200',
+                form.formState.errors.amount && 'border-destructive focus-visible:ring-destructive text-destructive'
+              )}
               disabled={isSubmitting}
             />
+            {form.formState.errors.amount && (
+              <p className="text-xs font-medium text-destructive mt-0.5">
+                {form.formState.errors.amount.message}
+              </p>
+            )}
           </div>
 
           {/* Tài khoản */}
@@ -275,7 +184,7 @@ export default function UpdateTransactionDialog({ transaction, open, onOpenChang
                             key={acc.id}
                             type="button"
                             onClick={() => {
-                              setAccountId(acc.id);
+                              form.setValue('accountId', acc.id);
                               setOpenFrom(false);
                             }}
                             className={cn(
@@ -330,7 +239,7 @@ export default function UpdateTransactionDialog({ transaction, open, onOpenChang
                             key={acc.id}
                             type="button"
                             onClick={() => {
-                              setToAccountId(acc.id);
+                              form.setValue('toAccountId', acc.id);
                               setOpenTo(false);
                             }}
                             className={cn(
@@ -398,7 +307,7 @@ export default function UpdateTransactionDialog({ transaction, open, onOpenChang
                             key={acc.id}
                             type="button"
                             onClick={() => {
-                              setAccountId(acc.id);
+                              form.setValue('accountId', acc.id);
                               setOpenAccount(false);
                             }}
                             className={cn(
@@ -434,7 +343,7 @@ export default function UpdateTransactionDialog({ transaction, open, onOpenChang
                   return (
                     <button
                       type="button"
-                      onClick={() => setCategoryId('')}
+                      onClick={() => form.setValue('categoryId', '')}
                       disabled={isSubmitting}
                       className={cn(
                         'group flex flex-col items-center justify-center gap-1.5 rounded-2xl border p-3 aspect-square text-center transition-all outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
@@ -463,7 +372,7 @@ export default function UpdateTransactionDialog({ transaction, open, onOpenChang
                     <button
                       key={c.id}
                       type="button"
-                      onClick={() => setCategoryId(c.id)}
+                      onClick={() => form.setValue('categoryId', c.id)}
                       disabled={isSubmitting}
                       className={cn(
                         'group flex flex-col items-center justify-center gap-1.5 rounded-2xl border p-3 aspect-square text-center transition-all outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
@@ -490,7 +399,7 @@ export default function UpdateTransactionDialog({ transaction, open, onOpenChang
           {/* Date */}
           <div className="grid gap-2">
             <Label htmlFor="tx-date">Ngày giao dịch</Label>
-            <Popover>
+            <Popover open={openCalendar} onOpenChange={setOpenCalendar}>
               <PopoverTrigger asChild>
                 <Button
                   id="tx-date"
@@ -509,7 +418,12 @@ export default function UpdateTransactionDialog({ transaction, open, onOpenChang
                 <Calendar
                   mode="single"
                   selected={date}
-                  onSelect={(newDate) => newDate && setDate(newDate)}
+                  onSelect={(newDate) => {
+                    if (newDate) {
+                      form.setValue('date', newDate);
+                      setOpenCalendar(false);
+                    }
+                  }}
                   disabled={{ after: new Date() }}
                 />
               </PopoverContent>
@@ -528,7 +442,7 @@ export default function UpdateTransactionDialog({ transaction, open, onOpenChang
             >
               Hủy
             </Button>
-            <Button type="button" className="rounded-xl" onClick={handleSubmit} disabled={isSubmitting || !isValid}>
+            <Button type="button" className="rounded-xl" onClick={onSubmit} disabled={isSubmitting || !isValid}>
               {isSubmitting && <Loader2Icon className="mr-2 size-4 animate-spin" />}
               Cập nhật giao dịch
             </Button>

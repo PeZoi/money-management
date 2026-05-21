@@ -40,13 +40,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, message: 'Thiếu thông tin bắt buộc' }, { status: 400 });
     }
 
+    const numBalance = balance !== undefined ? Number(balance) : 0;
+    if (isNaN(numBalance)) {
+      return NextResponse.json({ success: false, message: 'Số dư không hợp lệ' }, { status: 400 });
+    }
+    if (Math.abs(numBalance) > 9999999999999) {
+      return NextResponse.json({ success: false, message: 'Số dư quá lớn (tối đa ±9,999,999,999,999đ)' }, { status: 400 });
+    }
+
     const { data, error } = await supabase
       .from('accounts')
       .insert({
         workspace_id,
         name,
         type: type || 'cash',
-        balance: (balance as number) ?? 0,
+        balance: numBalance,
         currency: (currency as string) || 'VND',
         icon: (icon as string) || '💰',
         color: (color as string) || '#6366f1',
@@ -58,7 +66,10 @@ export async function POST(req: NextRequest) {
     if (error) throw error;
     return NextResponse.json({ success: true, data }, { status: 201 });
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Internal server error';
+    let message = err instanceof Error ? err.message : 'Internal server error';
+    if (message.includes("numeric field overflow")) {
+      message = "Số dư tài khoản vượt quá giới hạn tối đa của hệ thống.";
+    }
     return NextResponse.json({ success: false, message }, { status: 500 });
   }
 }
