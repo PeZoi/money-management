@@ -17,7 +17,7 @@ create type user_role as enum ('user', 'admin');
 create type workspace_role as enum ('owner', 'admin', 'member');
 
 -- Transaction types
-create type transaction_type as enum ('expense', 'income');
+create type transaction_type as enum ('expense', 'income', 'transfer');
 
 -- =====================================================
 -- COMMON UTILITIES

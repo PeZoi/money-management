@@ -12,7 +12,7 @@ export type UserRole = "user" | "admin";
 export type WorkspaceRole = "owner" | "admin" | "member";
 
 /** Enum `public.transaction_type` */
-export type TransactionType = "expense" | "income";
+export type TransactionType = "expense" | "income" | "transfer";
 
 /** Enum `public.account_type` */
 export type AccountType = "cash" | "bank" | "e_wallet" | "investment" | "other";
@@ -80,6 +80,7 @@ export interface TransactionRow {
   type: TransactionType;
   category_id: UuidString | null;
   account_id: UuidString | null;
+  to_account_id: UuidString | null;
   note: string | null;
   created_by: UuidString;
   created_at: IsoDateString;
@@ -103,7 +104,7 @@ export type TransactionInsert = Pick<
   TransactionRow,
   "workspace_id" | "amount" | "type" | "created_by"
 > &
-  Partial<Pick<TransactionRow, "category_id" | "note">>;
+  Partial<Pick<TransactionRow, "category_id" | "account_id" | "to_account_id" | "note">>;
 
 /** Update partial — thường không đổi PK / FK chính */
 export type WorkspaceUpdate = Partial<Pick<WorkspaceRow, "name" | "is_personal">>;
@@ -112,8 +113,9 @@ export type WorkspaceMemberUpdate = Partial<Pick<WorkspaceMemberRow, "role">>;
 
 export type CategoryUpdate = Partial<Pick<CategoryRow, "name" | "icon" | "color" | "type">>;
 
+/** Update partial — type không thể thay đổi sau khi tạo */
 export type TransactionUpdate = Partial<
-  Pick<TransactionRow, "amount" | "type" | "category_id" | "account_id" | "note">
+  Pick<TransactionRow, "amount" | "category_id" | "account_id" | "to_account_id" | "note">
 >;
 
 export type AccountInsert = Pick<AccountRow, "workspace_id" | "name" | "type" | "icon" | "color" | "created_by"> &
@@ -125,4 +127,5 @@ export type AccountUpdate = Partial<Pick<AccountRow, "name" | "type" | "balance"
 export type TransactionWithCategory = TransactionRow & {
   category: CategoryRow | null;
   account: AccountRow | null;
+  to_account: AccountRow | null;
 };

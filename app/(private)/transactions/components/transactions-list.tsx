@@ -2,6 +2,7 @@
 
 import {
   ArrowDownCircleIcon,
+  ArrowRightLeftIcon,
   ArrowUpCircleIcon,
   ChevronDownIcon,
   ClockIcon,
@@ -135,15 +136,24 @@ function TransactionRow({
   }, []);
 
   const isIncome = t.type === 'income';
-  const AmountIcon = isIncome ? ArrowUpCircleIcon : ArrowDownCircleIcon;
-  const amountIconClass = isIncome ? 'text-emerald-500' : 'text-rose-500';
-  const iconBgClass = isIncome ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-rose-500/10 border-rose-500/20';
+  const isTransfer = t.type === 'transfer';
+  const AmountIcon = isTransfer ? ArrowRightLeftIcon : isIncome ? ArrowUpCircleIcon : ArrowDownCircleIcon;
+  const amountIconClass = isTransfer ? 'text-blue-500' : isIncome ? 'text-emerald-500' : 'text-rose-500';
+  const iconBgClass = isTransfer
+    ? 'bg-blue-500/10 border-blue-500/20'
+    : isIncome
+      ? 'bg-emerald-500/10 border-emerald-500/20'
+      : 'bg-rose-500/10 border-rose-500/20';
 
   return (
     <div
       className={cn(
         'relative overflow-hidden rounded-2xl border border-border/50 bg-gray-200 dark:bg-muted/20 shadow-xs transition-colors duration-300',
-        isIncome ? 'hover:border-emerald-500/35' : 'hover:border-rose-500/35',
+        isTransfer
+          ? 'hover:border-blue-500/35'
+          : isIncome
+            ? 'hover:border-emerald-500/35'
+            : 'hover:border-rose-500/35',
       )}
     >
       {/* Nút Xoá nằm chìm bên dưới (Chỉ hiển thị trên mobile) */}
@@ -180,9 +190,11 @@ function TransactionRow({
         }}
         className={cn(
           'group relative z-10 flex cursor-pointer items-center gap-4 bg-card p-4 transition-all duration-300 select-none',
-          isIncome
-            ? 'hover:bg-emerald-50/70 dark:hover:bg-emerald-950/30'
-            : 'hover:bg-rose-50/70 dark:hover:bg-rose-950/30',
+          isTransfer
+            ? 'hover:bg-blue-50/70 dark:hover:bg-blue-950/30'
+            : isIncome
+              ? 'hover:bg-emerald-50/70 dark:hover:bg-emerald-950/30'
+              : 'hover:bg-rose-50/70 dark:hover:bg-rose-950/30',
         )}
       >
         {/* Icon mờ nghệ thuật (watermark) lớn ở góc dưới bên phải */}
@@ -208,7 +220,7 @@ function TransactionRow({
               <span
                 className={cn(
                   'absolute -bottom-1 -right-1 flex size-5 items-center justify-center rounded-full border bg-background shadow-xs text-[10px]',
-                  isIncome ? 'border-emerald-500/20 text-emerald-500' : 'border-rose-500/20 text-rose-500',
+                  isIncome ? 'border-emerald-500/20 text-emerald-500' : isTransfer ? 'border-blue-500/20 text-blue-500' : 'border-rose-500/20 text-rose-500',
                 )}
               >
                 <AmountIcon className="size-3" aria-hidden />
@@ -249,6 +261,22 @@ function TransactionRow({
                   <span className="text-[11px] leading-none select-none">{t.account.icon}</span>
                   <span>{t.account.name}</span>
                 </span>
+                {/* Hiển thị mũi tên chuyển tiền nếu là transfer */}
+                {isTransfer && (
+                  <>
+                    <span className="text-blue-500 font-medium select-none">→</span>
+                    <span className="inline-flex items-center gap-1 font-medium text-foreground/75">
+                      {t.to_account ? (
+                        <>
+                          <span className="text-[11px] leading-none select-none">{t.to_account.icon}</span>
+                          <span>{t.to_account.name}</span>
+                        </>
+                      ) : (
+                        <span className="text-muted-foreground italic">Tiền mặt</span>
+                      )}
+                    </span>
+                  </>
+                )}
                 <span className="text-muted-foreground/40 font-light select-none">·</span>
               </>
             )}

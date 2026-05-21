@@ -13,21 +13,29 @@ export function normalizeText(s: string) {
 }
 
 export function typeLabel(t: TransactionType) {
-  return t === 'income' ? 'Thu nhập' : 'Chi tiêu';
+  if (t === 'income') return 'Thu nhập';
+  if (t === 'transfer') return 'Chuyển tiền';
+  return 'Chi tiêu';
 }
 
 export function typeBadgeClass(t: TransactionType) {
-  return t === 'income'
-    ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
-    : 'border-rose-500/20 bg-rose-500/10 text-rose-700 dark:text-rose-400';
+  if (t === 'income')
+    return 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400';
+  if (t === 'transfer')
+    return 'border-blue-500/20 bg-blue-500/10 text-blue-700 dark:text-blue-400';
+  return 'border-rose-500/20 bg-rose-500/10 text-rose-700 dark:text-rose-400';
 }
 
 export function typeAmountClass(t: TransactionType) {
-  return t === 'income' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400';
+  if (t === 'income') return 'text-emerald-600 dark:text-emerald-400';
+  if (t === 'transfer') return 'text-blue-600 dark:text-blue-400';
+  return 'text-rose-600 dark:text-rose-400';
 }
 
 export function typeAmountPrefix(t: TransactionType) {
-  return t === 'income' ? '+' : '-';
+  if (t === 'income') return '+';
+  if (t === 'transfer') return '';
+  return '-';
 }
 
 /**

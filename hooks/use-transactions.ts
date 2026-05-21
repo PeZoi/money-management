@@ -5,7 +5,7 @@ import type { TransactionWithCategory } from '@/types/database';
 import { useWorkspaceStore } from './use-workspace';
 
 export type TransactionFilter = {
-  type?: 'all' | 'expense' | 'income';
+  type?: 'all' | 'expense' | 'income' | 'transfer';
   query?: string;
 };
 
@@ -92,9 +92,10 @@ export function useTransactionMutation() {
   const createTransaction = async (
     payload: {
       amount: number;
-      type: 'expense' | 'income';
+      type: 'expense' | 'income' | 'transfer';
       category_id?: string | null;
       account_id?: string | null;
+      to_account_id?: string | null;
       note?: string | null;
       created_at?: string | null;
     },
@@ -129,9 +130,9 @@ export function useTransactionMutation() {
     id: string,
     payload: {
       amount: number;
-      type: 'expense' | 'income';
       category_id?: string | null;
       account_id?: string | null;
+      to_account_id?: string | null;
       note?: string | null;
       created_at?: string | null;
     },

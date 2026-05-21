@@ -1,6 +1,6 @@
 'use client';
 
-import { TrendingDownIcon, TrendingUpIcon, WalletIcon } from 'lucide-react';
+import { ArrowRightLeftIcon, TrendingDownIcon, TrendingUpIcon, WalletIcon } from 'lucide-react';
 
 import { Skeleton } from '@/components/ui/skeleton';
 import type { TransactionWithCategory } from '@/types/database';
@@ -24,9 +24,11 @@ type StatCard = {
 export default function TransactionStatsCards({ transactions, isLoading }: Props) {
   const income = transactions.filter((t) => t.type === 'income');
   const expense = transactions.filter((t) => t.type === 'expense');
+  const transfer = transactions.filter((t) => t.type === 'transfer');
 
   const totalIncome = income.reduce((s, t) => s + Number(t.amount), 0);
   const totalExpense = expense.reduce((s, t) => s + Number(t.amount), 0);
+  const totalTransfer = transfer.reduce((s, t) => s + Number(t.amount), 0);
   const balance = totalIncome - totalExpense;
 
   const cards: StatCard[] = [
@@ -57,12 +59,21 @@ export default function TransactionStatsCards({ transactions, isLoading }: Props
       bgClass: 'bg-rose-500/10',
       borderClass: 'border-rose-500/20',
     },
+    {
+      label: 'Chuyển tiền',
+      value: formatVnd(totalTransfer),
+      sub: `${transfer.length} giao dịch`,
+      icon: ArrowRightLeftIcon,
+      colorClass: 'text-blue-600 dark:text-blue-400',
+      bgClass: 'bg-blue-500/10',
+      borderClass: 'border-blue-500/20',
+    },
   ];
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        {Array.from({ length: 3 }).map((_, i) => (
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
           <div key={i} className="rounded-2xl border bg-card p-5 shadow-sm">
             <div className="flex items-start justify-between">
               <Skeleton className="h-4 w-24" />
@@ -77,7 +88,7 @@ export default function TransactionStatsCards({ transactions, isLoading }: Props
   }
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {cards.map((card) => {
         const Icon = card.icon;
         return (

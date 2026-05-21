@@ -77,32 +77,29 @@ export async function PUT(
   if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
 
   const amount = typeof body.amount === "number" ? body.amount : Number(body.amount);
-  const type = body.type === "income" || body.type === "expense" ? body.type : null;
   const category_id = isUuid(body.category_id) ? body.category_id : null;
   const account_id = isUuid(body.account_id) ? body.account_id : null;
+  const to_account_id = isUuid(body.to_account_id) ? body.to_account_id : null;
   const note = typeof body.note === "string" ? body.note.trim() : null;
   const created_at = typeof body.created_at === "string" && !isNaN(Date.parse(body.created_at)) ? body.created_at : null;
 
   if (!Number.isFinite(amount) || amount <= 0) {
     return NextResponse.json({ error: "amount phải là số dương." }, { status: 400 });
   }
-  if (!type) {
-    return NextResponse.json({ error: "type phải là 'expense' hoặc 'income'." }, { status: 400 });
-  }
 
-  // Cập nhật giao dịch — trigger DB sẽ tự động điều chỉnh balance tài khoản
+  // Cập nhật giao dịch — type không được thay đổi, trigger DB sẽ tự động điều chỉnh balance
   const { data, error } = await session.supabase
     .from("transactions")
     .update({
       amount,
-      type,
       category_id: category_id || null,
       account_id: account_id || null,
+      to_account_id: to_account_id || null,
       note: note || null,
       ...(created_at && { created_at }),
     })
     .eq("id", id)
-    .select("*, category:categories(*), account:accounts(*)")
+    .select("*, category:categories(*), account:accounts!account_id(*), to_account:accounts!to_account_id(*)")
     .single();
 
   if (error) {

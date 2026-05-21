@@ -140,6 +140,18 @@ export default function TransactionsPage() {
                 >
                   Thu nhập
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setTypeFilter('transfer')}
+                  className={cn(
+                    'flex-1 sm:flex-none px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all active:scale-95 text-center',
+                    typeFilter === 'transfer'
+                      ? 'bg-blue-500/10 text-blue-500'
+                      : 'text-muted-foreground hover:text-blue-500',
+                  )}
+                >
+                  Chuyển tiền
+                </button>
               </div>
 
               {/* Sắp xếp và Chỉ số thống kê: Thẳng hàng và phân bổ đều 2 bên trên mobile, đẩy về phải trên desktop */}

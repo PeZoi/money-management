@@ -8,7 +8,7 @@ function isUuid(v: unknown): v is string {
   return typeof v === "string" && UUID_RE.test(v);
 }
 function parseType(v: unknown): TransactionType | null {
-  return v === "income" || v === "expense" ? v : null;
+  return v === "income" || v === "expense" || v === "transfer" ? v : null;
 }
 
 async function requireUser() {
@@ -48,7 +48,7 @@ export async function GET(req: Request) {
 
   let query = session.supabase
     .from("transactions")
-    .select("*, category:categories(*), account:accounts(*)")
+    .select("*, category:categories(*), account:accounts!account_id(*), to_account:accounts!to_account_id(*)")
     .eq("workspace_id", workspaceId);
 
   // Mặc định lọc theo tháng hiện tại nếu không chỉ định, trừ khi chọn "all"
@@ -99,6 +99,7 @@ export async function POST(req: Request) {
   const type = parseType(body.type);
   const category_id = isUuid(body.category_id) ? body.category_id : null;
   const account_id = isUuid(body.account_id) ? body.account_id : null;
+  const to_account_id = isUuid(body.to_account_id) ? body.to_account_id : null;
   const note = typeof body.note === "string" && body.note.trim() ? body.note.trim() : null;
   const created_at = typeof body.created_at === "string" && !isNaN(Date.parse(body.created_at)) ? body.created_at : null;
 
@@ -116,9 +117,25 @@ export async function POST(req: Request) {
   }
   if (!type) {
     return NextResponse.json(
-      { error: "type phải là 'expense' hoặc 'income'." },
+      { error: "type phải là 'expense', 'income' hoặc 'transfer'." },
       { status: 400 },
     );
+  }
+
+  // Validate transfer: phải có account_id nguồn, không được chuyển vào chính mình
+  if (type === "transfer") {
+    if (!account_id) {
+      return NextResponse.json(
+        { error: "Chuyển tiền cần chỉ định tài khoản nguồn." },
+        { status: 400 },
+      );
+    }
+    if (to_account_id && to_account_id === account_id) {
+      return NextResponse.json(
+        { error: "Tài khoản nguồn và đích không được trùng nhau." },
+        { status: 400 },
+      );
+    }
   }
 
   const { data, error } = await session.supabase
@@ -128,14 +145,15 @@ export async function POST(req: Request) {
         workspace_id,
         amount,
         type,
-        category_id,
+        category_id: type === "transfer" ? null : category_id,
         account_id,
+        to_account_id: type === "transfer" ? to_account_id : null,
         note,
         created_by: session.user.id,
         ...(created_at && { created_at }),
       },
     ])
-    .select("*, category:categories(*), account:accounts(*)")
+    .select("*, category:categories(*), account:accounts!account_id(*), to_account:accounts!to_account_id(*)")
     .single();
 
   if (error) {
