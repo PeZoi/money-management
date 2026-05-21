@@ -1,7 +1,8 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { useWorkspaceStore } from './use-workspace';
 import { CategoryType, CategoryUi } from '@/types/category';
@@ -19,44 +20,28 @@ import {
  */
 export function useCategories() {
   const { activeWorkspaceId } = useWorkspaceStore();
-  const [categories, setCategories] = useState<CategoryUi[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
 
-  const fetchCategories = useCallback(async () => {
-    if (!activeWorkspaceId) {
-      setCategories([]);
-      setIsLoading(false);
-      return;
-    }
-
-    setIsLoading(true);
-    try {
+  const { data: categories = [], isLoading, refetch } = useQuery<CategoryUi[]>({
+    queryKey: ['categories', activeWorkspaceId],
+    queryFn: async () => {
+      if (!activeWorkspaceId) return [];
       const res = await fetch(`/api/categories?workspace_id=${activeWorkspaceId}`);
-      if (res.ok) {
-        const json = await res.json();
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const mapped = (json.data || []).map((c: any) => ({
-          ...c,
-          colorHint: 'slate', // Fallback cho UI
-        }));
-        setCategories(mapped);
-      }
-    } catch (error) {
-      console.error('Failed to fetch categories:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [activeWorkspaceId]);
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchCategories();
-  }, [fetchCategories]);
+      if (!res.ok) throw new Error('Không thể tải danh mục');
+      const json = await res.json();
+      
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return (json.data || []).map((c: any) => ({
+        ...c,
+        colorHint: 'slate', // Fallback cho UI
+      }));
+    },
+    enabled: !!activeWorkspaceId,
+  });
 
   return {
     categories,
     isLoading,
-    fetchCategories,
+    fetchCategories: refetch, // Giữ backward compatibility cho các file gọi hook
   };
 }
 
@@ -65,29 +50,29 @@ export function useCategories() {
  */
 export function useCategoryMutation() {
   const { activeWorkspaceId } = useWorkspaceStore();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const queryClient = useQueryClient();
 
-  const saveCategory = async (
-    payload: Record<string, unknown>,
-    options?: {
-      categoryId?: string;
-      isUpdate?: boolean;
-      workspaceId?: string;
-      onSuccess?: () => void;
-      onError?: (err: Error) => void;
-    }
-  ) => {
-    const { categoryId, isUpdate, workspaceId, onSuccess, onError } = options || {};
+  const mutation = useMutation({
+    mutationFn: async ({
+      payload,
+      options,
+    }: {
+      payload: Record<string, unknown>;
+      options?: {
+        categoryId?: string;
+        isUpdate?: boolean;
+        workspaceId?: string;
+        onSuccess?: () => void;
+        onError?: (err: Error) => void;
+      };
+    }) => {
+      const { categoryId, isUpdate, workspaceId } = options || {};
+      const finalWorkspaceId = workspaceId || activeWorkspaceId;
 
-    const finalWorkspaceId = workspaceId || activeWorkspaceId;
+      if (!isUpdate && !finalWorkspaceId) {
+        throw new Error('Lỗi hệ thống: Không xác định được workspace đang hoạt động.');
+      }
 
-    if (!isUpdate && !finalWorkspaceId) {
-      toast.error('Lỗi hệ thống: Không xác định được workspace đang hoạt động.');
-      return false;
-    }
-
-    setIsSubmitting(true);
-    try {
       const url = isUpdate ? `/api/categories/${categoryId}` : '/api/categories';
       const method = isUpdate ? 'PATCH' : 'POST';
 
@@ -103,26 +88,51 @@ export function useCategoryMutation() {
       });
 
       const result = await response.json();
-
       if (!response.ok) {
         throw new Error(result.error || 'Đã có lỗi xảy ra');
       }
 
+      return result;
+    },
+    onSuccess: (data, variables) => {
+      const isUpdate = variables.options?.isUpdate;
       toast.success(isUpdate ? 'Đã cập nhật danh mục thành công' : 'Đã tạo danh mục thành công');
-      onSuccess?.();
-      return true;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Không thể lưu danh mục';
+      
+      // Invalidate cache categories
+      const finalWorkspaceId = variables.options?.workspaceId || activeWorkspaceId;
+      queryClient.invalidateQueries({
+        queryKey: ['categories', finalWorkspaceId],
+      });
+
+      variables.options?.onSuccess?.();
+    },
+    onError: (error: Error, variables) => {
+      const message = error.message || 'Không thể lưu danh mục';
       toast.error(message);
-      onError?.(error instanceof Error ? error : new Error(message));
+      variables.options?.onError?.(error);
+    },
+  });
+
+  const saveCategory = async (
+    payload: Record<string, unknown>,
+    options?: {
+      categoryId?: string;
+      isUpdate?: boolean;
+      workspaceId?: string;
+      onSuccess?: () => void;
+      onError?: (err: Error) => void;
+    }
+  ) => {
+    try {
+      await mutation.mutateAsync({ payload, options });
+      return true;
+    } catch {
       return false;
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
   return {
-    isSubmitting,
+    isSubmitting: mutation.isPending,
     saveCategory,
   };
 }
