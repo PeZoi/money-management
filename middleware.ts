@@ -11,6 +11,19 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Cho phép truy cập công khai các file tĩnh PWA, manifest và mọi biến thể apple-touch-icon của iOS
+  const isPwaResource =
+    pathname.startsWith("/manifest") ||
+    pathname.includes("apple-touch-icon") ||
+    pathname.includes("icon-app") ||
+    pathname.endsWith(".webmanifest") ||
+    pathname.endsWith(".json") ||
+    pathname.startsWith("/favicon.ico");
+
+  if (isPwaResource) {
+    return NextResponse.next();
+  }
+
   const response = NextResponse.next();
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;

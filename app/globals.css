@@ -128,3 +128,13 @@
     @apply font-sans;
   }
 }
+
+/* Safe area padding cho iOS PWA standalone mode (notch, Dynamic Island, home indicator) */
+@supports (padding-top: env(safe-area-inset-top)) {
+  /* Khi chạy ở chế độ standalone (đã add to home screen) */
+  @media all and (display-mode: standalone) {
+    body {
+      padding-top: env(safe-area-inset-top);
+    }
+  }
+}

@@ -1,21 +1,21 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
 import {
   ArrowRightLeftIcon,
+  EyeIcon,
+  EyeOffIcon,
+  InfoIcon,
+  SparklesIcon,
   TrendingDownIcon,
   TrendingUpIcon,
   WalletIcon,
-  EyeIcon,
-  EyeOffIcon,
-  SparklesIcon,
-  InfoIcon,
 } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 import type { TransactionWithCategory } from '@/types/database';
 import { formatVnd } from '../transaction-ui';
-import { cn } from '@/lib/utils';
 
 import type { FilterType } from '../hooks/use-transactions-page';
 
@@ -107,7 +107,7 @@ export default function TransactionStatsCards({ transactions, isLoading, activeF
   // Render skeleton khi đang tải dữ liệu hoặc component chưa được mount trên client
   if (isLoading || !isMounted) {
     return (
-      <div className="w-full rounded-3xl border bg-card p-5 sm:p-6 shadow-xs animate-pulse">
+      <div className="w-full rounded-3xl border bg-card p-5 sm:p-6 shadow-xs">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
           <div className="md:col-span-5 rounded-2xl bg-muted/40 p-5 flex flex-col justify-between h-[180px]">
             <div>

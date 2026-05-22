@@ -1,0 +1,25 @@
+{
+  "name": "Money+",
+  "short_name": "Money+",
+  "description": "Quản lý tài chính cá nhân an toàn, nhanh.",
+  "theme_color": "#16a34a",
+  "background_color": "#ffffff",
+  "display": "standalone",
+  "start_url": "/?homescreen=1",
+  "scope": "/",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon-app.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-app.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
