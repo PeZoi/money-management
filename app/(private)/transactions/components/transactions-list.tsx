@@ -10,7 +10,7 @@ import {
   ReceiptTextIcon,
   Trash2Icon,
 } from 'lucide-react';
-import { useState, useRef, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import IconPreview from '@/components/icons/icon-preview';
 import { Badge } from '@/components/ui/badge';
@@ -55,6 +55,7 @@ function TransactionRow({
   onRequestDelete: (id: string) => void;
 }) {
   const rowRef = useRef<HTMLDivElement>(null);
+  const deleteBtnRef = useRef<HTMLButtonElement>(null);
   const touchStart = useRef({ x: 0, y: 0 });
   const currentX = useRef(0);
   const isOpen = useRef(false);
@@ -69,6 +70,10 @@ function TransactionRow({
     // Tắt transition để khi vuốt ngón tay phản hồi ngay lập tức không bị trễ
     if (rowRef.current) {
       rowRef.current.style.transition = 'none';
+    }
+    if (deleteBtnRef.current) {
+      deleteBtnRef.current.style.transition = 'none';
+      deleteBtnRef.current.style.visibility = 'visible';
     }
   };
 
@@ -97,25 +102,43 @@ function TransactionRow({
 
     currentX.current = targetX;
     if (rowRef.current) {
-      rowRef.current.style.transform = `translateX(${targetX}px)`;
+      rowRef.current.style.transform = `translate3d(${targetX}px, 0, 0)`;
+    }
+
+    // Điều chỉnh độ mờ (opacity) của nút xóa tỉ lệ với khoảng cách kéo
+    if (deleteBtnRef.current) {
+      const opacity = Math.min(1, Math.abs(targetX) / 80);
+      deleteBtnRef.current.style.opacity = String(opacity);
     }
   };
 
   // Thả tay
   const handleTouchEnd = () => {
     isDragging.current = false;
+    
     if (rowRef.current) {
       rowRef.current.style.transition = 'transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)';
+    }
+    if (deleteBtnRef.current) {
+      deleteBtnRef.current.style.transition = 'opacity 0.25s ease, visibility 0.25s ease';
+    }
 
-      // Nếu vuốt qua trái hơn nửa chặng đường (-40px) thì mở hoàn toàn nút xóa (-80px)
-      if (currentX.current < -40) {
-        rowRef.current.style.transform = 'translateX(-80px)';
-        isOpen.current = true;
-        currentX.current = -80;
-      } else {
-        rowRef.current.style.transform = 'translateX(0px)';
-        isOpen.current = false;
-        currentX.current = 0;
+    // Nếu vuốt qua trái hơn nửa chặng đường (-40px) thì mở hoàn toàn nút xóa (-80px)
+    if (currentX.current < -40) {
+      if (rowRef.current) rowRef.current.style.transform = 'translate3d(-80px, 0, 0)';
+      isOpen.current = true;
+      currentX.current = -80;
+      if (deleteBtnRef.current) {
+        deleteBtnRef.current.style.opacity = '1';
+        deleteBtnRef.current.style.visibility = 'visible';
+      }
+    } else {
+      if (rowRef.current) rowRef.current.style.transform = 'translate3d(0px, 0, 0)';
+      isOpen.current = false;
+      currentX.current = 0;
+      if (deleteBtnRef.current) {
+        deleteBtnRef.current.style.opacity = '0';
+        deleteBtnRef.current.style.visibility = 'hidden';
       }
     }
   };
@@ -123,9 +146,16 @@ function TransactionRow({
   // Tự động đóng lại khi người dùng nhấp ra ngoài khu vực hàng đang mở
   useEffect(() => {
     const handleGlobalClick = () => {
-      if (isOpen.current && rowRef.current) {
-        rowRef.current.style.transition = 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)';
-        rowRef.current.style.transform = 'translateX(0px)';
+      if (isOpen.current) {
+        if (rowRef.current) {
+          rowRef.current.style.transition = 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)';
+          rowRef.current.style.transform = 'translate3d(0px, 0, 0)';
+        }
+        if (deleteBtnRef.current) {
+          deleteBtnRef.current.style.transition = 'opacity 0.2s ease, visibility 0.2s ease';
+          deleteBtnRef.current.style.opacity = '0';
+          deleteBtnRef.current.style.visibility = 'hidden';
+        }
         isOpen.current = false;
         currentX.current = 0;
       }
@@ -152,18 +182,19 @@ function TransactionRow({
         isTransfer ? 'hover:border-blue-500/35' : isIncome ? 'hover:border-emerald-500/35' : 'hover:border-rose-500/35',
       )}
     >
-      {/* Nút Xoá nằm chìm bên dưới (Chỉ hiển thị trên mobile) */}
+      {/* Nút Xoá nằm chìm bên dưới (Chỉ hiển thị trên mobile, mặc định ẩn để tránh lộ viền) */}
       <button
+        ref={deleteBtnRef}
         type="button"
         onClick={(e) => {
           e.stopPropagation();
           onRequestDelete(t.id);
         }}
-        className="absolute right-0 top-0 bottom-0 z-0 flex w-20 items-center justify-center bg-rose-500 font-semibold text-white transition-colors hover:bg-rose-600 active:bg-rose-700 md:hidden"
+        className="absolute right-0 top-0 bottom-0 z-0 flex w-20 items-center justify-center bg-linear-to-l from-rose-600 to-rose-500 rounded-r-2xl font-semibold text-white shadow-inner active:opacity-90 md:hidden opacity-0 invisible transition-all duration-200"
       >
-        <div className="flex flex-col items-center gap-1">
+        <div className="flex flex-col items-center gap-1.5 transition-transform duration-200 active:scale-95">
           <Trash2Icon className="size-5" />
-          <span className="text-[10px] font-medium">Xóa</span>
+          <span className="text-[10px] font-semibold tracking-wide">Xóa</span>
         </div>
       </button>
 
@@ -177,7 +208,12 @@ function TransactionRow({
           if (isOpen.current) {
             e.stopPropagation();
             rowRef.current!.style.transition = 'transform 0.2s ease';
-            rowRef.current!.style.transform = 'translateX(0px)';
+            rowRef.current!.style.transform = 'translate3d(0px, 0, 0)';
+            if (deleteBtnRef.current) {
+              deleteBtnRef.current.style.transition = 'opacity 0.2s ease, visibility 0.2s ease';
+              deleteBtnRef.current.style.opacity = '0';
+              deleteBtnRef.current.style.visibility = 'hidden';
+            }
             isOpen.current = false;
             currentX.current = 0;
             return;

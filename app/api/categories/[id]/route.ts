@@ -83,12 +83,6 @@ export async function PATCH(req: Request, context: RouteContext) {
     }
     patch.icon = body.icon.trim();
   }
-  if ("color" in body) {
-    if (typeof body.color !== "string" || !body.color.trim()) {
-      return NextResponse.json({ error: "color phải là chuỗi không rỗng." }, { status: 400 });
-    }
-    patch.color = body.color.trim();
-  }
   if ("type" in body) {
     const t = parseTransactionType(body.type);
     if (!t) {

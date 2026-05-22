@@ -1,18 +1,16 @@
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
-import { useWorkspaceStore } from './use-workspace';
-import { CategoryType, CategoryUi } from '@/types/category';
 import {
-  categorySchema,
   categoryDefaultValues,
   type CategoryFormValues,
-  DEFAULT_CATEGORY_COLOR,
-  isValidHex6,
+  categorySchema,
 } from '@/lib/validations/category-schema';
+import { CategoryType, CategoryUi } from '@/types/category';
+import { useWorkspaceStore } from './use-workspace';
 
 
 /**
@@ -28,12 +26,8 @@ export function useCategories() {
       const res = await fetch(`/api/categories?workspace_id=${activeWorkspaceId}`);
       if (!res.ok) throw new Error('Không thể tải danh mục');
       const json = await res.json();
-      
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return (json.data || []).map((c: any) => ({
-        ...c,
-        colorHint: 'slate', // Fallback cho UI
-      }));
+
+      return json.data || [];
     },
     enabled: !!activeWorkspaceId,
   });
@@ -97,7 +91,7 @@ export function useCategoryMutation() {
     onSuccess: (data, variables) => {
       const isUpdate = variables.options?.isUpdate;
       toast.success(isUpdate ? 'Đã cập nhật danh mục thành công' : 'Đã tạo danh mục thành công');
-      
+
       // Invalidate cache categories
       const finalWorkspaceId = variables.options?.workspaceId || activeWorkspaceId;
       queryClient.invalidateQueries({
@@ -110,6 +104,26 @@ export function useCategoryMutation() {
       const message = error.message || 'Không thể lưu danh mục';
       toast.error(message);
       variables.options?.onError?.(error);
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/categories/${id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const json = await res.json();
+        throw new Error(json.error || 'Xóa thất bại');
+      }
+      return true;
+    },
+    onSuccess: () => {
+      toast.success('Đã xóa danh mục thành công');
+      queryClient.invalidateQueries({
+        queryKey: ['categories', activeWorkspaceId],
+      });
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || 'Không thể xóa danh mục');
     },
   });
 
@@ -131,15 +145,25 @@ export function useCategoryMutation() {
     }
   };
 
+  const deleteCategory = async (id: string, options?: { onSuccess?: () => void }) => {
+    try {
+      await deleteMutation.mutateAsync(id);
+      options?.onSuccess?.();
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
   return {
-    isSubmitting: mutation.isPending,
+    isSubmitting: mutation.isPending || deleteMutation.isPending,
     saveCategory,
+    deleteCategory,
   };
 }
 
 
-// Re-export từ schema mới để giữ backward compatibility
-export { DEFAULT_CATEGORY_COLOR, isValidHex6 } from '@/lib/validations/category-schema';
+
 
 /**
  * Hook quản lý toàn bộ state và logic submit của form danh mục
@@ -153,7 +177,6 @@ export function useCategoryForm(options: {
     name: string;
     type: CategoryType;
     icon: string;
-    color: string;
   };
   workspaceId?: string;
   onSuccess?: () => void;
@@ -165,7 +188,7 @@ export function useCategoryForm(options: {
   const form = useForm<CategoryFormValues>({
     resolver: zodResolver(categorySchema),
     defaultValues: initialData
-      ? { name: initialData.name, type: initialData.type, icon: initialData.icon, color: initialData.color }
+      ? { name: initialData.name, type: initialData.type, icon: initialData.icon }
       : categoryDefaultValues,
   });
 
@@ -180,7 +203,7 @@ export function useCategoryForm(options: {
     if (open) {
       form.reset(
         initialData
-          ? { name: initialData.name, type: initialData.type, icon: initialData.icon, color: initialData.color }
+          ? { name: initialData.name, type: initialData.type, icon: initialData.icon }
           : categoryDefaultValues,
       );
     }
@@ -196,7 +219,6 @@ export function useCategoryForm(options: {
     const payload = {
       name: data.name.trim(),
       icon: data.icon,
-      color: isValidHex6(data.color) ? data.color : DEFAULT_CATEGORY_COLOR,
       type: data.type,
     };
 
@@ -216,14 +238,12 @@ export function useCategoryForm(options: {
   const draftName = form.watch('name');
   const draftType = form.watch('type');
   const draftIcon = form.watch('icon');
-  const draftColor = form.watch('color');
 
   return {
     form,
     draftName, setDraftName: (v: string) => form.setValue('name', v),
     draftType, setDraftType: (v: CategoryType) => form.setValue('type', v),
     draftIcon, setDraftIcon: (v: string) => form.setValue('icon', v),
-    draftColor, setDraftColor: (v: string) => form.setValue('color', v, { shouldValidate: true }),
     isSubmitting,
     isUpdate,
     handleSubmit,

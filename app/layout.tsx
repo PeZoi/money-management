@@ -64,7 +64,7 @@ export default function RootLayout({
         <link rel="icon" type="image/png" href="/icon-app.png" />
         <link rel="manifest" href="/manifest.webmanifest" />
       </head>
-      <body className="min-h-full flex flex-col">
+      <body className="min-h-[100dvh] flex flex-col">
         <ThemeProvider>
           <QueryProvider>
             <TooltipProvider>{children}</TooltipProvider>

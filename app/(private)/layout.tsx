@@ -34,9 +34,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </div>
           </header>
           {children}
-          <BottomNav />
         </SidebarInset>
       </SidebarProvider>
+      <BottomNav />
       <ConfirmDialog />
     </>
   );

@@ -77,8 +77,6 @@ export async function POST(req: Request) {
   const workspace_id = typeof body.workspace_id === "string" ? body.workspace_id.trim() : "";
   const name = typeof body.name === "string" ? body.name.trim() : "";
   const icon = typeof body.icon === "string" ? body.icon.trim() : "";
-  const colorRaw = typeof body.color === "string" ? body.color.trim() : "";
-  const color = colorRaw.length > 0 ? colorRaw : "#64748b";
   const type = parseTransactionType(body.type);
 
   if (!workspace_id || !isUuid(workspace_id)) {
@@ -98,7 +96,6 @@ export async function POST(req: Request) {
     workspace_id,
     name,
     icon,
-    color,
     type,
   };
 

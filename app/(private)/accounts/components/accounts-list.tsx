@@ -229,6 +229,11 @@ function AccountCard({ account, isSubmitting, onEdit, onDelete, onActivate }: Ac
           aria-hidden
         />
 
+        {/* Icon mờ nghệ thuật (watermark) lớn ở góc dưới bên phải */}
+        <div className="absolute -right-3 -bottom-5 pointer-events-none select-none opacity-[0.08] dark:opacity-[0.05] text-8xl transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6">
+          {account.icon}
+        </div>
+
         {/* Active badge */}
         {account.is_active && (
           <div className="absolute right-3 top-3 z-10">

@@ -11,16 +11,9 @@ import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { Loader2Icon, SearchIcon, TrendingDownIcon, TrendingUpIcon } from 'lucide-react';
 
-import { DEFAULT_CATEGORY_COLOR, isValidHex6, useCategoryForm } from '@/hooks/use-categories';
+import { useCategoryForm } from '@/hooks/use-categories';
 import { CategoryType } from '@/types/category';
-import { categoryCardAccentStyle, typeBadgeClass, typeLabel } from '../category-ui';
-
-function normalizeHexInput(raw: string): string {
-  let s = raw.trim().replace(/[^#0-9a-fA-F]/g, '');
-  if (!s.startsWith('#')) s = `#${s}`;
-  if (s.length > 7) s = s.slice(0, 7);
-  return s;
-}
+import { typeBadgeClass, typeLabel } from '../category-ui';
 
 type CreateCategoryDialogProps = {
   open: boolean;
@@ -30,7 +23,6 @@ type CreateCategoryDialogProps = {
     name: string;
     type: CategoryType;
     icon: string;
-    color: string;
   };
   workspaceId?: string; // Required for creating new categories
   onSuccess?: () => void;
@@ -51,8 +43,6 @@ export default function CreateCategoryDialog({
     setDraftType,
     draftIcon,
     setDraftIcon,
-    draftColor,
-    setDraftColor,
     isSubmitting,
     isUpdate,
     handleSubmit,
@@ -158,67 +148,38 @@ export default function CreateCategoryDialog({
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row justify-between gap-5">
-            <div className="grid gap-2">
-              <div className="flex flex-col gap-1">
-                <Label htmlFor="category-color">Màu nền thẻ danh mục</Label>
-              </div>
-              <div className="flex flex-col gap-4">
-                <div className="flex flex-wrap items-center gap-3">
-                  <input
-                    id="category-color"
-                    aria-label="Chọn màu nền thẻ danh mục"
-                    type="color"
-                    value={isValidHex6(draftColor) ? draftColor : DEFAULT_CATEGORY_COLOR}
-                    onChange={(e) => setDraftColor(e.target.value)}
-                    disabled={isSubmitting}
-                    className="h-11 w-16 shrink-0 cursor-pointer rounded-xl border border-input bg-background p-1 shadow-xs disabled:opacity-50"
-                  />
-                  <Input
-                    value={draftColor}
-                    onChange={(e) => setDraftColor(normalizeHexInput(e.target.value))}
-                    placeholder="#64748b"
-                    spellCheck={false}
-                    disabled={isSubmitting}
-                    className="h-11 max-w-44 rounded-xl font-mono text-sm"
-                    maxLength={7}
-                  />
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-5 flex-1">
-              <Separator orientation="vertical" className="h-full" />
-              <div className="grid gap-2">
-                <Label>Icon</Label>
-                <div className="flex flex-wrap items-center gap-2">
-                  <IconPickerDialog
-                    value={draftIcon}
-                    onChange={setDraftIcon}
-                    className="rounded-xl"
-                    disabled={isSubmitting}
-                  />
-                </div>
-              </div>
+          <div className="grid gap-2">
+            <Label>Icon danh mục</Label>
+            <div className="flex flex-wrap items-center gap-2">
+              <IconPickerDialog
+                value={draftIcon}
+                onChange={setDraftIcon}
+                className="rounded-xl"
+                disabled={isSubmitting}
+              />
             </div>
           </div>
 
           <Separator />
           <div>
             <p className="mb-2 text-xs font-medium text-muted-foreground">Xem trước thẻ</p>
-            <div className="relative max-w-sm overflow-hidden rounded-2xl border bg-card shadow-sm">
-              <div
-                className="pointer-events-none absolute inset-0"
-                style={categoryCardAccentStyle(isValidHex6(draftColor) ? draftColor : undefined)}
-                aria-hidden
-              />
+            <div className={cn(
+              "relative max-w-sm overflow-hidden rounded-2xl border bg-card shadow-xs transition-colors duration-300",
+              draftType === 'income' ? 'hover:border-emerald-500/30' : 'hover:border-rose-500/30'
+            )}>
               <div className="relative flex items-center gap-3 p-3">
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-xl border bg-background/80 shadow-sm">
+                <div className={cn(
+                  "flex size-10 shrink-0 items-center justify-center rounded-xl border transition-colors",
+                  draftType === 'income' 
+                    ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-500' 
+                    : 'border-rose-500/20 bg-rose-500/10 text-rose-500'
+                )}>
                   <IconPreview name={draftIcon} className="size-5" />
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="truncate font-semibold">{draftName.trim() || 'Tên danh mục'}</span>
-                    <Badge className={cn('shrink-0 rounded-xl border text-xs', typeBadgeClass(draftType))}>
+                    <span className="truncate font-semibold text-sm">{draftName.trim() || 'Tên danh mục'}</span>
+                    <Badge className={cn('shrink-0 rounded-xl border px-2 py-0.5 text-[10px] font-semibold', typeBadgeClass(draftType))}>
                       {typeLabel(draftType)}
                     </Badge>
                   </div>

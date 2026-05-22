@@ -62,7 +62,7 @@ export default function TransactionsPage() {
         description="Ghi nhận thu — chi, lọc và tìm kiếm nhanh."
         icon={ArrowLeftRightIcon}
         headerActions={
-          <Button type="button" className="rounded-xl" onClick={() => setCreateOpen(true)}>
+          <Button type="button" className="hidden md:inline-flex rounded-xl" onClick={() => setCreateOpen(true)}>
             <PlusIcon className="mr-2 size-4" aria-hidden />
             Thêm giao dịch
           </Button>

@@ -5,10 +5,10 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import { PencilIcon, PlusIcon, SparklesIcon } from 'lucide-react';
+import { PencilIcon, PlusIcon, SparklesIcon, Trash2Icon } from 'lucide-react';
 
 import { CategoryUi } from '@/types/category';
-import { categoryCardAccentStyle, typeBadgeClass, typeLabel } from '../category-ui';
+import { typeBadgeClass, typeLabel } from '../category-ui';
 
 type CategoriesListProps = {
   categories: CategoryUi[];
@@ -16,15 +16,230 @@ type CategoriesListProps = {
   onClearSearch: () => void;
   onRequestCreate: () => void;
   onRequestEdit: (category: CategoryUi) => void;
+  onRequestDelete: (id: string) => void;
 };
 
-// Helper chuyển mã màu Hex sang RGB để làm bóng mờ bằng Tailwind CSS
-function hexToRgb(hex: string) {
-  const raw = /^#[0-9a-fA-F]{6}$/.test(hex) ? hex : '#64748b';
-  const r = parseInt(raw.slice(1, 3), 16);
-  const g = parseInt(raw.slice(3, 5), 16);
-  const b = parseInt(raw.slice(5, 7), 16);
-  return `${r}, ${g}, ${b}`;
+
+
+import { useEffect, useRef } from 'react';
+
+// Component danh mục hỗ trợ vuốt kéo sang trái (Swipe Left to Delete)
+function CategoryCard({
+  c,
+  onRequestEdit,
+  onRequestDelete,
+}: {
+  c: CategoryUi;
+  onRequestEdit: (category: CategoryUi) => void;
+  onRequestDelete: (id: string) => void;
+}) {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const deleteBtnRef = useRef<HTMLButtonElement>(null);
+  const touchStart = useRef({ x: 0, y: 0 });
+  const currentX = useRef(0);
+  const isOpen = useRef(false);
+  const isDragging = useRef(false);
+
+  // Bắt đầu chạm
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    touchStart.current = { x: touch.clientX, y: touch.clientY };
+    isDragging.current = true;
+
+    // Tắt transition để di chuyển phản hồi ngay lập tức
+    if (cardRef.current) {
+      cardRef.current.style.transition = 'none';
+    }
+    if (deleteBtnRef.current) {
+      deleteBtnRef.current.style.transition = 'none';
+      deleteBtnRef.current.style.visibility = 'visible';
+    }
+  };
+
+  // Kéo di chuyển
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging.current) return;
+    const touch = e.touches[0];
+    const diffX = touch.clientX - touchStart.current.x;
+    const diffY = touch.clientY - touchStart.current.y;
+
+    // Bỏ qua nếu cuộn dọc nhiều hơn kéo ngang
+    if (Math.abs(diffY) > Math.abs(diffX)) return;
+
+    // Kéo sang trái: targetX âm
+    let targetX = isOpen.current ? diffX - 80 : diffX;
+
+    // Tạo hiệu ứng đàn hồi khi kéo quá -80px
+    if (targetX < -80) {
+      targetX = -80 + (targetX + 80) * 0.35;
+    }
+    // Giới hạn kéo dương (sang phải) để tránh lệch
+    if (targetX > 0) {
+      targetX = targetX * 0.25;
+    }
+
+    currentX.current = targetX;
+    if (cardRef.current) {
+      cardRef.current.style.transform = `translate3d(${targetX}px, 0, 0)`;
+    }
+
+    // Điều chỉnh độ mờ (opacity) của nút xóa tỉ lệ với khoảng cách kéo
+    if (deleteBtnRef.current) {
+      const opacity = Math.min(1, Math.abs(targetX) / 80);
+      deleteBtnRef.current.style.opacity = String(opacity);
+    }
+  };
+
+  // Thả tay ra
+  const handleTouchEnd = () => {
+    isDragging.current = false;
+    
+    // Thiết lập lại transition mượt mà
+    if (cardRef.current) {
+      cardRef.current.style.transition = 'transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)';
+    }
+    if (deleteBtnRef.current) {
+      deleteBtnRef.current.style.transition = 'opacity 0.25s ease, visibility 0.25s ease';
+    }
+
+    if (cardRef.current) {
+      // Nếu kéo sang trái hơn 40px thì mở nút xóa bên phải hoàn toàn ở vị trí -80px
+      if (currentX.current < -40) {
+        cardRef.current.style.transform = 'translate3d(-80px, 0, 0)';
+        isOpen.current = true;
+        currentX.current = -80;
+        if (deleteBtnRef.current) {
+          deleteBtnRef.current.style.opacity = '1';
+          deleteBtnRef.current.style.visibility = 'visible';
+        }
+      } else {
+        cardRef.current.style.transform = 'translate3d(0px, 0, 0)';
+        isOpen.current = false;
+        currentX.current = 0;
+        if (deleteBtnRef.current) {
+          deleteBtnRef.current.style.opacity = '0';
+          deleteBtnRef.current.style.visibility = 'hidden';
+        }
+      }
+    }
+  };
+
+  // Tự động đóng lại khi nhấp bên ngoài
+  useEffect(() => {
+    const handleGlobalClick = () => {
+      if (isOpen.current) {
+        if (cardRef.current) {
+          cardRef.current.style.transition = 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)';
+          cardRef.current.style.transform = 'translate3d(0px, 0, 0)';
+        }
+        if (deleteBtnRef.current) {
+          deleteBtnRef.current.style.transition = 'opacity 0.2s ease, visibility 0.2s ease';
+          deleteBtnRef.current.style.opacity = '0';
+          deleteBtnRef.current.style.visibility = 'hidden';
+        }
+        isOpen.current = false;
+        currentX.current = 0;
+      }
+    };
+
+    document.addEventListener('click', handleGlobalClick);
+    return () => document.removeEventListener('click', handleGlobalClick);
+  }, []);
+
+  return (
+    <div
+      className={cn(
+        "group relative overflow-hidden rounded-2xl border border-border/50 bg-gray-200 dark:bg-muted/20 shadow-xs transition-all duration-300",
+        c.type === 'income' 
+          ? "hover:border-emerald-500/35 hover:shadow-[0_12px_24px_-8px_rgba(16,185,129,0.15)]" 
+          : "hover:border-rose-500/35 hover:shadow-[0_12px_24px_-8px_rgba(244,63,94,0.15)]"
+      )}
+    >
+      {/* Nút Xóa sang trọng nằm chìm bên dưới phía bên phải (Chỉ hiển thị trên mobile, mặc định ẩn bằng opacity-0 để tránh lộ viền) */}
+      <button
+        ref={deleteBtnRef}
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onRequestDelete(c.id);
+        }}
+        className="absolute right-0 top-0 bottom-0 z-0 flex w-20 items-center justify-center bg-linear-to-l from-rose-600 to-rose-500 rounded-r-2xl text-white font-semibold shadow-inner active:opacity-90 md:hidden opacity-0 invisible transition-all duration-200 border border-transparent"
+      >
+        <div className="flex flex-col items-center gap-1.5 transition-transform duration-200 active:scale-95">
+          <Trash2Icon className="size-5" />
+          <span className="text-[10px] font-semibold tracking-wide">Xóa</span>
+        </div>
+      </button>
+
+      {/* Panel nội dung chính nằm phía trên */}
+      <div
+        ref={cardRef}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onClick={(e) => {
+          if (isOpen.current) {
+            e.stopPropagation();
+            cardRef.current!.style.transition = 'transform 0.2s ease';
+            cardRef.current!.style.transform = 'translate3d(0px, 0, 0)';
+            if (deleteBtnRef.current) {
+              deleteBtnRef.current.style.transition = 'opacity 0.2s ease, visibility 0.2s ease';
+              deleteBtnRef.current.style.opacity = '0';
+              deleteBtnRef.current.style.visibility = 'hidden';
+            }
+            isOpen.current = false;
+            currentX.current = 0;
+            return;
+          }
+          onRequestEdit(c);
+        }}
+        className="relative z-10 flex h-full cursor-pointer items-start gap-3 bg-card p-4 transition-all duration-300 select-none w-full"
+      >
+        <div className="relative flex items-start gap-3 w-full">
+          {/* Icon Container */}
+          <div className={cn(
+            "flex size-11 shrink-0 items-center justify-center rounded-2xl border bg-background/80 shadow-xs transition-all duration-300 group-hover:scale-105 group-hover:bg-background",
+            c.type === 'income' 
+              ? "border-emerald-500/20 text-emerald-500 group-hover:border-emerald-500/40" 
+              : "border-rose-500/20 text-rose-500 group-hover:border-rose-500/40"
+          )}>
+            <IconPreview
+              name={c.icon}
+              className="size-5 transition-transform duration-300 group-hover:scale-110"
+            />
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <h3 className="truncate font-semibold tracking-tight text-foreground/95 transition-colors group-hover:text-foreground">
+                  {c.name}
+                </h3>
+                <p className="mt-0.5 truncate text-[10px] text-muted-foreground font-medium">
+                  Icon: <span className="font-mono text-muted-foreground/80">{c.icon}</span>
+                </p>
+              </div>
+              <Badge
+                className={cn(
+                  'shrink-0 rounded-xl border font-semibold px-2 py-0.5 text-[10px] transition-all',
+                  typeBadgeClass(c.type),
+                )}
+              >
+                {typeLabel(c.type)}
+              </Badge>
+            </div>
+          </div>
+        </div>
+
+        {/* Nút chỉ báo chỉnh sửa nhỏ ở góc phải dưới khi hover (PC) */}
+        <div className="absolute right-3.5 bottom-3.5 opacity-0 scale-90 group-hover:opacity-100 group-hover:scale-100 transition-all duration-200 pointer-events-none">
+          <div className="rounded-lg p-1.5 bg-muted/60 text-muted-foreground/80 border border-muted/80 backdrop-blur-xs">
+            <PencilIcon className="size-3.5" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default function CategoriesList({
@@ -33,6 +248,7 @@ export default function CategoriesList({
   onClearSearch,
   onRequestCreate,
   onRequestEdit,
+  onRequestDelete,
 }: CategoriesListProps) {
   // Trạng thái Loading: Hiển thị 8 thẻ Skeleton giả lập cấu trúc
   if (isLoading) {
@@ -92,74 +308,14 @@ export default function CategoriesList({
 
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-      {categories.map((c) => {
-        const catColor = c.color || '#64748b';
-        const colorRgb = hexToRgb(catColor);
-
-        return (
-          <div
-            key={c.id}
-            className={cn(
-              'group relative overflow-hidden rounded-2xl border bg-card shadow-xs transition-all duration-300 cursor-pointer',
-              'hover:-translate-y-0.5 hover:border-(--category-color)/40',
-              'hover:shadow-[0_12px_24px_-8px_rgba(var(--category-color-rgb),0.18)]',
-            )}
-            style={
-              {
-                '--category-color': catColor,
-                '--category-color-rgb': colorRgb,
-                ...categoryCardAccentStyle(catColor),
-              } as React.CSSProperties
-            }
-            onClick={() => onRequestEdit(c)}
-          >
-            {/* Gradient nền theo mã màu danh mục */}
-            <div
-              className={cn(
-                'pointer-events-none absolute inset-0 transition-opacity duration-300 group-hover:opacity-100',
-              )}
-            />
-
-            <div className="relative flex items-start gap-3 p-4">
-              {/* Icon Container */}
-              <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl border border-input/60 bg-background/80 shadow-xs transition-all duration-300 group-hover:scale-105 group-hover:bg-background group-hover:border-(--category-color)/30">
-                <IconPreview
-                  name={c.icon}
-                  className="size-5 text-(--category-color) transition-transform duration-300 group-hover:scale-110"
-                />
-              </div>
-
-              <div className="min-w-0 flex-1">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <h3 className="truncate font-semibold tracking-tight text-foreground/95 transition-colors group-hover:text-foreground">
-                      {c.name}
-                    </h3>
-                    <p className="mt-0.5 truncate text-[10px] text-muted-foreground font-medium">
-                      Icon: <span className="font-mono text-muted-foreground/80">{c.icon}</span>
-                    </p>
-                  </div>
-                  <Badge
-                    className={cn(
-                      'shrink-0 rounded-xl border font-semibold px-2 py-0.5 text-[10px] transition-all',
-                      typeBadgeClass(c.type),
-                    )}
-                  >
-                    {typeLabel(c.type)}
-                  </Badge>
-                </div>
-              </div>
-            </div>
-
-            {/* Nút chỉ báo hành động chỉnh sửa nhỏ ở góc phải dưới khi hover */}
-            <div className="absolute right-3.5 bottom-3.5 opacity-0 scale-90 group-hover:opacity-100 group-hover:scale-100 transition-all duration-200 pointer-events-none">
-              <div className="rounded-lg p-1.5 bg-muted/60 text-muted-foreground/80 border border-muted/80 backdrop-blur-xs">
-                <PencilIcon className="size-3.5" />
-              </div>
-            </div>
-          </div>
-        );
-      })}
+      {categories.map((c) => (
+        <CategoryCard
+          key={c.id}
+          c={c}
+          onRequestEdit={onRequestEdit}
+          onRequestDelete={onRequestDelete}
+        />
+      ))}
     </div>
   );
 }

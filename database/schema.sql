@@ -99,7 +99,6 @@ create table public.categories (
   workspace_id uuid not null references public.workspaces(id) on delete cascade,
   name text not null,
   icon text not null,
-  color text not null default '#64748b',
   type transaction_type not null,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
