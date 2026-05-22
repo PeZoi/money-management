@@ -26,6 +26,7 @@ import {
   CalendarIcon,
   CoinsIcon,
   EyeIcon,
+  MailIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ArchivedTransactionsList from "./components/archived-transactions-list";
@@ -93,6 +94,10 @@ export default function SettingsPage() {
     formatVND,
     formatDate,
     isCurrentOwner,
+    invitations,
+    invitationsLoading,
+    acceptInvitation,
+    declineInvitation,
   } = useSettings();
 
 
@@ -141,6 +146,23 @@ export default function SettingsPage() {
           >
             <ArchiveIcon className="size-4" />
             Nhóm đã lưu trữ
+          </button>
+          <button
+            onClick={() => setActiveTab("invitations")}
+            className={cn(
+              "pb-4 text-sm font-semibold border-b-2 transition-colors relative flex items-center gap-2",
+              activeTab === "invitations"
+                ? "border-primary text-primary"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <MailIcon className="size-4" />
+            Lời mời
+            {invitations.length > 0 && (
+              <span className="ml-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 text-xxs font-bold text-destructive-foreground animate-pulse">
+                {invitations.length}
+              </span>
+            )}
           </button>
         </div>
       </div>
@@ -441,6 +463,78 @@ export default function SettingsPage() {
                         >
                           <TrashIcon className="mr-1.5 size-3.5" />
                           Xóa khỏi tôi
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+          </div>
+        )}
+
+        {/* Tab 4: Invitations */}
+        {activeTab === "invitations" && (
+          <div className="grid gap-6">
+            <section className="rounded-xl border border-border bg-card p-5 shadow-xs">
+              <h2 className="text-base font-semibold">Lời mời vào nhóm chi tiêu</h2>
+              <p className="text-xs text-muted-foreground mt-1">Danh sách các nhóm chi tiêu chung mời bạn tham gia.</p>
+
+              {invitationsLoading ? (
+                <div className="py-12 text-center text-sm text-muted-foreground flex items-center justify-center gap-2">
+                  <Loader2Icon className="h-4 w-4 animate-spin text-primary" />
+                  Đang tải danh sách lời mời...
+                </div>
+              ) : invitations.length === 0 ? (
+                <div className="py-16 text-center text-sm text-muted-foreground flex flex-col items-center justify-center gap-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground/60">
+                    <MailIcon className="h-6 w-6" />
+                  </div>
+                  <span className="font-medium text-muted-foreground">Bạn không có lời mời nào mới.</span>
+                </div>
+              ) : (
+                <div className="mt-4 divide-y divide-border">
+                  {invitations.map((inv) => (
+                    <div key={inv.invitation_id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-4 gap-4">
+                      <div className="flex items-start gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary mt-0.5">
+                          <UsersIcon className="h-5 w-5" />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="font-semibold text-sm text-foreground flex items-center gap-1.5 flex-wrap">
+                            <span>{inv.workspace_name}</span>
+                            <span className="inline-flex items-center rounded-sm bg-primary/10 px-1.5 py-0.5 text-xxs font-medium text-primary">
+                              Lời mời mới
+                            </span>
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            Người mời: <span className="font-medium text-foreground">{inv.invited_by_email}</span>
+                          </div>
+                          <div className="text-xxs text-muted-foreground mt-0.5 flex items-center gap-1">
+                            <CalendarIcon className="size-3" />
+                            Nhận lúc: {formatDate(inv.created_at)}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-2 self-end sm:self-center shrink-0">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={isSubmitting}
+                          onClick={() => declineInvitation(inv.invitation_id)}
+                          className="text-xs border-destructive/20 text-destructive hover:bg-destructive/10 hover:border-destructive/30"
+                        >
+                          Từ chối
+                        </Button>
+                        <Button
+                          size="sm"
+                          disabled={isSubmitting}
+                          onClick={() => acceptInvitation(inv.invitation_id)}
+                          className="text-xs"
+                        >
+                          {isSubmitting && <Loader2Icon className="mr-1.5 size-3.5 animate-spin" />}
+                          Chấp nhận
                         </Button>
                       </div>
                     </div>

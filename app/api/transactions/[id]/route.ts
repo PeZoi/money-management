@@ -50,7 +50,7 @@ export async function DELETE(
     return NextResponse.json({ error: "Giao dịch không tồn tại." }, { status: 404 });
   }
 
-  const isArchived = (txData.workspaces as any)?.is_archived;
+  const isArchived = (txData.workspaces as { is_archived: boolean } | null)?.is_archived;
   if (isArchived) {
     return NextResponse.json(
       { error: "Nhóm này đã giải tán, không thể xóa giao dịch." },
@@ -109,7 +109,7 @@ export async function PUT(
     return NextResponse.json({ error: "Giao dịch không tồn tại." }, { status: 404 });
   }
 
-  const isArchived = (txData.workspaces as any)?.is_archived;
+  const isArchived = (txData.workspaces as { is_archived: boolean } | null)?.is_archived;
   if (isArchived) {
     return NextResponse.json(
       { error: "Nhóm này đã giải tán, không thể cập nhật giao dịch." },

@@ -52,7 +52,7 @@ export async function GET(req: Request) {
 
   const memberMap = new Map<string, { display_name: string; email: string; avatar_url: string | null }>();
   if (!membersError && members) {
-    (members as any[]).forEach((m) => {
+    (members as { user_id: string; display_name: string; email: string; avatar_url: string | null }[]).forEach((m) => {
       memberMap.set(m.user_id, {
         display_name: m.display_name,
         email: m.email,

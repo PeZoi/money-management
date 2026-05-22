@@ -11,6 +11,10 @@ import {
   useWorkspaceHistory,
   useWorkspaceMutation,
 } from "@/hooks/use-workspaces";
+import {
+  useWorkspaceInvitations,
+  useWorkspaceInvitationMutation,
+} from "@/hooks/use-workspace-invitations";
 
 export interface WorkspaceMember {
   id: string;
@@ -36,12 +40,12 @@ export function useSettings() {
   const { theme, setPrimary, resetPrimary } = useTheme();
   const color = theme.primary || "#16a34a";
 
-  const { user, refreshUser } = useAuth();
+  const { user } = useAuth();
   const { activeWorkspaceId, setActiveWorkspaceId } = useWorkspaceStore();
   const workspaces = React.useMemo(() => user?.workspaces ?? [], [user?.workspaces]);
   const activeWorkspace = workspaces.find((w) => w.id === activeWorkspaceId) ?? workspaces[0];
 
-  const [activeTab, setActiveTab] = React.useState<"appearance" | "group" | "archived">("appearance");
+  const [activeTab, setActiveTab] = React.useState<"appearance" | "group" | "archived" | "invitations">("appearance");
 
   // Tab 2: Group Settings Inputs
   const [groupName, setGroupName] = React.useState("");
@@ -71,9 +75,17 @@ export function useSettings() {
   );
   const [groupToDelete, setGroupToDelete] = React.useState<ArchivedWorkspace | null>(null);
 
+  // Tab 4: Workspace Invitations
+  const { data: invitations = [], isLoading: invitationsLoading } = useWorkspaceInvitations();
+  const {
+    isSubmitting: isInvitationSubmitting,
+    acceptInvitation,
+    declineInvitation,
+  } = useWorkspaceInvitationMutation();
+
   // TanStack Mutations
   const {
-    isSubmitting,
+    isSubmitting: isWorkspaceSubmitting,
     renameWorkspace,
     archiveWorkspace,
     transferOwner,
@@ -82,6 +94,8 @@ export function useSettings() {
     kickMember,
     deleteArchivedWorkspace,
   } = useWorkspaceMutation();
+
+  const isSubmitting = isWorkspaceSubmitting || isInvitationSubmitting;
 
   // Synchronize Group Name input with active workspace name
   React.useEffect(() => {
@@ -297,5 +311,9 @@ export function useSettings() {
     formatVND,
     formatDate,
     isCurrentOwner,
+    invitations,
+    invitationsLoading,
+    acceptInvitation,
+    declineInvitation,
   };
 }

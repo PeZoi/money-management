@@ -28,7 +28,8 @@ export async function GET(req: Request) {
         created_at
       )
     `)
-    .eq("user_id", user.id);
+    .eq("user_id", user.id)
+    .eq("status", "accepted");
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

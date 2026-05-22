@@ -46,7 +46,8 @@ export async function GET() {
         created_by
       )
     `)
-    .eq("user_id", base.id);
+    .eq("user_id", base.id)
+    .eq("status", "accepted");
 
   if (workspacesError) {
     return NextResponse.json({ error: workspacesError.message }, { status: 500 });
