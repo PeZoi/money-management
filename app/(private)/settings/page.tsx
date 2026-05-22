@@ -100,6 +100,9 @@ export default function SettingsPage() {
     declineInvitation,
   } = useSettings();
 
+  const acceptedMembers = React.useMemo(() => members.filter((m) => m.status !== "pending"), [members]);
+  const pendingMembers = React.useMemo(() => members.filter((m) => m.status === "pending"), [members]);
+
 
   return (
     <PrivatePageShell
@@ -159,7 +162,7 @@ export default function SettingsPage() {
             <MailIcon className="size-4" />
             Lời mời
             {invitations.length > 0 && (
-              <span className="ml-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 text-xxs font-bold text-destructive-foreground animate-pulse">
+              <span className="ml-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground shadow-xs">
                 {invitations.length}
               </span>
             )}
@@ -271,7 +274,7 @@ export default function SettingsPage() {
                 <section className="rounded-xl border border-border bg-card p-5 shadow-xs">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-border pb-4 mb-4">
                     <div>
-                      <h2 className="text-base font-semibold">Thành viên ({members.length})</h2>
+                      <h2 className="text-base font-semibold">Thành viên ({acceptedMembers.length})</h2>
                       <p className="text-xs text-muted-foreground mt-1">Danh sách những người dùng chung tài khoản quỹ này.</p>
                     </div>
 
@@ -306,65 +309,126 @@ export default function SettingsPage() {
                       Đang tải danh sách thành viên...
                     </div>
                   ) : (
-                    <div className="divide-y divide-border">
-                      {members.map((member) => {
-                        const isMemberOwner = member.role === "owner";
-                        const isMe = member.user_id === user?.id;
-                        return (
-                          <div key={member.id || member.member_id} className="flex items-center justify-between py-3">
-                            <div className="flex items-center gap-3">
-                              <Avatar
-                                src={member.avatar_url}
-                                name={member.display_name || member.email}
-                                className="h-9 w-9 border border-border"
-                                width={36}
-                                height={36}
-                              />
-                              <div className="min-w-0">
-                                <div className="text-sm font-semibold flex items-center gap-1.5">
-                                  <span className="truncate max-w-[150px] sm:max-w-[300px]">
-                                    {member.display_name || "Chưa đặt tên"}
-                                  </span>
-                                  {isMe && (
-                                    <span className="inline-flex items-center rounded-sm bg-muted px-1.5 py-0.5 text-xxs font-medium text-muted-foreground">
-                                      Bạn
+                    <div className="space-y-6">
+                      {/* Danh sách thành viên chính thức */}
+                      <div>
+                        <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2.5">
+                          Thành viên chính thức ({acceptedMembers.length})
+                        </h3>
+                        <div className="divide-y divide-border rounded-lg border border-border bg-muted/10 px-4">
+                          {acceptedMembers.map((member) => {
+                            const isMemberOwner = member.role === "owner";
+                            const isMe = member.user_id === user?.id;
+                            return (
+                              <div key={member.id || member.member_id} className="flex items-center justify-between py-3">
+                                <div className="flex items-center gap-3">
+                                  <Avatar
+                                    src={member.avatar_url}
+                                    name={member.display_name || member.email}
+                                    className="h-9 w-9 border border-border"
+                                    width={36}
+                                    height={36}
+                                  />
+                                  <div className="min-w-0">
+                                    <div className="text-sm font-semibold flex items-center gap-1.5">
+                                      <span className="truncate max-w-[150px] sm:max-w-[300px]">
+                                        {member.display_name || "Chưa đặt tên"}
+                                      </span>
+                                      {isMe && (
+                                        <span className="inline-flex items-center rounded-sm bg-muted px-1.5 py-0.5 text-xxs font-medium text-muted-foreground">
+                                          Bạn
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="text-xs text-muted-foreground truncate max-w-[200px] sm:max-w-[300px]">
+                                      {member.email}
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-3">
+                                  {isMemberOwner ? (
+                                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2.5 py-1 text-xs font-semibold text-amber-600 dark:text-amber-400">
+                                      <CrownIcon className="size-3" />
+                                      Chủ nhóm
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center rounded-full bg-secondary px-2.5 py-1 text-xs font-semibold text-secondary-foreground">
+                                      Thành viên
                                     </span>
                                   )}
-                                </div>
-                                <div className="text-xs text-muted-foreground truncate max-w-[200px] sm:max-w-[300px]">
-                                  {member.email}
+
+                                  {isCurrentOwner && !isMemberOwner && (
+                                    <Button
+                                      variant="ghost"
+                                      size="icon-sm"
+                                      onClick={() => setMemberToKick(member)}
+                                      className="text-destructive hover:bg-destructive/10 rounded-full"
+                                      title="Xóa thành viên"
+                                      disabled={isSubmitting}
+                                    >
+                                      <TrashIcon className="size-4" />
+                                    </Button>
+                                  )}
                                 </div>
                               </div>
-                            </div>
+                            );
+                          })}
+                        </div>
+                      </div>
 
-                            <div className="flex items-center gap-3">
-                              {isMemberOwner ? (
-                                <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2.5 py-1 text-xs font-semibold text-amber-600 dark:text-amber-400">
-                                  <CrownIcon className="size-3" />
-                                  Chủ nhóm
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center rounded-full bg-secondary px-2.5 py-1 text-xs font-semibold text-secondary-foreground">
-                                  Thành viên
-                                </span>
-                              )}
+                      {/* Danh sách lời mời đang chờ */}
+                      {pendingMembers.length > 0 && (
+                        <div>
+                          <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2.5">
+                            Lời mời đang chờ ({pendingMembers.length})
+                          </h3>
+                          <div className="divide-y divide-border rounded-lg border border-border bg-muted/10 px-4">
+                            {pendingMembers.map((member) => (
+                              <div key={member.id || member.member_id} className="flex items-center justify-between py-3">
+                                <div className="flex items-center gap-3 opacity-70">
+                                  <Avatar
+                                    src={member.avatar_url}
+                                    name={member.display_name || member.email}
+                                    className="h-9 w-9 border border-border grayscale"
+                                    width={36}
+                                    height={36}
+                                  />
+                                  <div className="min-w-0">
+                                    <div className="text-sm font-semibold flex items-center gap-1.5">
+                                      <span className="truncate max-w-[150px] sm:max-w-[300px]">
+                                        {member.display_name || "Chưa đặt tên"}
+                                      </span>
+                                    </div>
+                                    <div className="text-xs text-muted-foreground truncate max-w-[200px] sm:max-w-[300px]">
+                                      {member.email}
+                                    </div>
+                                  </div>
+                                </div>
 
-                              {isCurrentOwner && !isMemberOwner && (
-                                <Button
-                                  variant="ghost"
-                                  size="icon-sm"
-                                  onClick={() => setMemberToKick(member)}
-                                  className="text-destructive hover:bg-destructive/10 rounded-full"
-                                  title="Xóa thành viên"
-                                  disabled={isSubmitting}
-                                >
-                                  <TrashIcon className="size-4" />
-                                </Button>
-                              )}
-                            </div>
+                                <div className="flex items-center gap-3">
+                                  <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/10 px-2.5 py-1 text-xs font-semibold text-blue-600 dark:text-blue-400">
+                                    Chờ chấp nhận
+                                  </span>
+
+                                  {isCurrentOwner && (
+                                    <Button
+                                      variant="ghost"
+                                      size="icon-sm"
+                                      onClick={() => setMemberToKick(member)}
+                                      className="text-destructive hover:bg-destructive/10 rounded-full"
+                                      title="Hủy lời mời"
+                                      disabled={isSubmitting}
+                                    >
+                                      <TrashIcon className="size-4" />
+                                    </Button>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
                           </div>
-                        );
-                      })}
+                        </div>
+                      )}
                     </div>
                   )}
                 </section>

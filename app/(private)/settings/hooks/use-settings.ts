@@ -24,6 +24,7 @@ export interface WorkspaceMember {
   email: string;
   display_name: string | null;
   avatar_url: string | null;
+  status?: "accepted" | "pending";
 }
 
 export interface ArchivedWorkspace {
@@ -42,7 +43,8 @@ export function useSettings() {
 
   const { user } = useAuth();
   const { activeWorkspaceId, setActiveWorkspaceId } = useWorkspaceStore();
-  const workspaces = React.useMemo(() => user?.workspaces ?? [], [user?.workspaces]);
+  const { data: workspacesData = [] } = useWorkspaces(false);
+  const workspaces = React.useMemo(() => workspacesData, [workspacesData]);
   const activeWorkspace = workspaces.find((w) => w.id === activeWorkspaceId) ?? workspaces[0];
 
   const [activeTab, setActiveTab] = React.useState<"appearance" | "group" | "archived" | "invitations">("appearance");

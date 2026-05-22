@@ -21,6 +21,7 @@ interface WorkspaceMember {
   email: string;
   display_name: string | null;
   avatar_url: string | null;
+  status?: "accepted" | "pending";
 }
 
 interface Transaction {
@@ -64,6 +65,7 @@ export function useWorkspaces(isArchived = false) {
       const json = await res.json();
       return json.data ?? [];
     },
+    refetchInterval: isArchived ? false : 20000,
   });
 }
 

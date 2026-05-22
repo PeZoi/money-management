@@ -15,7 +15,6 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { useAuth } from "@/hooks/use-auth"
 import { useWorkspaceStore } from "@/hooks/use-workspace"
 import {
   Dialog,
@@ -28,17 +27,17 @@ import {
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
-import { useWorkspaceMutation } from "@/hooks/use-workspaces"
+import { useWorkspaces, useWorkspaceMutation } from "@/hooks/use-workspaces"
 import { cn } from "@/lib/utils"
 
 export function WorkspaceSwitcher() {
-  const { user } = useAuth()
   const { activeWorkspaceId, setActiveWorkspaceId } = useWorkspaceStore()
   const [openCreate, setOpenCreate] = React.useState(false)
   const [name, setName] = React.useState("")
   const { createWorkspace, isSubmitting: loading } = useWorkspaceMutation()
 
-  const workspaces = React.useMemo(() => user?.workspaces ?? [], [user?.workspaces])
+  const { data: workspacesData = [] } = useWorkspaces(false)
+  const workspaces = React.useMemo(() => workspacesData, [workspacesData])
 
   // Tự động chọn workspace đầu tiên nếu chưa chọn hoặc workspace cũ không tồn tại
   React.useEffect(() => {

@@ -51,6 +51,7 @@ export async function GET(
     email: string;
     display_name: string | null;
     avatar_url: string | null;
+    status: string;
   }) => ({
     ...m,
     id: m.member_id,
