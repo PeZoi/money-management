@@ -1,11 +1,15 @@
 'use client';
 
+import { useState } from 'react';
 import { PrivatePageShell } from '@/components/private-page-shell';
 import { Button } from '@/components/ui/button';
 import { useDraggable } from '@/hooks/use-draggable';
+import { useWorkspaceStore } from '@/hooks/use-workspace';
+import { useWorkspaces } from '@/hooks/use-workspaces';
 import { cn } from '@/lib/utils';
-import { CreditCardIcon, PlusIcon } from 'lucide-react';
+import { CreditCardIcon, PlusIcon, CoinsIcon } from 'lucide-react';
 import AccountFormDialog from './components/account-form-dialog';
+import FundContributionDialog from './components/fund-contribution-dialog';
 import AccountsList from './components/accounts-list';
 import { useAccountsPage } from './hooks/use-accounts-page';
 import type { AccountRow } from '@/types/database';
@@ -25,6 +29,14 @@ export default function AccountsPage() {
     totalBalance,
   } = useAccountsPage();
 
+  const { activeWorkspaceId } = useWorkspaceStore();
+  const { data: workspaces = [] } = useWorkspaces();
+  const [contributionOpen, setContributionOpen] = useState(false);
+
+  // Xác định xem workspace hiện tại có phải workspace nhóm (không phải cá nhân) hay không
+  const currentWorkspace = workspaces.find((w) => w.id === activeWorkspaceId);
+  const isGroupWorkspace = currentWorkspace && !currentWorkspace.is_personal;
+
   // Hook kéo thả FAB mượt mà trên di động
   const { ref: fabRef, dragInfo, handleDragStart } = useDraggable();
 
@@ -38,10 +50,23 @@ export default function AccountsPage() {
         description="Quản lý ví, ngân hàng & ví điện tử — chọn tài khoản active để ghi giao dịch."
         icon={CreditCardIcon}
         headerActions={
-          <Button type="button" className="hidden md:inline-flex rounded-xl" onClick={() => setCreateOpen(true)}>
-            <PlusIcon className="mr-2 size-4" aria-hidden />
-            Thêm tài khoản
-          </Button>
+          <div className="hidden md:flex items-center gap-2">
+            {isGroupWorkspace && (
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-xl border-primary/20 bg-primary/5 hover:bg-primary/10 text-primary font-semibold"
+                onClick={() => setContributionOpen(true)}
+              >
+                <CoinsIcon className="mr-2 size-4" aria-hidden />
+                Nộp quỹ nhóm
+              </Button>
+            )}
+            <Button type="button" className="rounded-xl" onClick={() => setCreateOpen(true)}>
+              <PlusIcon className="mr-2 size-4" aria-hidden />
+              Thêm tài khoản
+            </Button>
+          </div>
         }
       >
         {/* Summary bar - Bố cục không đối xứng sáng tạo: Tổng tài sản chiếm full width trên mobile, 2 thẻ phụ nằm ngang ở dưới */}
@@ -90,8 +115,22 @@ export default function AccountsPage() {
               Nhấp vào thẻ tài khoản bên dưới để chỉnh sửa hoặc thiết lập kích hoạt
             </p>
           </div>
-          <div className="text-xs font-semibold text-muted-foreground/80 bg-muted/50 dark:bg-muted/20 px-2.5 py-1 rounded-xl border border-border/50">
-            Tổng số: <span className="font-bold text-foreground">{accounts.length}</span>
+          <div className="flex items-center gap-2">
+            {isGroupWorkspace && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="md:hidden rounded-xl text-xs font-bold border-primary/20 bg-primary/5 text-primary py-1 h-8 px-3"
+                onClick={() => setContributionOpen(true)}
+              >
+                <CoinsIcon className="mr-1.5 size-3.5" aria-hidden />
+                Nộp quỹ
+              </Button>
+            )}
+            <div className="text-xs font-semibold text-muted-foreground/80 bg-muted/50 dark:bg-muted/20 px-2.5 py-1.5 rounded-xl border border-border/50">
+              Tổng số: <span className="font-bold text-foreground">{accounts.length}</span>
+            </div>
           </div>
         </div>
 
@@ -153,6 +192,15 @@ export default function AccountsPage() {
         onSuccess={() => {
           fetchAccounts();
           setEditingAccount(null);
+        }}
+      />
+
+      {/* Dialog nộp quỹ nhóm */}
+      <FundContributionDialog
+        open={contributionOpen}
+        onOpenChange={setContributionOpen}
+        onSuccess={() => {
+          fetchAccounts();
         }}
       />
     </>

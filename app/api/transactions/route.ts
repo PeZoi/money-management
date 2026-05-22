@@ -46,6 +46,21 @@ export async function GET(req: Request) {
     );
   }
 
+  // Lấy thông tin thành viên của workspace để phục vụ việc hiển thị người tạo
+  const { data: members, error: membersError } = await session.supabase
+    .rpc("get_workspace_member_details", { ws_id: workspaceId });
+
+  const memberMap = new Map<string, { display_name: string; email: string; avatar_url: string | null }>();
+  if (!membersError && members) {
+    (members as any[]).forEach((m) => {
+      memberMap.set(m.user_id, {
+        display_name: m.display_name,
+        email: m.email,
+        avatar_url: m.avatar_url,
+      });
+    });
+  }
+
   let query = session.supabase
     .from("transactions")
     .select("*, category:categories(*), account:accounts!account_id(*), to_account:accounts!to_account_id(*)")
@@ -79,7 +94,20 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ data: data ?? [] });
+  // Đính kèm thông tin người tạo giao dịch
+  const mappedData = (data ?? []).map((t) => {
+    const creator = memberMap.get(t.created_by) || {
+      display_name: "Thành viên cũ",
+      email: "",
+      avatar_url: null,
+    };
+    return {
+      ...t,
+      created_by_details: creator,
+    };
+  });
+
+  return NextResponse.json({ data: mappedData });
 }
 
 /**
@@ -109,6 +137,24 @@ export async function POST(req: Request) {
       { status: 400 },
     );
   }
+
+  // Kiểm tra xem workspace có bị đóng băng (archived) không
+  const { data: wsData, error: wsError } = await session.supabase
+    .from("workspaces")
+    .select("is_archived")
+    .eq("id", workspace_id)
+    .maybeSingle();
+
+  if (wsError) {
+    return NextResponse.json({ error: wsError.message }, { status: 500 });
+  }
+  if (wsData?.is_archived) {
+    return NextResponse.json(
+      { error: "Nhóm này đã giải tán, không thể thêm giao dịch mới." },
+      { status: 400 },
+    );
+  }
+
   if (!Number.isFinite(amount) || amount <= 0) {
     return NextResponse.json(
       { error: "amount phải là số dương." },

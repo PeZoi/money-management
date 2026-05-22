@@ -69,42 +69,60 @@ export async function POST(req: Request) {
   const session = await requireSessionUser();
   if (session.errorResponse) return session.errorResponse;
 
-  const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
+  const body = (await req.json().catch(() => null));
   if (!body) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const workspace_id = typeof body.workspace_id === "string" ? body.workspace_id.trim() : "";
-  const name = typeof body.name === "string" ? body.name.trim() : "";
-  const icon = typeof body.icon === "string" ? body.icon.trim() : "";
-  const type = parseTransactionType(body.type);
+  const isBulk = Array.isArray(body);
+  const items = isBulk ? body : [body];
 
-  if (!workspace_id || !isUuid(workspace_id)) {
-    return NextResponse.json({ error: "workspace_id phải là UUID hợp lệ." }, { status: 400 });
-  }
-  if (!name) {
-    return NextResponse.json({ error: "name không được để trống." }, { status: 400 });
-  }
-  if (!icon) {
-    return NextResponse.json({ error: "icon không được để trống." }, { status: 400 });
-  }
-  if (!type) {
-    return NextResponse.json({ error: "type phải là expense hoặc income." }, { status: 400 });
+  if (items.length === 0) {
+    return NextResponse.json({ error: "Danh sách danh mục trống." }, { status: 400 });
   }
 
-  const row: CategoryInsert = {
-    workspace_id,
-    name,
-    icon,
-    type,
-  };
+  const rows: CategoryInsert[] = [];
 
-  const { data, error } = await session.supabase.from("categories").insert([row]).select("*").single();
+  for (const item of items) {
+    const workspace_id = typeof item.workspace_id === "string" ? item.workspace_id.trim() : "";
+    const name = typeof item.name === "string" ? item.name.trim() : "";
+    const icon = typeof item.icon === "string" ? item.icon.trim() : "";
+    const type = parseTransactionType(item.type);
 
-  if (error) {
-    const status = error.code === "23505" ? 409 : 500;
-    return NextResponse.json({ error: error.message }, { status });
+    if (!workspace_id || !isUuid(workspace_id)) {
+      return NextResponse.json({ error: "workspace_id phải là UUID hợp lệ." }, { status: 400 });
+    }
+    if (!name) {
+      return NextResponse.json({ error: "name không được để trống." }, { status: 400 });
+    }
+    if (!icon) {
+      return NextResponse.json({ error: "icon không được để trống." }, { status: 400 });
+    }
+    if (!type) {
+      return NextResponse.json({ error: "type phải là expense hoặc income." }, { status: 400 });
+    }
+
+    rows.push({
+      workspace_id,
+      name,
+      icon,
+      type,
+    });
   }
 
-  return NextResponse.json({ data }, { status: 201 });
+  if (isBulk) {
+    const { data, error } = await session.supabase.from("categories").insert(rows).select("*");
+    if (error) {
+      const status = error.code === "23505" ? 409 : 500;
+      return NextResponse.json({ error: error.message }, { status });
+    }
+    return NextResponse.json({ data }, { status: 201 });
+  } else {
+    const { data, error } = await session.supabase.from("categories").insert([rows[0]]).select("*").single();
+    if (error) {
+      const status = error.code === "23505" ? 409 : 500;
+      return NextResponse.json({ error: error.message }, { status });
+    }
+    return NextResponse.json({ data }, { status: 201 });
+  }
 }

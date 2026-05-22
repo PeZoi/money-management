@@ -42,6 +42,7 @@ export async function GET() {
         id,
         name,
         is_personal,
+        is_archived,
         created_by
       )
     `)
@@ -53,13 +54,19 @@ export async function GET() {
 
   type WorkspaceQueryResult = {
     role: WorkspaceRole;
-    workspaces: Pick<WorkspaceRow, "id" | "name" | "is_personal" | "created_by">;
+    workspaces: (Pick<WorkspaceRow, "id" | "name" | "is_personal" | "created_by"> & { is_archived: boolean }) | null;
   };
 
-  const workspaces = (workspacesData as unknown as WorkspaceQueryResult[])?.map((w) => ({
-    ...w.workspaces,
-    role: w.role,
-  })) ?? [];
+  // Chỉ lấy các workspace hoạt động (không bị archived)
+  const workspaces = (workspacesData as unknown as WorkspaceQueryResult[])
+    ?.filter((w) => w.workspaces && !w.workspaces.is_archived)
+    ?.map((w) => ({
+      id: w.workspaces!.id,
+      name: w.workspaces!.name,
+      is_personal: w.workspaces!.is_personal,
+      created_by: w.workspaces!.created_by,
+      role: w.role,
+    })) ?? [];
 
   const currentUser = mergeCurrentUserSnapshot(base, {
     roleLabel: roleRow?.role ?? undefined,

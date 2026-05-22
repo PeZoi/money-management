@@ -91,7 +91,7 @@ export default function UpdateTransactionDialog({ transaction, open, onOpenChang
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent aria-describedby={undefined} className="max-w-lg gap-0 p-0">
+      <DialogContent aria-describedby={undefined} fullScreenOnMobile className="max-w-lg gap-0 p-0">
         <DialogHeader className="border-b px-5 py-4 sm:px-6 flex flex-row items-center gap-4">
           <DialogTitle>Cập nhật giao dịch</DialogTitle>
           <div

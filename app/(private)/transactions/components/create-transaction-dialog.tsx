@@ -261,7 +261,7 @@ export default function CreateTransactionDialog({ open, onOpenChange, onSuccess 
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent aria-describedby={undefined} className="max-w-lg gap-0 p-0">
+      <DialogContent aria-describedby={undefined} fullScreenOnMobile className="max-w-lg gap-0 p-0">
         <DialogHeader className="border-b px-5 py-4 sm:px-6">
           <DialogTitle>Thêm giao dịch mới</DialogTitle>
         </DialogHeader>

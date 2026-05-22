@@ -71,7 +71,7 @@ export default function AccountFormDialog({ open, onOpenChange, account, onSucce
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent aria-describedby={undefined} className="max-w-xl gap-0 p-0">
+      <DialogContent aria-describedby={undefined} fullScreenOnMobile className="max-w-xl gap-0 p-0">
         <DialogHeader className="border-b px-5 py-4 sm:px-6">
           <DialogTitle>{isUpdate ? 'Cập nhật tài khoản' : 'Thêm tài khoản mới'}</DialogTitle>
         </DialogHeader>

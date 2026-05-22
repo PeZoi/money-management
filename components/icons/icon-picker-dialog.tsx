@@ -60,7 +60,8 @@ export default function IconPickerDialog({ value, onChange, disabled, className 
       <DialogContent
         aria-describedby={undefined}
         showCloseButton
-        className="max-h-[min(90dvh,760px)] min-w-0 gap-0 overflow-x-hidden overflow-y-hidden p-0"
+        fullScreenOnMobile
+        className="sm:max-h-[min(90dvh,760px)] min-w-0 gap-0 overflow-x-hidden overflow-y-hidden p-0"
       >
         <DialogHeader className="shrink-0 border-b px-4 py-3 text-left sm:px-6">
           <DialogTitle>Chọn icon</DialogTitle>

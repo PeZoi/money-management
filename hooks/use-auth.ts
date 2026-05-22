@@ -15,6 +15,7 @@ type AuthState = {
 
   init: () => Promise<void>;
   refresh: () => Promise<void>;
+  refreshUser: () => Promise<void>;
   signOut: () => Promise<void>;
 };
 
@@ -90,6 +91,19 @@ export const useAuthStore = create<AuthState>((set) => ({
     });
   },
 
+  refreshUser: async () => {
+    try {
+      const response = await fetch('/api/user/get-current-user');
+      const result = await response.json();
+      if (response.ok && result.data) {
+        set({ user: result.data, status: "authenticated" });
+        localStorageFn.setLocalStorageItem(localStorageFn.AUTH_KEY.USER, JSON.stringify(result.data));
+      }
+    } catch (error) {
+      console.error("Failed to refresh user:", error);
+    }
+  },
+
   signOut: async () => {
     const supabase = createClient();
     const { error } = await supabase.auth.signOut();
@@ -121,7 +135,8 @@ export function useAuth() {
   const error = useAuthStore((s) => s.error);
   const init = useAuthStore((s) => s.init);
   const refresh = useAuthStore((s) => s.refresh);
+  const refreshUser = useAuthStore((s) => s.refreshUser);
   const signOut = useAuthStore((s) => s.signOut);
 
-  return { status, user, error, init, refresh, signOut };
+  return { status, user, error, init, refresh, refreshUser, signOut };
 }

@@ -60,6 +60,34 @@ export async function DELETE(
     if (!user) return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
 
     const { id } = await params;
+
+    // 1. Tìm workspace_id của tài khoản cần xóa
+    const { data: account, error: getAccountError } = await supabase
+      .from('accounts')
+      .select('workspace_id')
+      .eq('id', id)
+      .single();
+
+    if (getAccountError) {
+      return NextResponse.json({ success: false, message: 'Không tìm thấy tài khoản cần xóa.' }, { status: 404 });
+    }
+
+    // 2. Đếm số lượng tài khoản trong workspace này
+    const { count, error: countError } = await supabase
+      .from('accounts')
+      .select('*', { count: 'exact', head: true })
+      .eq('workspace_id', account.workspace_id);
+
+    if (countError) throw countError;
+
+    // 3. Nếu còn <= 1 tài khoản, chặn không cho xóa
+    if (count !== null && count <= 1) {
+      return NextResponse.json({ 
+        success: false, 
+        message: 'Không thể xóa tài khoản duy nhất của nhóm. Nhóm cần ít nhất một tài khoản hoạt động.' 
+      }, { status: 400 });
+    }
+
     const { error } = await supabase.from('accounts').delete().eq('id', id);
     if (error) throw error;
     return NextResponse.json({ success: true });

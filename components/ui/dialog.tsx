@@ -43,9 +43,11 @@ function DialogContent({
   className,
   children,
   showCloseButton = true,
+  fullScreenOnMobile = false,
   ...props
 }: React.ComponentProps<typeof DialogNS.Content> & {
   showCloseButton?: boolean;
+  fullScreenOnMobile?: boolean;
 }) {
   return (
     <DialogPortal>
@@ -54,19 +56,25 @@ function DialogContent({
         data-slot="dialog-content"
         className={cn(
           'fixed z-50 flex flex-col bg-popover text-popover-foreground shadow-lg outline-none duration-200 border-border bg-clip-padding p-0 transition-all',
-          // Mobile: Bottom sheet trượt từ dưới lên, bo góc trên, giới hạn chiều cao tối đa
-          'bottom-0 top-auto left-1/2 -translate-x-1/2 translate-y-0 w-full rounded-t-3xl rounded-b-none border-t border-x max-h-[92dvh] gap-0 overflow-hidden',
+          // Mobile styles: bottom sheet hoặc full screen (chừa một khoảng trống nhỏ phía trên đầu)
+          fullScreenOnMobile
+            ? 'top-10 bottom-0 left-0 translate-x-0 w-full rounded-t-3xl rounded-b-none border-t border-x gap-0 overflow-y-auto'
+            : 'bottom-0 top-auto left-1/2 -translate-x-1/2 translate-y-0 w-full rounded-t-3xl rounded-b-none border-t border-x max-h-[92dvh] gap-0 overflow-hidden',
           // Desktop/Laptop: Modal căn giữa màn hình, giới hạn chiều cao chống cắt hai đầu
-          'sm:top-1/2 sm:bottom-auto sm:-translate-y-1/2 sm:w-[calc(100%-2rem)] sm:max-w-xl sm:rounded-2xl sm:border sm:max-h-[85vh]',
+          'sm:top-1/2 sm:bottom-auto sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:w-[calc(100%-2rem)] sm:max-w-xl sm:rounded-2xl sm:border sm:max-h-[85vh]',
           // Hiệu ứng chuyển động mượt mà
-          'data-open:animate-in data-open:fade-in-0 data-open:slide-in-from-bottom-10 sm:data-open:zoom-in-95 sm:data-open:slide-in-from-bottom-0',
+          fullScreenOnMobile
+            ? 'data-open:animate-in data-open:fade-in-0 data-open:slide-in-from-bottom-5 sm:data-open:zoom-in-95 sm:data-open:slide-in-from-bottom-0'
+            : 'data-open:animate-in data-open:fade-in-0 data-open:slide-in-from-bottom-10 sm:data-open:zoom-in-95 sm:data-open:slide-in-from-bottom-0',
           'data-closed:animate-out data-closed:fade-out-0 data-closed:slide-out-to-bottom-10 sm:data-closed:zoom-out-95 sm:data-closed:slide-out-to-bottom-0',
           className,
         )}
         {...props}
       >
-        {/* Thanh giả lập kéo (drag handle) chỉ hiển thị trên thiết bị di động */}
-        <div className="mx-auto my-3 h-1.5 w-12 shrink-0 rounded-full bg-muted-foreground/20 sm:hidden" />
+        {/* Thanh giả lập kéo (drag handle) chỉ hiển thị trên thiết bị di động khi không ở chế độ full screen */}
+        {!fullScreenOnMobile && (
+          <div className="mx-auto my-3 h-1.5 w-12 shrink-0 rounded-full bg-muted-foreground/20 sm:hidden" />
+        )}
         
         {children}
         {showCloseButton ? (
@@ -74,7 +82,10 @@ function DialogContent({
             <Button
               type="button"
               variant="ghost"
-              className="absolute top-3 right-3 z-10 rounded-full hover:bg-muted"
+              className={cn(
+                'absolute z-10 rounded-full hover:bg-muted',
+                fullScreenOnMobile ? 'top-4 right-4' : 'top-3 right-3'
+              )}
               size="icon-sm"
             >
               <XIcon className="size-4" />

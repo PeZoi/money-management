@@ -127,4 +127,9 @@ export type TransactionWithCategory = TransactionRow & {
   category: CategoryRow | null;
   account: AccountRow | null;
   to_account: AccountRow | null;
+  created_by_details?: {
+    display_name: string;
+    email: string;
+    avatar_url: string | null;
+  };
 };

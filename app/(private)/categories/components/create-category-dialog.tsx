@@ -57,7 +57,7 @@ export default function CreateCategoryDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent aria-describedby={undefined} className="max-w-xl gap-0 p-0">
+      <DialogContent aria-describedby={undefined} fullScreenOnMobile className="max-w-xl gap-0 p-0">
         <DialogHeader className="border-b px-5 py-4 sm:px-6">
           <DialogTitle>{isUpdate ? 'Cập nhật danh mục' : 'Tạo danh mục mới'}</DialogTitle>
         </DialogHeader>

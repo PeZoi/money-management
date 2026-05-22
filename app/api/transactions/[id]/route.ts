@@ -36,6 +36,28 @@ export async function DELETE(
     return NextResponse.json({ error: "Thiếu id giao dịch." }, { status: 400 });
   }
 
+  // Kiểm tra xem workspace của giao dịch có bị đóng băng không
+  const { data: txData, error: txError } = await session.supabase
+    .from("transactions")
+    .select("workspace_id, workspaces (is_archived)")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (txError) {
+    return NextResponse.json({ error: txError.message }, { status: 500 });
+  }
+  if (!txData) {
+    return NextResponse.json({ error: "Giao dịch không tồn tại." }, { status: 404 });
+  }
+
+  const isArchived = (txData.workspaces as any)?.is_archived;
+  if (isArchived) {
+    return NextResponse.json(
+      { error: "Nhóm này đã giải tán, không thể xóa giao dịch." },
+      { status: 400 }
+    );
+  }
+
   const { error } = await session.supabase
     .from("transactions")
     .delete()
@@ -71,6 +93,28 @@ export async function PUT(
   const { id } = await params;
   if (!id) {
     return NextResponse.json({ error: "Thiếu id giao dịch." }, { status: 400 });
+  }
+
+  // Kiểm tra xem workspace của giao dịch có bị đóng băng không
+  const { data: txData, error: txError } = await session.supabase
+    .from("transactions")
+    .select("workspace_id, workspaces (is_archived)")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (txError) {
+    return NextResponse.json({ error: txError.message }, { status: 500 });
+  }
+  if (!txData) {
+    return NextResponse.json({ error: "Giao dịch không tồn tại." }, { status: 404 });
+  }
+
+  const isArchived = (txData.workspaces as any)?.is_archived;
+  if (isArchived) {
+    return NextResponse.json(
+      { error: "Nhóm này đã giải tán, không thể cập nhật giao dịch." },
+      { status: 400 }
+    );
   }
 
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
