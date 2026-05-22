@@ -23,10 +23,7 @@ function DialogClose({ ...props }: React.ComponentProps<typeof DialogNS.Close>) 
   return <DialogNS.Close data-slot="dialog-close" {...props} />;
 }
 
-function DialogOverlay({
-  className,
-  ...props
-}: React.ComponentProps<typeof DialogNS.Overlay>) {
+function DialogOverlay({ className, ...props }: React.ComponentProps<typeof DialogNS.Overlay>) {
   return (
     <DialogNS.Overlay
       data-slot="dialog-overlay"
@@ -58,7 +55,7 @@ function DialogContent({
           'fixed z-50 flex flex-col bg-popover text-popover-foreground shadow-lg outline-none duration-200 border-border bg-clip-padding p-0 transition-all',
           // Mobile styles: bottom sheet hoặc full screen (chừa một khoảng trống nhỏ phía trên đầu)
           fullScreenOnMobile
-            ? 'top-10 bottom-0 left-0 translate-x-0 w-full rounded-t-3xl rounded-b-none border-t border-x gap-0 overflow-y-auto'
+            ? 'top-35 bottom-0 left-0 translate-x-0 w-full rounded-t-3xl rounded-b-none border-t border-x gap-0 overflow-y-auto'
             : 'bottom-0 top-auto left-1/2 -translate-x-1/2 translate-y-0 w-full rounded-t-3xl rounded-b-none border-t border-x max-h-[92dvh] gap-0 overflow-hidden',
           // Desktop/Laptop: Modal căn giữa màn hình, giới hạn chiều cao chống cắt hai đầu
           'sm:top-1/2 sm:bottom-auto sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:w-[calc(100%-2rem)] sm:max-w-xl sm:rounded-2xl sm:border sm:max-h-[85vh]',
@@ -75,7 +72,7 @@ function DialogContent({
         {!fullScreenOnMobile && (
           <div className="mx-auto my-3 h-1.5 w-12 shrink-0 rounded-full bg-muted-foreground/20 sm:hidden" />
         )}
-        
+
         {children}
         {showCloseButton ? (
           <DialogNS.Close asChild>
@@ -84,7 +81,7 @@ function DialogContent({
               variant="ghost"
               className={cn(
                 'absolute z-10 rounded-full hover:bg-muted',
-                fullScreenOnMobile ? 'top-4 right-4' : 'top-3 right-3'
+                fullScreenOnMobile ? 'top-4 right-4' : 'top-3 right-3',
               )}
               size="icon-sm"
             >
@@ -99,19 +96,11 @@ function DialogContent({
 }
 
 function DialogHeader({ className, ...props }: React.ComponentProps<'div'>) {
-  return (
-    <div data-slot="dialog-header" className={cn('flex flex-col gap-1.5 p-4', className)} {...props} />
-  );
+  return <div data-slot="dialog-header" className={cn('flex flex-col gap-1.5 p-4', className)} {...props} />;
 }
 
 function DialogFooter({ className, ...props }: React.ComponentProps<'div'>) {
-  return (
-    <div
-      data-slot="dialog-footer"
-      className={cn('mt-auto flex flex-col gap-2 p-4', className)}
-      {...props}
-    />
-  );
+  return <div data-slot="dialog-footer" className={cn('mt-auto flex flex-col gap-2 p-4', className)} {...props} />;
 }
 
 function DialogTitle({ className, ...props }: React.ComponentProps<typeof DialogNS.Title>) {
@@ -124,10 +113,7 @@ function DialogTitle({ className, ...props }: React.ComponentProps<typeof Dialog
   );
 }
 
-function DialogDescription({
-  className,
-  ...props
-}: React.ComponentProps<typeof DialogNS.Description>) {
+function DialogDescription({ className, ...props }: React.ComponentProps<typeof DialogNS.Description>) {
   return (
     <DialogNS.Description
       data-slot="dialog-description"

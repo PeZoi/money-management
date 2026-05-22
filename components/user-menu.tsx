@@ -12,18 +12,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Avatar } from '@/components/ui/avatar';
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { useAuth } from '@/hooks/use-auth';
 import type { UserRole } from '@/types/database';
-import Image from 'next/image';
 import Link from 'next/link';
-
-function initialsFromName(name: string) {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return '?';
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
-}
 
 function roleMapToVietnamese(role: UserRole | undefined): string {
   switch (role) {
@@ -39,8 +32,6 @@ function roleMapToVietnamese(role: UserRole | undefined): string {
 export function UserMenu() {
   const { user, signOut } = useAuth();
 
-  const initials = initialsFromName(user?.displayName ?? '');
-
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -50,19 +41,14 @@ export function UserMenu() {
               size="lg"
               className="h-auto min-h-14 gap-3 px-3 py-2.5 group-data-[collapsible=icon]:size-11! group-data-[collapsible=icon]:justify-center!  cursor-pointer"
             >
-              <span className="relative flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-sidebar-border bg-sidebar-accent text-sidebar-accent-foreground">
-                {user?.avatarUrl ? (
-                  <Image
-                    src={user?.avatarUrl}
-                    alt={user?.displayName ?? ''}
-                    className="size-full object-cover"
-                    width={36}
-                    height={36}
-                  />
-                ) : (
-                  <span className="select-none text-xs font-semibold">{initials}</span>
-                )}
-              </span>
+              {/* Sử dụng component Avatar dùng chung cho tài khoản ở sidebar */}
+              <Avatar
+                src={user?.avatarUrl}
+                name={user?.displayName}
+                className="size-9 border-sidebar-border"
+                width={36}
+                height={36}
+              />
               <div className="grid min-w-0 flex-1 gap-1 text-left group-data-[collapsible=icon]:hidden">
                 <span className="truncate font-semibold text-sidebar-foreground">{user?.displayName}</span>
                 <Badge variant={user?.roleLabel as UserRole} className="max-w-full justify-start">
@@ -80,19 +66,14 @@ export function UserMenu() {
             <DropdownMenuLabel className="font-normal">
               <div className="flex flex-col gap-2">
                 <div className="flex items-center gap-2">
-                  <span className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-muted">
-                    {user?.avatarUrl ? (
-                      <Image
-                        src={user?.avatarUrl}
-                        alt={user?.displayName ?? ''}
-                        className="size-full object-cover"
-                        width={36}
-                        height={36}
-                      />
-                    ) : (
-                      <span className="text-xs font-semibold">{initials}</span>
-                    )}
-                  </span>
+                  {/* Sử dụng component Avatar dùng chung cho tài khoản ở menu dropdown */}
+                  <Avatar
+                    src={user?.avatarUrl}
+                    name={user?.displayName}
+                    className="size-9 border-border"
+                    width={36}
+                    height={36}
+                  />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold leading-tight text-black">{user?.displayName}</p>
                     <Badge variant={user?.roleLabel as UserRole} className="mt-1.5 max-w-full">

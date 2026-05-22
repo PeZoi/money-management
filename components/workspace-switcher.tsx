@@ -1,13 +1,14 @@
 "use client"
 
 import * as React from "react"
-import { BuildingIcon, CheckIcon, ChevronsUpDownIcon, PlusIcon, Sparkles, Users } from "lucide-react"
+import { CheckIcon, ChevronsUpDownIcon, PlusIcon, Sparkles, Users, User, Landmark } from "lucide-react"
 
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
 import {
   SidebarMenu,
@@ -28,6 +29,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import { useWorkspaceMutation } from "@/hooks/use-workspaces"
+import { cn } from "@/lib/utils"
 
 export function WorkspaceSwitcher() {
   const { user } = useAuth()
@@ -38,12 +40,11 @@ export function WorkspaceSwitcher() {
 
   const workspaces = React.useMemo(() => user?.workspaces ?? [], [user?.workspaces])
 
-  // Auto-select first workspace if no active workspace is set or if active workspace is not in the list (e.g. archived)
+  // Tự động chọn workspace đầu tiên nếu chưa chọn hoặc workspace cũ không tồn tại
   React.useEffect(() => {
     if (workspaces.length > 0) {
       const exists = workspaces.some((w) => w.id === activeWorkspaceId)
       if (!activeWorkspaceId || !exists) {
-        // Tìm workspace cá nhân trước
         const personal = workspaces.find((w) => w.is_personal)
         setActiveWorkspaceId(personal?.id ?? workspaces[0].id)
       }
@@ -61,11 +62,11 @@ export function WorkspaceSwitcher() {
       if (newWs?.id) {
         setName("")
         setOpenCreate(false)
-        setActiveWorkspaceId(newWs.id) // Switch sang workspace mới
+        setActiveWorkspaceId(newWs.id)
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Không thể kết nối đến máy chủ";
-      toast.error(errorMessage);
+      const errorMessage = err instanceof Error ? err.message : "Không thể kết nối đến máy chủ"
+      toast.error(errorMessage)
     }
   }
 
@@ -81,39 +82,106 @@ export function WorkspaceSwitcher() {
             <DropdownMenuTrigger asChild>
               <SidebarMenuButton
                 size="lg"
-                className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+                className={cn(
+                  "h-14 gap-3 px-3 py-2.5 cursor-pointer rounded-xl border border-transparent transition-all duration-300",
+                  "hover:bg-sidebar-accent hover:border-sidebar-border/40",
+                  "data-[state=open]:bg-sidebar-accent data-[state=open]:border-sidebar-border/60 data-[state=open]:shadow-xs"
+                )}
               >
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                  <BuildingIcon className="size-4" />
+                {/* Icon Workspace được thiết kế rực rỡ với các dải gradient riêng biệt */}
+                <div
+                  className={cn(
+                    "flex aspect-square size-9 items-center justify-center rounded-xl text-white shadow-md transition-transform duration-300 group-hover:scale-105",
+                    activeWorkspace.is_personal
+                      ? "bg-gradient-to-tr from-emerald-500 via-teal-500 to-cyan-400 shadow-emerald-500/10"
+                      : "bg-gradient-to-tr from-indigo-500 via-purple-500 to-fuchsia-400 shadow-indigo-500/10"
+                  )}
+                >
+                  {activeWorkspace.is_personal ? (
+                    <User className="size-4.5 stroke-[2.5]" />
+                  ) : (
+                    <Users className="size-4.5 stroke-[2.5]" />
+                  )}
                 </div>
-                <div className="flex flex-col gap-0.5 leading-none">
-                  <span className="font-medium truncate max-w-[140px]">{activeWorkspace.name}</span>
-                  <span className="text-xs truncate">{activeWorkspace.is_personal ? 'Cá nhân' : 'Nhóm'}</span>
+                <div className="flex flex-col gap-0.5 leading-tight text-left flex-1 min-w-0">
+                  <span className="font-semibold text-sm text-sidebar-foreground truncate">
+                    {activeWorkspace.name}
+                  </span>
+                  <span className="text-[11px] text-muted-foreground font-medium truncate">
+                    {activeWorkspace.is_personal ? "Tài khoản cá nhân" : "Nhóm chi tiêu chung"}
+                  </span>
                 </div>
-                <ChevronsUpDownIcon className="ml-auto" />
+                <ChevronsUpDownIcon className="size-4 shrink-0 text-muted-foreground/60 group-hover:text-foreground transition-colors" />
               </SidebarMenuButton>
             </DropdownMenuTrigger>
+            
             <DropdownMenuContent
-              className="w-(--radix-dropdown-menu-trigger-width)"
+              className="w-64 p-1.5 rounded-xl border-border/60 shadow-xl"
               align="start"
+              sideOffset={6}
             >
-              {workspaces.map((workspace) => (
-                <DropdownMenuItem
-                  key={workspace.id}
-                  onSelect={() => setActiveWorkspaceId(workspace.id)}
-                >
-                  {workspace.name}{" "}
-                  {workspace.id === activeWorkspaceId && (
-                    <CheckIcon className="ml-auto" />
-                  )}
-                </DropdownMenuItem>
-              ))}
-              <DropdownMenuItem 
-                onSelect={() => setOpenCreate(true)} 
-                className="border-t border-border mt-1 pt-2 text-primary focus:text-primary cursor-pointer"
+              <div className="px-2.5 py-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80">
+                Danh sách không gian
+              </div>
+              <div className="space-y-1">
+                {workspaces.map((workspace) => {
+                  const isActive = workspace.id === activeWorkspaceId
+                  return (
+                    <DropdownMenuItem
+                      key={workspace.id}
+                      onSelect={() => setActiveWorkspaceId(workspace.id)}
+                      className={cn(
+                        "flex items-center gap-3 px-2.5 py-2 rounded-lg cursor-pointer transition-all duration-200",
+                        isActive 
+                          ? "bg-primary/5 text-primary font-semibold border border-primary/10" 
+                          : "hover:bg-muted border border-transparent hover:translate-x-0.5"
+                      )}
+                    >
+                      {/* Icon rực rỡ cho từng workspace trong danh sách */}
+                      <div
+                        className={cn(
+                          "flex size-7.5 shrink-0 items-center justify-center rounded-lg text-white shadow-xs",
+                          workspace.is_personal
+                            ? "bg-gradient-to-tr from-emerald-500 to-teal-500"
+                            : "bg-gradient-to-tr from-indigo-500 to-purple-500"
+                        )}
+                      >
+                        {workspace.is_personal ? (
+                          <User className="size-3.5 stroke-[2.5]" />
+                        ) : (
+                          <Users className="size-3.5 stroke-[2.5]" />
+                        )}
+                      </div>
+                      
+                      <div className="flex flex-col min-w-0 flex-1 leading-none gap-0.5">
+                        <span className="text-sm truncate">{workspace.name}</span>
+                        <span className="text-[10px] text-muted-foreground font-normal">
+                          {workspace.is_personal ? "Cá nhân" : "Nhóm chung"}
+                        </span>
+                      </div>
+                      
+                      {isActive && (
+                        <div className="flex size-5 items-center justify-center rounded-full bg-primary/10 text-primary">
+                          <CheckIcon className="size-3 stroke-[3]" />
+                        </div>
+                      )}
+                    </DropdownMenuItem>
+                  )
+                })}
+              </div>
+              
+              <DropdownMenuSeparator className="my-1.5 border-border/50" />
+              
+              <DropdownMenuItem
+                onSelect={() => setOpenCreate(true)}
+                className={cn(
+                  "flex items-center justify-center gap-2 px-2.5 py-2.5 rounded-lg border border-dashed",
+                  "border-primary/30 text-primary bg-primary/5 hover:bg-primary hover:text-white hover:border-transparent",
+                  "transition-all duration-300 font-semibold text-xs cursor-pointer shadow-2xs hover:shadow-md hover:shadow-primary/10"
+                )}
               >
-                <PlusIcon className="mr-2 size-4" />
-                Tạo nhóm mới
+                <PlusIcon className="size-4 stroke-[2.5]" />
+                Tạo nhóm chi tiêu mới
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -123,25 +191,29 @@ export function WorkspaceSwitcher() {
       <Dialog open={openCreate} onOpenChange={setOpenCreate}>
         <DialogContent className="sm:max-w-[440px] rounded-2xl overflow-hidden border border-border/80 bg-background/95 backdrop-blur-md p-6 shadow-2xl transition-all duration-300">
           <form onSubmit={handleCreate} className="space-y-6">
-            <div className="flex flex-col items-center text-center space-y-3 pt-2">
-              <div className="flex items-center justify-center size-12 rounded-full bg-primary/10 border border-primary/20 text-primary shadow-[0_0_15px_rgba(var(--primary),0.15)] animate-pulse">
-                <Users className="size-6" />
+            <div className="flex flex-col items-center text-center space-y-3.5 pt-2">
+              {/* Vòng tròn icon tạo nhóm với hiệu ứng pulse và gradient rực rỡ */}
+              <div className="flex items-center justify-center size-14 rounded-full bg-gradient-to-tr from-indigo-500 via-purple-500 to-fuchsia-400 text-white shadow-lg shadow-indigo-500/20 animate-pulse">
+                <Users className="size-7 stroke-[2]" />
               </div>
               <div className="space-y-1">
                 <DialogHeader className="space-y-1 p-0">
-                  <DialogTitle className="text-xl font-semibold tracking-tight text-foreground flex items-center justify-center gap-1.5">
+                  <DialogTitle className="text-xl font-bold tracking-tight text-foreground flex items-center justify-center gap-2">
                     Tạo nhóm chi tiêu mới
-                    <Sparkles className="size-4 text-amber-500 fill-amber-500 animate-bounce" />
+                    <Sparkles className="size-4.5 text-amber-400 fill-amber-400 animate-bounce" />
                   </DialogTitle>
                 </DialogHeader>
                 <DialogDescription className="text-sm text-muted-foreground max-w-[320px] mx-auto leading-relaxed">
-                  Lập kế hoạch tài chính chung cho các chuyến đi, chi tiêu gia đình hoặc quỹ nhóm bạn bè.
+                  Lập kế hoạch tài chính chung cho các chuyến đi, chi tiêu gia đình hoặc quỹ nhóm bạn bè cực kỳ dễ dàng.
                 </DialogDescription>
               </div>
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="workspace-name" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+              <label
+                htmlFor="workspace-name"
+                className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5"
+              >
                 Tên nhóm chi tiêu
               </label>
               <div className="relative group">
@@ -153,11 +225,16 @@ export function WorkspaceSwitcher() {
                   disabled={loading}
                   required
                   autoFocus
-                  className="h-11 rounded-xl px-4 border-muted-foreground/20 bg-background/50 hover:bg-background/80 transition-all duration-200 focus-visible:ring-primary/20 focus-visible:border-primary focus-visible:ring-4 focus-visible:ring-offset-0 text-base"
+                  className={cn(
+                    "h-11 rounded-xl px-4 bg-background/50 border-muted-foreground/20 text-base",
+                    "transition-all duration-300 hover:bg-background/80 focus-visible:bg-background",
+                    "focus-visible:ring-primary/20 focus-visible:border-primary focus-visible:ring-4 focus-visible:ring-offset-0"
+                  )}
                 />
               </div>
-              <p className="text-[11px] text-muted-foreground flex items-center gap-1 mt-1">
-                <span>💡</span> Bạn sẽ tự động là <strong>Owner (chủ nhóm)</strong> và có toàn quyền quản lý.
+              <p className="text-[11px] text-muted-foreground flex items-center gap-1.5 mt-1.5">
+                <Landmark className="size-3.5 text-primary" />
+                <span>Bạn sẽ tự động là <strong>Chủ nhóm</strong> và có toàn quyền quản lý.</span>
               </p>
             </div>
 
@@ -174,7 +251,11 @@ export function WorkspaceSwitcher() {
               <Button
                 type="submit"
                 disabled={loading || !name.trim()}
-                className="flex-1 sm:flex-initial h-11 px-6 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-medium shadow-md shadow-primary/20 transition-all duration-200 active:scale-[0.98] flex items-center justify-center gap-2"
+                className={cn(
+                  "flex-1 sm:flex-initial h-11 px-6 rounded-xl font-semibold transition-all duration-300 active:scale-[0.98]",
+                  "bg-gradient-to-r from-primary to-indigo-600 hover:from-primary/95 hover:to-indigo-600/95 text-primary-foreground",
+                  "shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 flex items-center justify-center gap-2"
+                )}
               >
                 {loading ? (
                   <>
@@ -184,7 +265,7 @@ export function WorkspaceSwitcher() {
                 ) : (
                   <>
                     Tạo nhóm
-                    <PlusIcon className="size-4" />
+                    <PlusIcon className="size-4 stroke-[2.5]" />
                   </>
                 )}
               </Button>
@@ -195,4 +276,3 @@ export function WorkspaceSwitcher() {
     </>
   )
 }
-

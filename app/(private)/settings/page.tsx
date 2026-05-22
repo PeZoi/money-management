@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
 import * as React from "react";
@@ -33,6 +31,7 @@ import { cn } from "@/lib/utils";
 import ArchivedTransactionsList from "./components/archived-transactions-list";
 import { TransactionWithCategory } from "@/types";
 import { useSettings } from "./hooks/use-settings";
+import { Avatar } from "@/components/ui/avatar";
 
 const PRESETS: Array<{ name: string; value: string }> = [
   { name: "Xanh lá", value: "#16a34a" },
@@ -292,9 +291,13 @@ export default function SettingsPage() {
                         return (
                           <div key={member.id || member.member_id} className="flex items-center justify-between py-3">
                             <div className="flex items-center gap-3">
-                              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-sm">
-                                {(member.display_name || member.email || "U")[0].toUpperCase()}
-                              </div>
+                              <Avatar
+                                src={member.avatar_url}
+                                name={member.display_name || member.email}
+                                className="h-9 w-9 border border-border"
+                                width={36}
+                                height={36}
+                              />
                               <div className="min-w-0">
                                 <div className="text-sm font-semibold flex items-center gap-1.5">
                                   <span className="truncate max-w-[150px] sm:max-w-[300px]">
