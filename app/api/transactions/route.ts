@@ -38,6 +38,9 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const workspaceId = searchParams.get("workspace_id");
   const monthParam = searchParams.get("month"); // "YYYY-MM" hoặc "all"
+  const accountId = searchParams.get("account_id");
+  const startDateParam = searchParams.get("start_date");
+  const endDateParam = searchParams.get("end_date");
 
   if (!isUuid(workspaceId)) {
     return NextResponse.json(
@@ -66,8 +69,21 @@ export async function GET(req: Request) {
     .select("*, category:categories(*), account:accounts!account_id(*), to_account:accounts!to_account_id(*)")
     .eq("workspace_id", workspaceId);
 
-  // Mặc định lọc theo tháng hiện tại nếu không chỉ định, trừ khi chọn "all"
-  if (monthParam !== "all") {
+  // Lọc theo tài khoản nếu có (là tài khoản nguồn hoặc đích)
+  if (accountId && isUuid(accountId)) {
+    query = query.or(`account_id.eq.${accountId},to_account_id.eq.${accountId}`);
+  }
+
+  // Lọc theo khoảng thời gian tùy chọn nếu được cung cấp
+  if (startDateParam || endDateParam) {
+    if (startDateParam && !isNaN(Date.parse(startDateParam))) {
+      query = query.gte("created_at", startDateParam);
+    }
+    if (endDateParam && !isNaN(Date.parse(endDateParam))) {
+      query = query.lte("created_at", endDateParam);
+    }
+  } else if (monthParam !== "all") {
+    // Mặc định lọc theo tháng hiện tại nếu không chỉ định, trừ khi chọn "all"
     let targetMonth = monthParam;
     if (!targetMonth) {
       const now = new Date();

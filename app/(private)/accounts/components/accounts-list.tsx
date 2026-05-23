@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import type { AccountRow } from '@/types/database';
 import { useAccountMutation } from '@/hooks/use-accounts';
 import { Badge } from '@/components/ui/badge';
@@ -96,6 +97,7 @@ type AccountCardProps = {
 };
 
 function AccountCard({ account, isSubmitting, onEdit, onDelete, onActivate }: AccountCardProps) {
+  const router = useRouter();
   const balance = Number(account.balance);
   const isNegative = balance < 0;
 
@@ -218,7 +220,7 @@ function AccountCard({ account, isSubmitting, onEdit, onDelete, onActivate }: Ac
             currentX.current = 0;
             return;
           }
-          onEdit();
+          router.push(`/accounts/${account.id}`);
         }}
         className="group relative z-10 flex cursor-pointer flex-col bg-card p-4 transition-all duration-300 select-none"
       >

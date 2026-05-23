@@ -105,14 +105,13 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   signOut: async () => {
+    // Gọi API signOut của Supabase ở chế độ chạy ngầm (không await) để tránh chặn luồng chính
     const supabase = createClient();
-    const { error } = await supabase.auth.signOut();
+    supabase.auth.signOut().catch((err) => {
+      console.error("Supabase signOut error (background):", err);
+    });
 
-    if (error) {
-      set({ error: error.message });
-      return;
-    }
-
+    // Xoá ngay lập tức trạng thái đăng nhập cục bộ
     set({
       user: null,
       status: "unauthenticated",
@@ -120,10 +119,14 @@ export const useAuthStore = create<AuthState>((set) => ({
     });
 
     localStorageFn.removeLocalStorageItem(localStorageFn.AUTH_KEY.USER);
-    cookieStore.delete("sb-jcrytweuxovtwejovjjh-auth-token.0")
-    cookieStore.delete("sb-jcrytweuxovtwejovjjh-auth-token.1")
+    
+    // Xóa cookie token của Supabase ngay lập tức
+    if (typeof document !== "undefined") {
+      document.cookie = "sb-jcrytweuxovtwejovjjh-auth-token.0=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;";
+      document.cookie = "sb-jcrytweuxovtwejovjjh-auth-token.1=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;";
+    }
 
-    // ✅ client-safe redirect
+    // ✅ client-safe redirect tức thì
     window.location.href = "/login";
   },
 }));

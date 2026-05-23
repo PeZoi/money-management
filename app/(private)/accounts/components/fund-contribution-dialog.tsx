@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Loader2Icon, CoinsIcon, ArrowRightIcon, WalletIcon, LandmarkIcon, HelpCircleIcon } from 'lucide-react';
+import { Loader2Icon, CoinsIcon, ArrowRightIcon } from 'lucide-react';
 
 import type { AccountRow } from '@/types/database';
 import { useAuth } from '@/hooks/use-auth';
@@ -13,7 +13,6 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 
 type FundContributionDialogProps = {
