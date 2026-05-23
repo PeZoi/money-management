@@ -29,9 +29,11 @@ import {
 import { useWorkspaceStore } from "@/hooks/use-workspace"
 import { useWorkspaceMutation, useWorkspaces } from "@/hooks/use-workspaces"
 import { cn } from "@/lib/utils"
+import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 
 export function WorkspaceSwitcher() {
+  const router = useRouter()
   const { activeWorkspaceId, setActiveWorkspaceId } = useWorkspaceStore()
   const [openCreate, setOpenCreate] = React.useState(false)
   const [name, setName] = React.useState("")
@@ -64,6 +66,8 @@ export function WorkspaceSwitcher() {
         setName("")
         setOpenCreate(false)
         setActiveWorkspaceId(newWs.id)
+        router.push("/dashboard")
+        toast.success(`Đã tạo sổ chi tiêu mới: ${newWs.name}`)
         if (isMobile) {
           setOpenMobile(false)
         }
@@ -126,7 +130,7 @@ export function WorkspaceSwitcher() {
               sideOffset={6}
             >
               <div className="px-2.5 py-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80">
-                Danh sách không gian
+                Danh sách sổ chi tiêu
               </div>
               <div className="space-y-1">
                 {workspaces.map((workspace) => {
@@ -136,6 +140,8 @@ export function WorkspaceSwitcher() {
                       key={workspace.id}
                       onSelect={() => {
                         setActiveWorkspaceId(workspace.id)
+                        router.push("/dashboard")
+                        toast.success(`Đã chuyển sang sổ chi tiêu: ${workspace.name}`)
                         if (isMobile) {
                           setOpenMobile(false)
                         }

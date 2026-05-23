@@ -34,7 +34,7 @@ export const ChartContainer = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<'div'> & {
     config: ChartConfig;
-    children: React.ReactElement;
+    children: React.ReactElement<any>;
   }
 >(({ id, className, config, children, ...props }, ref) => {
   const uniqueId = React.useId();
