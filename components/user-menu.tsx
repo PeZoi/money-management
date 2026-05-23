@@ -2,6 +2,7 @@
 
 import { ChevronDownIcon, LogOutIcon, SettingsIcon, UserIcon } from 'lucide-react';
 
+import { Avatar } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
@@ -12,8 +13,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Avatar } from '@/components/ui/avatar';
-import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
+import { cn } from '@/lib/utils';
+import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from '@/components/ui/sidebar';
 import { useAuth } from '@/hooks/use-auth';
 import type { UserRole } from '@/types/database';
 import Link from 'next/link';
@@ -31,6 +32,11 @@ function roleMapToVietnamese(role: UserRole | undefined): string {
 
 export function UserMenu() {
   const { user, signOut } = useAuth();
+  const { isMobile, setOpenMobile } = useSidebar();
+
+  if (isMobile) {
+    return null;
+  }
 
   return (
     <SidebarMenu>
@@ -39,7 +45,13 @@ export function UserMenu() {
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
               size="lg"
-              className="h-auto min-h-14 gap-3 px-3 py-2.5 group-data-[collapsible=icon]:size-11! group-data-[collapsible=icon]:justify-center!  cursor-pointer"
+              className={cn(
+                "h-auto min-h-14 gap-3 px-3 py-2.5 cursor-pointer rounded-xl border transition-all duration-300",
+                "border-border/40 bg-card/40 dark:bg-card/20 shadow-xs backdrop-blur-xs",
+                "hover:bg-muted/80 hover:border-border/60",
+                "group-data-[state=open]:bg-muted group-data-[state=open]:border-border/60 group-data-[state=open]:shadow-xs",
+                "group-data-[collapsible=icon]:size-11! group-data-[collapsible=icon]:justify-center!"
+              )}
             >
               {/* Sử dụng component Avatar dùng chung cho tài khoản ở sidebar */}
               <Avatar
@@ -62,7 +74,12 @@ export function UserMenu() {
             </SidebarMenuButton>
           </DropdownMenuTrigger>
 
-          <DropdownMenuContent className="w-56" side="right" align="end" sideOffset={8}>
+          <DropdownMenuContent
+            className="w-[calc(var(--sidebar-width)-24px)] sm:w-56 rounded-xl border-border/60 shadow-xl"
+            side={isMobile ? 'top' : 'right'}
+            align={isMobile ? 'start' : 'end'}
+            sideOffset={8}
+          >
             <DropdownMenuLabel className="font-normal">
               <div className="flex flex-col gap-2">
                 <div className="flex items-center gap-2">
@@ -89,7 +106,14 @@ export function UserMenu() {
                 <UserIcon />
                 Hồ sơ
               </DropdownMenuItem>
-              <Link href="/settings">
+              <Link
+                href="/settings"
+                onClick={() => {
+                  if (isMobile) {
+                    setOpenMobile(false);
+                  }
+                }}
+              >
                 <DropdownMenuItem>
                   <SettingsIcon />
                   Cài đặt

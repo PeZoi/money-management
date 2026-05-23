@@ -1,40 +1,42 @@
 "use client"
 
+import { CheckIcon, ChevronsUpDownIcon, Landmark, PlusIcon, Sparkles, User, Users } from "lucide-react"
 import * as React from "react"
-import { CheckIcon, ChevronsUpDownIcon, PlusIcon, Sparkles, Users, User, Landmark } from "lucide-react"
 
+import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger,
   DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { Input } from "@/components/ui/input"
 import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar"
 import { useWorkspaceStore } from "@/hooks/use-workspace"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogDescription,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { toast } from "sonner"
-import { useWorkspaces, useWorkspaceMutation } from "@/hooks/use-workspaces"
+import { useWorkspaceMutation, useWorkspaces } from "@/hooks/use-workspaces"
 import { cn } from "@/lib/utils"
+import { toast } from "sonner"
 
 export function WorkspaceSwitcher() {
   const { activeWorkspaceId, setActiveWorkspaceId } = useWorkspaceStore()
   const [openCreate, setOpenCreate] = React.useState(false)
   const [name, setName] = React.useState("")
   const { createWorkspace, isSubmitting: loading } = useWorkspaceMutation()
+  const { isMobile, setOpenMobile } = useSidebar()
 
   const { data: workspacesData = [] } = useWorkspaces(false)
   const workspaces = React.useMemo(() => workspacesData, [workspacesData])
@@ -62,6 +64,9 @@ export function WorkspaceSwitcher() {
         setName("")
         setOpenCreate(false)
         setActiveWorkspaceId(newWs.id)
+        if (isMobile) {
+          setOpenMobile(false)
+        }
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Không thể kết nối đến máy chủ"
@@ -82,9 +87,10 @@ export function WorkspaceSwitcher() {
               <SidebarMenuButton
                 size="lg"
                 className={cn(
-                  "h-14 gap-3 px-3 py-2.5 cursor-pointer rounded-xl border border-transparent transition-all duration-300",
-                  "hover:bg-sidebar-accent hover:border-sidebar-border/40",
-                  "data-[state=open]:bg-sidebar-accent data-[state=open]:border-sidebar-border/60 data-[state=open]:shadow-xs"
+                  "h-14 gap-3 px-3 py-2.5 cursor-pointer rounded-xl border transition-all duration-300",
+                  "border-border/40 bg-card/40 dark:bg-card/20 shadow-xs backdrop-blur-xs",
+                  "hover:bg-muted/80 hover:border-border/60",
+                  "data-[state=open]:bg-muted data-[state=open]:border-border/60 data-[state=open]:shadow-xs"
                 )}
               >
                 {/* Icon Workspace được thiết kế rực rỡ với các dải gradient riêng biệt */}
@@ -115,7 +121,7 @@ export function WorkspaceSwitcher() {
             </DropdownMenuTrigger>
             
             <DropdownMenuContent
-              className="w-64 p-1.5 rounded-xl border-border/60 shadow-xl"
+              className="w-[calc(var(--sidebar-width)-24px)] sm:w-64 p-1.5 rounded-xl border-border/60 shadow-xl"
               align="start"
               sideOffset={6}
             >
@@ -128,7 +134,12 @@ export function WorkspaceSwitcher() {
                   return (
                     <DropdownMenuItem
                       key={workspace.id}
-                      onSelect={() => setActiveWorkspaceId(workspace.id)}
+                      onSelect={() => {
+                        setActiveWorkspaceId(workspace.id)
+                        if (isMobile) {
+                          setOpenMobile(false)
+                        }
+                      }}
                       className={cn(
                         "flex items-center gap-3 px-2.5 py-2 rounded-lg cursor-pointer transition-all duration-200",
                         isActive 

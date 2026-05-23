@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 
+import { Separator } from '@/components/ui/separator';
 import {
   Sidebar,
   SidebarContent,
@@ -13,13 +14,14 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
+  useSidebar,
 } from '@/components/ui/sidebar';
 import { UserMenu } from '@/components/user-menu';
 import { WorkspaceSwitcher } from '@/components/workspace-switcher';
 import { ChartPieIcon, CreditCardIcon, LayoutDashboardIcon, SettingsIcon, TagsIcon, WalletIcon } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
 
 type NavItem = {
   title: string;
@@ -63,18 +65,21 @@ function isItemActive(pathname: string, item: NavItem) {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname();
+  const { isMobile, setOpenMobile } = useSidebar();
 
   return (
     <Sidebar {...props}>
-      <SidebarHeader>
+      <SidebarHeader className="p-3">
         <WorkspaceSwitcher />
-        <Separator />
+        <Separator className="mt-2.5 opacity-40" />
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent className="px-2 py-2">
         {navGroups.map((group) => (
-          <SidebarGroup key={group.label}>
-            <SidebarGroupLabel className="text-xs tracking-wide">{group.label}</SidebarGroupLabel>
-            <SidebarMenu>
+          <SidebarGroup key={group.label} className="py-2.5">
+            <SidebarGroupLabel className="text-[10px] font-bold tracking-wider text-muted-foreground/50 uppercase px-3.5 mb-1.5 mt-0.5">
+              {group.label}
+            </SidebarGroupLabel>
+            <SidebarMenu className="gap-1">
               {group.items.map((item) => {
                 const active = isItemActive(pathname, item);
                 const Icon = item.icon;
@@ -84,10 +89,29 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                       asChild
                       isActive={active}
                       tooltip={item.title}
-                      className="data-[active=true]:bg-primary data-[active=true]:text-primary-foreground data-[active=true]:hover:bg-primary/90"
+                      className={cn(
+                        "relative rounded-xl px-3 py-2.5 h-10 gap-3 cursor-pointer transition-all duration-300 font-medium",
+                        "hover:bg-muted/50 dark:hover:bg-muted/20 text-muted-foreground hover:text-foreground",
+                        "data-[active=true]:bg-gradient-to-r data-[active=true]:from-emerald-500/12 data-[active=true]:to-teal-500/6 data-[active=true]:text-primary data-[active=true]:font-bold data-[active=true]:border-l-3 data-[active=true]:border-primary data-[active=true]:pl-2 data-[active=true]:rounded-l-none"
+                      )}
                     >
-                      <Link href={item.url} className="flex items-center gap-2">
-                        <Icon aria-hidden />
+                      <Link
+                        href={item.url}
+                        className="flex items-center gap-2.5 group"
+                        onClick={() => {
+                          // Tự động đóng sidebar trên thiết bị di động khi chuyển trang
+                          if (isMobile) {
+                            setOpenMobile(false);
+                          }
+                        }}
+                      >
+                        <Icon 
+                          className={cn(
+                            "size-4.5! transition-all duration-300 group-hover:scale-105",
+                            active ? "text-primary scale-105" : "text-muted-foreground/80"
+                          )}
+                          aria-hidden 
+                        />
                         <span>{item.title}</span>
                       </Link>
                     </SidebarMenuButton>
@@ -98,10 +122,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarGroup>
         ))}
       </SidebarContent>
-      <SidebarFooter>
-        <Separator />
-        <UserMenu />
-      </SidebarFooter>
+      {!isMobile && (
+        <SidebarFooter className="p-3">
+          <Separator className="mb-2.5 opacity-40" />
+          <UserMenu />
+        </SidebarFooter>
+      )}
       <SidebarRail />
     </Sidebar>
   );

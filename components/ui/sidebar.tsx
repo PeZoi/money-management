@@ -167,7 +167,7 @@ function Sidebar({
           data-sidebar="sidebar"
           data-slot="sidebar"
           data-mobile="true"
-          className="w-(--sidebar-width) bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden"
+          className="w-(--sidebar-width) bg-sidebar/95 dark:bg-sidebar/95 backdrop-blur-xl p-0 text-sidebar-foreground [&>button]:hidden rounded-r-3xl border-r border-border/40 shadow-2xl transition-all duration-300"
           style={
             {
               '--sidebar-width': SIDEBAR_WIDTH_MOBILE,

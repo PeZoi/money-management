@@ -1,38 +1,39 @@
 "use client";
 
-import * as React from "react";
 import { PrivatePageShell } from "@/components/private-page-shell";
+import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
-  DialogDescription,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
+import { TransactionWithCategory } from "@/types";
 import {
-  SettingsIcon,
-  UsersIcon,
-  ArchiveIcon,
-  TrashIcon,
-  LogOutIcon,
-  CrownIcon,
-  UserPlusIcon,
-  Loader2Icon,
   AlertTriangleIcon,
+  ArchiveIcon,
   BuildingIcon,
   CalendarIcon,
   CoinsIcon,
+  CrownIcon,
   EyeIcon,
+  Loader2Icon,
+  LogOutIcon,
   MailIcon,
+  SettingsIcon,
+  TrashIcon,
+  UserPlusIcon,
+  UsersIcon,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import * as React from "react";
 import ArchivedTransactionsList from "./components/archived-transactions-list";
-import { TransactionWithCategory } from "@/types";
 import { useSettings } from "./hooks/use-settings";
-import { Avatar } from "@/components/ui/avatar";
+import { useAuth } from "@/hooks/use-auth";
 
 const PRESETS: Array<{ name: string; value: string }> = [
   { name: "Xanh lá", value: "#16a34a" },
@@ -44,6 +45,7 @@ const PRESETS: Array<{ name: string; value: string }> = [
 ];
 
 export default function SettingsPage() {
+  const { signOut } = useAuth();
   const {
     theme,
     color,
@@ -112,12 +114,13 @@ export default function SettingsPage() {
       contentClassName="max-w-4xl"
     >
       {/* Tab Navigation */}
-      <div className="mt-8 border-b border-border">
-        <div className="flex space-x-6">
+      {/* Cho phép cuộn ngang và ẩn thanh cuộn ở thiết bị di động */}
+      <div className="mt-8 border-b border-border overflow-x-auto no-scrollbar">
+        <div className="flex space-x-6 min-w-max pb-px">
           <button
             onClick={() => setActiveTab("appearance")}
             className={cn(
-              "pb-4 text-sm font-semibold border-b-2 transition-colors relative flex items-center gap-2",
+              "pb-4 text-sm font-semibold border-b-2 transition-colors relative flex items-center gap-2 whitespace-nowrap cursor-pointer",
               activeTab === "appearance"
                 ? "border-primary text-primary"
                 : "border-transparent text-muted-foreground hover:text-foreground"
@@ -129,7 +132,7 @@ export default function SettingsPage() {
           <button
             onClick={() => setActiveTab("group")}
             className={cn(
-              "pb-4 text-sm font-semibold border-b-2 transition-colors relative flex items-center gap-2",
+              "pb-4 text-sm font-semibold border-b-2 transition-colors relative flex items-center gap-2 whitespace-nowrap cursor-pointer",
               activeTab === "group"
                 ? "border-primary text-primary"
                 : "border-transparent text-muted-foreground hover:text-foreground"
@@ -141,7 +144,7 @@ export default function SettingsPage() {
           <button
             onClick={() => setActiveTab("archived")}
             className={cn(
-              "pb-4 text-sm font-semibold border-b-2 transition-colors relative flex items-center gap-2",
+              "pb-4 text-sm font-semibold border-b-2 transition-colors relative flex items-center gap-2 whitespace-nowrap cursor-pointer",
               activeTab === "archived"
                 ? "border-primary text-primary"
                 : "border-transparent text-muted-foreground hover:text-foreground"
@@ -153,7 +156,7 @@ export default function SettingsPage() {
           <button
             onClick={() => setActiveTab("invitations")}
             className={cn(
-              "pb-4 text-sm font-semibold border-b-2 transition-colors relative flex items-center gap-2",
+              "pb-4 text-sm font-semibold border-b-2 transition-colors relative flex items-center gap-2 whitespace-nowrap cursor-pointer",
               activeTab === "invitations"
                 ? "border-primary text-primary"
                 : "border-transparent text-muted-foreground hover:text-foreground"
@@ -228,6 +231,35 @@ export default function SettingsPage() {
               </div>
               <Button variant="outline" onClick={resetPrimary} type="button">
                 Reset về mặc định
+              </Button>
+            </section>
+
+            {/* Section 3: Tài khoản & Đăng xuất */}
+            <section className="rounded-xl border border-border/80 bg-linear-to-r from-card to-muted/20 p-6 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-primary/2 rounded-full blur-3xl pointer-events-none" />
+              <div className="flex items-center gap-4 relative z-10">
+                <Avatar
+                  src={user?.avatarUrl}
+                  name={user?.displayName || user?.email}
+                  className="h-14 w-14 border-2 border-background shadow-md transition-transform duration-300 hover:scale-105"
+                  width={56}
+                  height={56}
+                />
+                <div className="min-w-0">
+                  <h2 className="text-base font-bold text-foreground tracking-tight">{user?.displayName || "Người dùng"}</h2>
+                  <p className="text-xs text-muted-foreground font-medium truncate mt-1 flex items-center gap-1.5">
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    {user?.email}
+                  </p>
+                </div>
+              </div>
+              <Button
+                variant="destructive"
+                onClick={() => signOut()}
+                className="font-semibold px-5 py-2.5 rounded-xl transition-all duration-300 shadow-sm hover:shadow-md cursor-pointer self-start sm:self-auto h-10 gap-2 relative z-10"
+              >
+                <LogOutIcon className="size-4" />
+                Đăng xuất
               </Button>
             </section>
           </div>

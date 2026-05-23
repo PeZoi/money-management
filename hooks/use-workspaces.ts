@@ -65,7 +65,9 @@ export function useWorkspaces(isArchived = false) {
       const json = await res.json();
       return json.data ?? [];
     },
-    refetchInterval: isArchived ? false : 20000,
+    // Không tự động fetch định kỳ và khi focus lại cửa sổ trình duyệt
+    refetchInterval: false,
+    refetchOnWindowFocus: false,
   });
 }
 
