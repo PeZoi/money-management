@@ -255,7 +255,7 @@ export function WorkspaceSetupDialog() {
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleDismiss()}>
       <DialogContent fullScreenOnMobile className="sm:max-w-2xl sm:max-h-[90vh] sm:rounded-2xl shadow-xl">
         {/* Header với hiệu ứng gradient đẹp mắt */}
-        <div className="relative p-6 pb-4 border-b border-border bg-gradient-to-r from-primary/5 via-transparent to-transparent">
+        <div className="relative p-6 pb-4 border-b border-border bg-linear-to-r from-primary/5 via-transparent to-transparent">
           <div className="pointer-events-none absolute inset-x-0 -top-6 h-20 bg-linear-to-b from-primary/8 to-transparent blur-xl" />
           <DialogHeader className="relative">
             <DialogTitle className="flex items-center gap-2 text-xl font-bold tracking-tight">

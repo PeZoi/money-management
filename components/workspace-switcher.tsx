@@ -102,8 +102,8 @@ export function WorkspaceSwitcher() {
                   className={cn(
                     "flex aspect-square size-9 items-center justify-center rounded-xl text-white shadow-md transition-transform duration-300 group-hover:scale-105",
                     activeWorkspace.is_personal
-                      ? "bg-gradient-to-tr from-emerald-500 via-teal-500 to-cyan-400 shadow-emerald-500/10"
-                      : "bg-gradient-to-tr from-indigo-500 via-purple-500 to-fuchsia-400 shadow-indigo-500/10"
+                      ? "bg-linear-to-tr from-emerald-500 via-teal-500 to-cyan-400 shadow-emerald-500/10"
+                      : "bg-linear-to-tr from-indigo-500 via-purple-500 to-fuchsia-400 shadow-indigo-500/10"
                   )}
                 >
                   {activeWorkspace.is_personal ? (
@@ -158,8 +158,8 @@ export function WorkspaceSwitcher() {
                         className={cn(
                           "flex size-7.5 shrink-0 items-center justify-center rounded-lg text-white shadow-xs",
                           workspace.is_personal
-                            ? "bg-gradient-to-tr from-emerald-500 to-teal-500"
-                            : "bg-gradient-to-tr from-indigo-500 to-purple-500"
+                            ? "bg-linear-to-tr from-emerald-500 to-teal-500"
+                            : "bg-linear-to-tr from-indigo-500 to-purple-500"
                         )}
                       >
                         {workspace.is_personal ? (
@@ -178,7 +178,7 @@ export function WorkspaceSwitcher() {
                       
                       {isActive && (
                         <div className="flex size-5 items-center justify-center rounded-full bg-primary/10 text-primary">
-                          <CheckIcon className="size-3 stroke-[3]" />
+                          <CheckIcon className="size-3 stroke-3" />
                         </div>
                       )}
                     </DropdownMenuItem>
@@ -209,8 +209,8 @@ export function WorkspaceSwitcher() {
           <form onSubmit={handleCreate} className="space-y-6">
             <div className="flex flex-col items-center text-center space-y-3.5 pt-2">
               {/* Vòng tròn icon tạo nhóm với hiệu ứng pulse và gradient rực rỡ */}
-              <div className="flex items-center justify-center size-14 rounded-full bg-gradient-to-tr from-indigo-500 via-purple-500 to-fuchsia-400 text-white shadow-lg shadow-indigo-500/20 animate-pulse">
-                <Users className="size-7 stroke-[2]" />
+              <div className="flex items-center justify-center size-14 rounded-full bg-linear-to-tr from-indigo-500 via-purple-500 to-fuchsia-400 text-white shadow-lg shadow-indigo-500/20 animate-pulse">
+                <Users className="size-7 stroke-2" />
               </div>
               <div className="space-y-1">
                 <DialogHeader className="space-y-1 p-0">
@@ -269,7 +269,7 @@ export function WorkspaceSwitcher() {
                 disabled={loading || !name.trim()}
                 className={cn(
                   "flex-1 sm:flex-initial h-11 px-6 rounded-xl font-semibold transition-all duration-300 active:scale-[0.98]",
-                  "bg-gradient-to-r from-primary to-indigo-600 hover:from-primary/95 hover:to-indigo-600/95 text-primary-foreground",
+                  "bg-linear-to-r from-primary to-indigo-600 hover:from-primary/95 hover:to-indigo-600/95 text-primary-foreground",
                   "shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 flex items-center justify-center gap-2"
                 )}
               >
