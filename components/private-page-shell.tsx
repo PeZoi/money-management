@@ -37,8 +37,8 @@ export function PrivatePageShell({
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <span className="inline-flex size-9 items-center justify-center rounded-xl border bg-card shadow-sm">
-                <Icon className="size-4 text-primary" aria-hidden />
+              <span className="inline-flex size-8 sm:size-9 shrink-0 items-center justify-center rounded-xl border bg-card shadow-sm">
+                <Icon className="size-3.5 sm:size-4 text-primary" aria-hidden />
               </span>
               <div className="min-w-0">
                 <h1 className="truncate text-xl font-semibold tracking-tight sm:text-2xl">{title}</h1>

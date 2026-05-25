@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { AccountRow } from '@/types/database';
 import { useAccountMutation } from '@/hooks/use-accounts';
@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import { CheckCircle2Icon, EditIcon, MoreVerticalIcon, PlusIcon, Trash2Icon } from 'lucide-react';
+import { CheckCircle2Icon, EditIcon, MoreVerticalIcon, PlusIcon, Trash2Icon, RefreshCwIcon } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -98,6 +98,7 @@ type AccountCardProps = {
 
 function AccountCard({ account, isSubmitting, onEdit, onDelete, onActivate }: AccountCardProps) {
   const router = useRouter();
+  const [isActivating, setIsActivating] = useState(false);
   const balance = Number(account.balance);
   const isNegative = balance < 0;
 
@@ -263,13 +264,26 @@ function AccountCard({ account, isSubmitting, onEdit, onDelete, onActivate }: Ac
             <DropdownMenuContent align="start" className="min-w-44 rounded-xl">
               {!account.is_active && (
                 <DropdownMenuItem
-                  onClick={(e) => {
+                  onClick={async (e) => {
                     e.stopPropagation();
-                    onActivate();
+                    if (isActivating) return;
+                    setIsActivating(true);
+                    try {
+                      await onActivate();
+                    } catch (err) {
+                      console.error(err);
+                    } finally {
+                      setIsActivating(false);
+                    }
                   }}
                   className="rounded-lg cursor-pointer gap-2"
+                  disabled={isSubmitting || isActivating}
                 >
-                  <CheckCircle2Icon className="size-4 text-primary" />
+                  {isActivating ? (
+                    <RefreshCwIcon className="size-4 animate-spin text-primary" />
+                  ) : (
+                    <CheckCircle2Icon className="size-4 text-primary" />
+                  )}
                   <span>Đặt làm active</span>
                 </DropdownMenuItem>
               )}
@@ -338,14 +352,26 @@ function AccountCard({ account, isSubmitting, onEdit, onDelete, onActivate }: Ac
                 type="button"
                 variant="outline"
                 size="sm"
-                className="h-8 rounded-xl text-xs border-muted-foreground/20 hover:border-primary hover:bg-primary/10 hover:text-primary transition-all"
-                onClick={(e) => {
+                className="h-8 rounded-xl text-xs border-muted-foreground/20 hover:border-primary hover:bg-primary/10 hover:text-primary transition-all gap-1.5"
+                onClick={async (e) => {
                   e.stopPropagation();
-                  onActivate();
+                  if (isActivating) return;
+                  setIsActivating(true);
+                  try {
+                    await onActivate();
+                  } catch (err) {
+                    console.error(err);
+                  } finally {
+                    setIsActivating(false);
+                  }
                 }}
-                disabled={isSubmitting}
+                disabled={isSubmitting || isActivating}
               >
-                Kích hoạt
+                {isActivating ? (
+                  <RefreshCwIcon className="size-3.5 animate-spin text-muted-foreground" />
+                ) : (
+                  'Kích hoạt'
+                )}
               </Button>
             )}
           </div>

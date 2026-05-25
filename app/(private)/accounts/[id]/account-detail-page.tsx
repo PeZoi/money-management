@@ -94,7 +94,7 @@ export default function AccountDetailPage({ id }: AccountDetailPageProps) {
             <Button
               type="button"
               variant="outline"
-              onClick={() => router.push('/accounts')}
+              onClick={() => router.back()}
               className="rounded-xl h-10 text-xs font-semibold"
             >
               <ArrowLeftIcon className="mr-1.5 size-4" />

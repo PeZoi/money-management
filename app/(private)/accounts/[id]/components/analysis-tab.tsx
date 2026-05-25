@@ -216,8 +216,8 @@ export function AnalysisTab({
                     paddingAngle={3}
                     dataKey="amount"
                   >
-                    {categoryStats.data.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    {categoryStats.data.map((entry) => (
+                      <Cell key={`cell-${entry.id}`} fill={entry.color} />
                     ))}
                   </Pie>
                   <Tooltip content={<CustomPieTooltip />} wrapperStyle={{ zIndex: 100 }} />
@@ -235,9 +235,9 @@ export function AnalysisTab({
             
             {/* Danh sách chú thích chi tiết đơn giản, sạch sẽ */}
             <div className="space-y-1.5 max-h-[220px] overflow-y-auto pr-1 w-full">
-              {categoryStats.data.map((item, idx) => (
+              {categoryStats.data.map((item) => (
                 <div 
-                  key={idx} 
+                  key={item.id} 
                   onClick={() => {
                     const catTransactions = filteredPeriodTransactions.filter(t => {
                       // Chỉ lấy giao dịch chi tiêu (bao gồm expense và transfer đi của tài khoản này)
@@ -259,8 +259,15 @@ export function AnalysisTab({
                 >
                   {/* Trái: Icon + Tên danh mục */}
                   <div className="flex items-center gap-2.5 min-w-0">
-                    {/* Ô Icon bo góc kiểu iOS gọn gàng bảo vệ layout */}
-                    <div className="size-7 shrink-0 flex items-center justify-center rounded-lg bg-muted/60 select-none overflow-hidden text-muted-foreground">
+                    {/* Ô Icon bo góc kiểu iOS gọn gàng đồng bộ màu sắc biểu đồ */}
+                    <div 
+                      className="size-7 shrink-0 flex items-center justify-center rounded-lg select-none overflow-hidden transition-transform duration-300"
+                      style={{
+                        backgroundColor: `${item.color}15`,
+                        border: `1px solid ${item.color}30`,
+                        color: item.color
+                      }}
+                    >
                       {item.id !== 'other' ? (
                         <IconPreview name={item.icon} className="size-4" />
                       ) : (

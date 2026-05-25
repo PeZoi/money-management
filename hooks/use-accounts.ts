@@ -82,6 +82,10 @@ export function useAccountMutation() {
     onSuccess: () => {
       toast.success('Đã cập nhật tài khoản');
       queryClient.invalidateQueries({ queryKey: ['accounts', activeWorkspaceId] });
+      queryClient.invalidateQueries({ queryKey: ['transactions-report', activeWorkspaceId] });
+      queryClient.invalidateQueries({ queryKey: ['transactions-report-prev', activeWorkspaceId] });
+      queryClient.invalidateQueries({ queryKey: ['transactions-today', activeWorkspaceId] });
+      queryClient.invalidateQueries({ queryKey: ['transactions', activeWorkspaceId] });
     },
     onError: (err: Error) => {
       toast.error(err.message || 'Không thể cập nhật tài khoản');
@@ -100,6 +104,10 @@ export function useAccountMutation() {
     onSuccess: () => {
       toast.success('Đã xóa tài khoản');
       queryClient.invalidateQueries({ queryKey: ['accounts', activeWorkspaceId] });
+      queryClient.invalidateQueries({ queryKey: ['transactions-report', activeWorkspaceId] });
+      queryClient.invalidateQueries({ queryKey: ['transactions-report-prev', activeWorkspaceId] });
+      queryClient.invalidateQueries({ queryKey: ['transactions-today', activeWorkspaceId] });
+      queryClient.invalidateQueries({ queryKey: ['transactions', activeWorkspaceId] });
     },
     onError: (err: Error) => {
       toast.error(err.message || 'Không thể xóa tài khoản');
@@ -116,6 +124,10 @@ export function useAccountMutation() {
     onSuccess: () => {
       toast.success('Đã chọn tài khoản active');
       queryClient.invalidateQueries({ queryKey: ['accounts', activeWorkspaceId] });
+      queryClient.invalidateQueries({ queryKey: ['transactions-report', activeWorkspaceId] });
+      queryClient.invalidateQueries({ queryKey: ['transactions-report-prev', activeWorkspaceId] });
+      queryClient.invalidateQueries({ queryKey: ['transactions-today', activeWorkspaceId] });
+      queryClient.invalidateQueries({ queryKey: ['transactions', activeWorkspaceId] });
     },
     onError: (err: Error) => {
       toast.error(err.message || 'Không thể kích hoạt tài khoản');
