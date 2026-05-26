@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 
+import { useTransactionSuggestions } from '@/hooks/use-transactions';
 import { useUpdateTransactionForm } from '../hooks/use-update-transaction-form';
 
 type Props = {
@@ -77,6 +78,15 @@ export default function UpdateTransactionDialog({ transaction, open, onOpenChang
   const note = form.watch('note');
   const date = form.watch('date');
 
+  // States và logic cho tính năng autocomplete tên giao dịch
+  const { suggestions } = useTransactionSuggestions();
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
+
+  const filteredSuggestions = suggestions
+    .filter((s) => !note || s.toLowerCase().includes(note.toLowerCase()))
+    .slice(0, 5);
+
   // State cho popover tài khoản
   const [openFrom, setOpenFrom] = useState(false);
   const [openTo, setOpenTo] = useState(false);
@@ -108,41 +118,69 @@ export default function UpdateTransactionDialog({ transaction, open, onOpenChang
 
         {/* Phần thân form chứa các trường nhập liệu có khả năng cuộn độc lập */}
         <div className="flex-1 overflow-y-auto px-5 py-5 sm:px-6 space-y-5">
-          {/* Tên giao dịch (Lưu trữ ở cột note) */}
-          <div className="grid gap-2">
-            <Label htmlFor="tx-note">Tên giao dịch</Label>
-            <Input
-              id="tx-note"
-              value={note}
-              onChange={(e) => form.setValue('note', e.target.value)}
-              placeholder={isTransfer ? 'Ví dụ: Chuyển sang VPBank, rút ATM…' : 'Ví dụ: Ăn trưa, xăng xe, mua sắm…'}
-              className="h-11 rounded-xl"
-              disabled={isSubmitting}
-            />
-          </div>
+          {/* Category — Ẩn khi transfer */}
+          {!isTransfer && (
+            <div className="grid gap-2">
+              <Label>Danh mục</Label>
+              <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
+                {/* Option "Khác" (mặc định / không chọn) */}
+                {(() => {
+                  const classes = getCategoryClasses(!categoryId);
+                  return (
+                    <button
+                      type="button"
+                      onClick={() => form.setValue('categoryId', '')}
+                      disabled={isSubmitting}
+                      className={cn(
+                        'group flex flex-col items-center justify-center gap-1.5 rounded-2xl border p-3 aspect-square text-center transition-all outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+                        classes.button,
+                        isSubmitting && 'cursor-not-allowed opacity-50',
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          'flex size-10 shrink-0 items-center justify-center rounded-xl border transition-colors',
+                          classes.iconSpan,
+                        )}
+                      >
+                        <HelpCircleIcon className="size-5" />
+                      </span>
+                      <span className="text-xs font-semibold truncate max-w-full">Khác</span>
+                    </button>
+                  );
+                })()}
 
-          {/* Amount */}
-          <div className="grid gap-2">
-            <Label htmlFor="tx-amount" className={cn(form.formState.errors.amount && 'text-destructive')}>
-              Số tiền (VND)
-            </Label>
-            <Input
-              id="tx-amount"
-              type="text"
-              inputMode="numeric"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="0"
-              className={cn(
-                'h-12 rounded-xl text-lg font-semibold transition-all duration-200',
-                form.formState.errors.amount && 'border-destructive focus-visible:ring-destructive text-destructive',
-              )}
-              disabled={isSubmitting}
-            />
-            {form.formState.errors.amount && (
-              <p className="text-xs font-medium text-destructive mt-0.5">{form.formState.errors.amount.message}</p>
-            )}
-          </div>
+                {/* Danh sách danh mục đã lọc */}
+                {filteredCategories.map((c) => {
+                  const isSelected = categoryId === c.id;
+                  const classes = getCategoryClasses(isSelected);
+                  return (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => form.setValue('categoryId', c.id)}
+                      disabled={isSubmitting}
+                      className={cn(
+                        'group flex flex-col items-center justify-center gap-1.5 rounded-2xl border p-3 aspect-square text-center transition-all outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+                        classes.button,
+                        isSubmitting && 'cursor-not-allowed opacity-50',
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          'flex size-10 shrink-0 items-center justify-center rounded-xl border transition-colors',
+                          classes.iconSpan,
+                        )}
+                      >
+                        <IconPreview name={c.icon} className="size-5" />
+                      </span>
+                      <span className="text-xs font-semibold truncate max-w-full">{c.name}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Tài khoản */}
           {isTransfer ? (
@@ -330,69 +368,108 @@ export default function UpdateTransactionDialog({ transaction, open, onOpenChang
             </div>
           )}
 
-          {/* Category — Ẩn khi transfer */}
-          {!isTransfer && (
-            <div className="grid gap-2">
-              <Label>Danh mục</Label>
-              <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
-                {/* Option "Khác" (mặc định / không chọn) */}
-                {(() => {
-                  const classes = getCategoryClasses(!categoryId);
-                  return (
-                    <button
-                      type="button"
-                      onClick={() => form.setValue('categoryId', '')}
-                      disabled={isSubmitting}
-                      className={cn(
-                        'group flex flex-col items-center justify-center gap-1.5 rounded-2xl border p-3 aspect-square text-center transition-all outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-                        classes.button,
-                        isSubmitting && 'cursor-not-allowed opacity-50',
-                      )}
-                    >
-                      <span
-                        className={cn(
-                          'flex size-10 shrink-0 items-center justify-center rounded-xl border transition-colors',
-                          classes.iconSpan,
-                        )}
-                      >
-                        <HelpCircleIcon className="size-5" />
-                      </span>
-                      <span className="text-xs font-semibold truncate max-w-full">Khác</span>
-                    </button>
-                  );
-                })()}
+          {/* Tên giao dịch (Lưu trữ ở cột note) */}
+          <div className="grid gap-2">
+            <Label htmlFor="tx-note">Tên giao dịch</Label>
+            <div className="relative">
+              <Input
+                id="tx-note"
+                value={note}
+                onChange={(e) => {
+                  form.setValue('note', e.target.value);
+                  setActiveSuggestionIndex(-1);
+                  setShowSuggestions(true);
+                }}
+                onFocus={() => setShowSuggestions(true)}
+                onBlur={() => {
+                  // Delay một chút để có thể click chọn suggestion trước khi dropdown bị ẩn
+                  setTimeout(() => {
+                    setShowSuggestions(false);
+                  }, 200);
+                }}
+                onKeyDown={(e) => {
+                  if (!showSuggestions || filteredSuggestions.length === 0) return;
 
-                {/* Danh sách danh mục đã lọc */}
-                {filteredCategories.map((c) => {
-                  const isSelected = categoryId === c.id;
-                  const classes = getCategoryClasses(isSelected);
-                  return (
-                    <button
-                      key={c.id}
-                      type="button"
-                      onClick={() => form.setValue('categoryId', c.id)}
-                      disabled={isSubmitting}
-                      className={cn(
-                        'group flex flex-col items-center justify-center gap-1.5 rounded-2xl border p-3 aspect-square text-center transition-all outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-                        classes.button,
-                        isSubmitting && 'cursor-not-allowed opacity-50',
-                      )}
-                    >
-                      <span
+                  if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    setActiveSuggestionIndex((prev) =>
+                      prev < filteredSuggestions.length - 1 ? prev + 1 : 0
+                    );
+                  } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    setActiveSuggestionIndex((prev) =>
+                      prev > 0 ? prev - 1 : filteredSuggestions.length - 1
+                    );
+                  } else if (e.key === 'Enter') {
+                    if (activeSuggestionIndex >= 0 && activeSuggestionIndex < filteredSuggestions.length) {
+                      e.preventDefault();
+                      form.setValue('note', filteredSuggestions[activeSuggestionIndex]);
+                      setShowSuggestions(false);
+                      setActiveSuggestionIndex(-1);
+                    }
+                  } else if (e.key === 'Escape') {
+                    setShowSuggestions(false);
+                    setActiveSuggestionIndex(-1);
+                  }
+                }}
+                placeholder={isTransfer ? 'Ví dụ: Chuyển sang VPBank, rút ATM…' : 'Ví dụ: Ăn trưa, xăng xe, mua sắm…'}
+                className="h-11 rounded-xl"
+                disabled={isSubmitting}
+                autoComplete="off"
+              />
+
+              {/* Dropdown gợi ý */}
+              {showSuggestions && filteredSuggestions.length > 0 && (
+                <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-xl shadow-lg max-h-[220px] overflow-y-auto p-1">
+                  {filteredSuggestions.map((suggestion, index) => {
+                    const isActive = index === activeSuggestionIndex;
+                    return (
+                      <button
+                        key={suggestion}
+                        type="button"
+                        onMouseDown={() => {
+                          form.setValue('note', suggestion);
+                          setShowSuggestions(false);
+                          setActiveSuggestionIndex(-1);
+                        }}
                         className={cn(
-                          'flex size-10 shrink-0 items-center justify-center rounded-xl border transition-colors',
-                          classes.iconSpan,
+                          'flex w-full items-center rounded-lg px-3 py-2 text-sm text-left transition-colors',
+                          isActive
+                            ? 'bg-primary/10 text-primary font-medium'
+                            : 'hover:bg-muted text-foreground'
                         )}
                       >
-                        <IconPreview name={c.icon} className="size-5" />
-                      </span>
-                      <span className="text-xs font-semibold truncate max-w-full">{c.name}</span>
-                    </button>
-                  );
-                })}
-              </div>
+                        <span className="truncate">{suggestion}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
-          )}
+          </div>
+
+          {/* Amount */}
+          <div className="grid gap-2">
+            <Label htmlFor="tx-amount" className={cn(form.formState.errors.amount && 'text-destructive')}>
+              Số tiền (VND)
+            </Label>
+            <Input
+              id="tx-amount"
+              type="text"
+              inputMode="numeric"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder="0"
+              className={cn(
+                'h-12 rounded-xl text-lg font-semibold transition-all duration-200',
+                form.formState.errors.amount && 'border-destructive focus-visible:ring-destructive text-destructive',
+              )}
+              disabled={isSubmitting}
+            />
+            {form.formState.errors.amount && (
+              <p className="text-xs font-medium text-destructive mt-0.5">{form.formState.errors.amount.message}</p>
+            )}
+          </div>
 
           {/* Date */}
           <div className="grid gap-2">

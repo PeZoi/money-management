@@ -199,3 +199,39 @@ export function useTransactionMutation() {
   return { isSubmitting, deleteTransaction, createTransaction, updateTransaction };
 }
 
+/**
+ * Hook lấy danh sách gợi ý tên giao dịch dựa trên lịch sử
+ */
+export function useTransactionSuggestions() {
+  const { activeWorkspaceId } = useWorkspaceStore();
+
+  const { data: suggestions = [] } = useQuery<string[]>({
+    queryKey: ['transaction-suggestions', activeWorkspaceId],
+    queryFn: async () => {
+      if (!activeWorkspaceId) return [];
+      const res = await fetch(`/api/transactions?workspace_id=${activeWorkspaceId}&month=all`);
+      if (!res.ok) throw new Error('Không thể tải lịch sử giao dịch để gợi ý');
+      const json = await res.json();
+      const list: TransactionWithCategory[] = json.data || [];
+      
+      // Lọc các note không rỗng, chuẩn hóa và đếm tần suất xuất hiện
+      const notesMap = new Map<string, number>();
+      list.forEach((t) => {
+        const note = t.note?.trim();
+        if (note) {
+          notesMap.set(note, (notesMap.get(note) || 0) + 1);
+        }
+      });
+      
+      // Sắp xếp các note theo tần suất xuất hiện giảm dần
+      return Array.from(notesMap.entries())
+        .sort((a, b) => b[1] - a[1])
+        .map((entry) => entry[0]);
+    },
+    enabled: !!activeWorkspaceId,
+    staleTime: 1000 * 60 * 5, // 5 phút cache
+  });
+
+  return { suggestions };
+}
+

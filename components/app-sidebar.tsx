@@ -92,7 +92,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                       className={cn(
                         "relative rounded-xl px-3 py-2.5 h-10 gap-3 cursor-pointer transition-all duration-300 font-medium",
                         "hover:bg-muted/50 dark:hover:bg-muted/20 text-muted-foreground hover:text-foreground",
-                        "data-[active=true]:bg-gradient-to-r data-[active=true]:from-emerald-500/12 data-[active=true]:to-teal-500/6 data-[active=true]:text-primary data-[active=true]:font-bold data-[active=true]:border-l-3 data-[active=true]:border-primary data-[active=true]:pl-2 data-[active=true]:rounded-l-none"
+                        "data-[active=true]:bg-linear-to-r data-[active=true]:from-emerald-500/12 data-[active=true]:to-teal-500/6 data-[active=true]:text-primary data-[active=true]:font-bold data-[active=true]:border-l-3 data-[active=true]:border-primary data-[active=true]:pl-2 data-[active=true]:rounded-l-none"
                       )}
                     >
                       <Link
@@ -105,12 +105,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                           }
                         }}
                       >
-                        <Icon 
+                        <Icon
                           className={cn(
                             "size-4.5! transition-all duration-300 group-hover:scale-105",
                             active ? "text-primary scale-105" : "text-muted-foreground/80"
                           )}
-                          aria-hidden 
+                          aria-hidden
                         />
                         <span>{item.title}</span>
                       </Link>

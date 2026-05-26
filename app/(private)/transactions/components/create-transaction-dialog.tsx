@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 
+import { useTransactionSuggestions } from '@/hooks/use-transactions';
 import { useCreateTransactionForm } from '../hooks/use-create-transaction-form';
 import { formatVnd } from '../transaction-ui';
 
@@ -216,6 +217,15 @@ export default function CreateTransactionDialog({ open, onOpenChange, onSuccess 
   const date = form.watch('date');
   const [openCalendar, setOpenCalendar] = useState(false);
 
+  // States và logic cho tính năng autocomplete tên giao dịch
+  const { suggestions } = useTransactionSuggestions();
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
+
+  const filteredSuggestions = suggestions
+    .filter((s) => !note || s.toLowerCase().includes(note.toLowerCase()))
+    .slice(0, 5);
+
   const renderSourcePreview = () => {
     if (!sourcePreviewData) return null;
     const { curBalance, nextBalance } = sourcePreviewData;
@@ -313,91 +323,6 @@ export default function CreateTransactionDialog({ open, onOpenChange, onSuccess 
             </div>
           </div>
 
-          {/* Tên giao dịch (Lưu trữ ở cột note) */}
-          <div className="grid gap-2">
-            <Label htmlFor="tx-note">Tên giao dịch</Label>
-            <Input
-              id="tx-note"
-              value={note}
-              onChange={(e) => form.setValue('note', e.target.value)}
-              placeholder={isTransfer ? 'Ví dụ: Chuyển sang VPBank, rút ATM…' : 'Ví dụ: Ăn trưa, xăng xe, mua sắm…'}
-              className="h-11 rounded-xl"
-              disabled={isSubmitting}
-            />
-          </div>
-
-          {/* Amount */}
-          <div className="grid gap-2">
-            <Label htmlFor="tx-amount" className={cn(form.formState.errors.amount && 'text-destructive')}>
-              Số tiền (VND)
-            </Label>
-            <Input
-              id="tx-amount"
-              type="text"
-              inputMode="numeric"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="0"
-              className={cn(
-                'h-12 rounded-xl text-lg font-semibold transition-all duration-200',
-                form.formState.errors.amount && 'border-destructive focus-visible:ring-destructive text-destructive',
-              )}
-              disabled={isSubmitting}
-            />
-            {form.formState.errors.amount && (
-              <p className="text-xs font-medium text-destructive mt-0.5">{form.formState.errors.amount.message}</p>
-            )}
-          </div>
-
-          {/* Tài khoản — UI khác nhau tùy theo loại giao dịch */}
-          {isTransfer ? (
-            <>
-              {/* Transfer: 2 selector — Từ tài khoản & Đến tài khoản */}
-              <div className="space-y-4">
-                <AccountSelector
-                  id="tx-from-account"
-                  label="Từ tài khoản"
-                  accountId={accountId}
-                  onSelect={(id) => form.setValue('accountId', id)}
-                  accounts={accounts}
-                  activeAccount={activeAccount}
-                  disabled={isSubmitting}
-                  icon={CreditCardIcon}
-                  preview={renderSourcePreview()}
-                />
-                <AccountSelector
-                  id="tx-to-account"
-                  label="Đến tài khoản"
-                  accountId={toAccountId ?? ''}
-                  onSelect={(id) => form.setValue('toAccountId', id)}
-                  accounts={accounts}
-                  activeAccount={activeAccount}
-                  disabled={isSubmitting}
-                  placeholder="Chọn tài khoản nhận"
-                  icon={WalletIcon}
-                  preview={renderDestPreview()}
-                />
-                {isDuplicateTransfer && (
-                  <p className="text-xs font-semibold text-rose-500 animate-pulse bg-rose-500/5 border border-rose-500/20 px-3 py-2 rounded-lg">
-                    Tài khoản nguồn và tài khoản đích không được trùng nhau!
-                  </p>
-                )}
-              </div>
-            </>
-          ) : (
-            /* Expense / Income: 1 selector tài khoản */
-            <AccountSelector
-              id="tx-account"
-              label="Tài khoản"
-              accountId={accountId}
-              onSelect={(id) => form.setValue('accountId', id)}
-              accounts={accounts}
-              activeAccount={activeAccount}
-              disabled={isSubmitting}
-              preview={renderSourcePreview()}
-            />
-          )}
-
           {/* Category — Ẩn khi transfer */}
           {!isTransfer && (
             <div className="grid gap-2">
@@ -461,6 +386,158 @@ export default function CreateTransactionDialog({ open, onOpenChange, onSuccess 
               </div>
             </div>
           )}
+
+          {/* Tài khoản — UI khác nhau tùy theo loại giao dịch */}
+          {isTransfer ? (
+            <>
+              {/* Transfer: 2 selector — Từ tài khoản & Đến tài khoản */}
+              <div className="space-y-4">
+                <AccountSelector
+                  id="tx-from-account"
+                  label="Từ tài khoản"
+                  accountId={accountId}
+                  onSelect={(id) => form.setValue('accountId', id)}
+                  accounts={accounts}
+                  activeAccount={activeAccount}
+                  disabled={isSubmitting}
+                  icon={CreditCardIcon}
+                  preview={renderSourcePreview()}
+                />
+                <AccountSelector
+                  id="tx-to-account"
+                  label="Đến tài khoản"
+                  accountId={toAccountId ?? ''}
+                  onSelect={(id) => form.setValue('toAccountId', id)}
+                  accounts={accounts}
+                  activeAccount={activeAccount}
+                  disabled={isSubmitting}
+                  placeholder="Chọn tài khoản nhận"
+                  icon={WalletIcon}
+                  preview={renderDestPreview()}
+                />
+                {isDuplicateTransfer && (
+                  <p className="text-xs font-semibold text-rose-500 animate-pulse bg-rose-500/5 border border-rose-500/20 px-3 py-2 rounded-lg">
+                    Tài khoản nguồn và tài khoản đích không được trùng nhau!
+                  </p>
+                )}
+              </div>
+            </>
+          ) : (
+            /* Expense / Income: 1 selector tài khoản */
+            <AccountSelector
+              id="tx-account"
+              label="Tài khoản"
+              accountId={accountId}
+              onSelect={(id) => form.setValue('accountId', id)}
+              accounts={accounts}
+              activeAccount={activeAccount}
+              disabled={isSubmitting}
+              preview={renderSourcePreview()}
+            />
+          )}
+
+          {/* Tên giao dịch (Lưu trữ ở cột note) */}
+          <div className="grid gap-2">
+            <Label htmlFor="tx-note">Tên giao dịch</Label>
+            <div className="relative">
+              <Input
+                id="tx-note"
+                value={note}
+                onChange={(e) => {
+                  form.setValue('note', e.target.value);
+                  setActiveSuggestionIndex(-1);
+                  setShowSuggestions(true);
+                }}
+                onFocus={() => setShowSuggestions(true)}
+                onBlur={() => {
+                  // Delay một chút để có thể click chọn suggestion trước khi dropdown bị ẩn
+                  setTimeout(() => {
+                    setShowSuggestions(false);
+                  }, 200);
+                }}
+                onKeyDown={(e) => {
+                  if (!showSuggestions || filteredSuggestions.length === 0) return;
+
+                  if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    setActiveSuggestionIndex((prev) =>
+                      prev < filteredSuggestions.length - 1 ? prev + 1 : 0
+                    );
+                  } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    setActiveSuggestionIndex((prev) =>
+                      prev > 0 ? prev - 1 : filteredSuggestions.length - 1
+                    );
+                  } else if (e.key === 'Enter') {
+                    if (activeSuggestionIndex >= 0 && activeSuggestionIndex < filteredSuggestions.length) {
+                      e.preventDefault();
+                      form.setValue('note', filteredSuggestions[activeSuggestionIndex]);
+                      setShowSuggestions(false);
+                      setActiveSuggestionIndex(-1);
+                    }
+                  } else if (e.key === 'Escape') {
+                    setShowSuggestions(false);
+                    setActiveSuggestionIndex(-1);
+                  }
+                }}
+                placeholder={isTransfer ? 'Ví dụ: Chuyển sang VPBank, rút ATM…' : 'Ví dụ: Ăn trưa, xăng xe, mua sắm…'}
+                className="h-11 rounded-xl"
+                disabled={isSubmitting}
+                autoComplete="off"
+              />
+
+              {/* Dropdown gợi ý */}
+              {showSuggestions && filteredSuggestions.length > 0 && (
+                <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-xl shadow-lg max-h-[220px] overflow-y-auto p-1">
+                  {filteredSuggestions.map((suggestion, index) => {
+                    const isActive = index === activeSuggestionIndex;
+                    return (
+                      <button
+                        key={suggestion}
+                        type="button"
+                        onMouseDown={() => {
+                          form.setValue('note', suggestion);
+                          setShowSuggestions(false);
+                          setActiveSuggestionIndex(-1);
+                        }}
+                        className={cn(
+                          'flex w-full items-center rounded-lg px-3 py-2 text-sm text-left transition-colors',
+                          isActive
+                            ? 'bg-primary/10 text-primary font-medium'
+                            : 'hover:bg-muted text-foreground'
+                        )}
+                      >
+                        <span className="truncate">{suggestion}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Amount */}
+          <div className="grid gap-2">
+            <Label htmlFor="tx-amount" className={cn(form.formState.errors.amount && 'text-destructive')}>
+              Số tiền (VND)
+            </Label>
+            <Input
+              id="tx-amount"
+              type="text"
+              inputMode="numeric"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder="0"
+              className={cn(
+                'h-12 rounded-xl text-lg font-semibold transition-all duration-200',
+                form.formState.errors.amount && 'border-destructive focus-visible:ring-destructive text-destructive',
+              )}
+              disabled={isSubmitting}
+            />
+            {form.formState.errors.amount && (
+              <p className="text-xs font-medium text-destructive mt-0.5">{form.formState.errors.amount.message}</p>
+            )}
+          </div>
 
           {/* Date */}
           <div className="grid gap-2">
