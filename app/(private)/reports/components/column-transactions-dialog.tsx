@@ -40,6 +40,7 @@ interface ColumnTransactionsDialogProps {
   onEditTransaction: (tx: TransactionWithCategory) => void;
   onUnassignTransaction?: (transactionId: string) => void;
   onUpdateColumn?: (updatedColumn: ReportColumn) => void;
+  readOnly?: boolean;
 }
 
 export function ColumnTransactionsDialog({
@@ -50,6 +51,7 @@ export function ColumnTransactionsDialog({
   onEditTransaction,
   onUnassignTransaction,
   onUpdateColumn,
+  readOnly = false,
 }: ColumnTransactionsDialogProps) {
   const [showDummyForm, setShowDummyForm] = useState(false);
   const [dummyNote, setDummyNote] = useState('');
@@ -165,7 +167,7 @@ export function ColumnTransactionsDialog({
               </span>
             </div>
 
-            {column.kind === 'category' && (
+            {column.kind === 'category' && !readOnly && (
               <Button
                 variant="outline"
                 size="sm"
@@ -191,7 +193,7 @@ export function ColumnTransactionsDialog({
           </div>
 
           {/* Form thêm/sửa giao dịch giả lập */}
-          {column.kind === 'category' && showDummyForm && (
+          {column.kind === 'category' && showDummyForm && !readOnly && (
             <div className="rounded-xl border border-purple-500/20 bg-purple-500/5 p-3 space-y-3 shrink-0 animate-in fade-in duration-200">
               <div className="flex items-center justify-between border-b border-purple-500/10 pb-1.5">
                 <span className="text-xs font-bold text-purple-600 dark:text-purple-400">
@@ -299,53 +301,55 @@ export function ColumnTransactionsDialog({
                         {formatVnd(Number(tx.amount))}
                       </span>
 
-                      <div className="flex items-center gap-1">
-                        {isDummy ? (
-                          <>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="size-7 rounded-lg text-muted-foreground hover:text-primary hover:bg-muted cursor-pointer"
-                              onClick={() => handleEditDummyClick(tx as ReportDummyTransaction)}
-                              title="Sửa giao dịch giả"
-                            >
-                              <PencilIcon className="size-3" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="size-7 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer"
-                              onClick={() => handleDeleteDummy(tx.id)}
-                              title="Xóa giao dịch giả"
-                            >
-                              <Trash2Icon className="size-3" />
-                            </Button>
-                          </>
-                        ) : (
-                          <>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="size-7 rounded-lg text-muted-foreground hover:text-primary hover:bg-muted cursor-pointer"
-                              onClick={() => onEditTransaction(tx as TransactionWithCategory)}
-                              title="Sửa số tiền"
-                            >
-                              <PencilIcon className="size-3" />
-                            </Button>
-                            {isVisually && onUnassignTransaction && (
+                      {!readOnly && (
+                        <div className="flex items-center gap-1">
+                          {isDummy ? (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="size-7 rounded-lg text-muted-foreground hover:text-primary hover:bg-muted cursor-pointer"
+                                onClick={() => handleEditDummyClick(tx as ReportDummyTransaction)}
+                                title="Sửa giao dịch giả"
+                              >
+                                <PencilIcon className="size-3" />
+                              </Button>
                               <Button
                                 variant="ghost"
                                 size="icon"
                                 className="size-7 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer"
-                                onClick={() => onUnassignTransaction(tx.id)}
-                                title="Gỡ khỏi cột"
+                                onClick={() => handleDeleteDummy(tx.id)}
+                                title="Xóa giao dịch giả"
                               >
-                                <XIcon className="size-3" />
+                                <Trash2Icon className="size-3" />
                               </Button>
-                            )}
-                          </>
-                        )}
-                      </div>
+                            </>
+                          ) : (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="size-7 rounded-lg text-muted-foreground hover:text-primary hover:bg-muted cursor-pointer"
+                                onClick={() => onEditTransaction(tx as TransactionWithCategory)}
+                                title="Sửa số tiền"
+                              >
+                                <PencilIcon className="size-3" />
+                              </Button>
+                              {isVisually && onUnassignTransaction && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="size-7 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer"
+                                  onClick={() => onUnassignTransaction(tx.id)}
+                                  title="Gỡ khỏi cột"
+                                >
+                                  <XIcon className="size-3" />
+                                </Button>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 );

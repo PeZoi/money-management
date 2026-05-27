@@ -1,11 +1,11 @@
 'use client';
 
 import {
-  CalculatorIcon,
   EyeIcon,
   MoreVerticalIcon,
   PencilIcon,
   ScaleIcon,
+  Sigma,
   Trash2Icon,
   TrendingDownIcon,
   TrendingUpIcon,
@@ -55,6 +55,7 @@ interface VerticalTableProps {
   onOpenFormulaDialog: (tableId: string, editColumn?: ReportColumn) => void;
   // Cell click → xem giao dịch
   onCellClick: (col: ReportColumn) => void;
+  readOnly?: boolean;
 }
 
 export function VerticalTable({
@@ -73,6 +74,7 @@ export function VerticalTable({
   onRenameColumn,
   onOpenFormulaDialog,
   onCellClick,
+  readOnly = false,
 }: VerticalTableProps) {
   // ─── Đổi tên cột (inline edit) ────────────────────
   const [editingColumnId, setEditingColumnId] = useState<string | null>(null);
@@ -117,16 +119,16 @@ export function VerticalTable({
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-sm">
+      <table className="w-full min-w-max text-sm">
         <thead>
-          <tr className="border-b bg-muted/20">
-            <th className="px-3 py-2.5 text-center text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60 w-12 whitespace-nowrap border-r border-border/40">
+          <tr className="border-b bg-muted/40 text-muted-foreground">
+            <th className="px-3 py-3 text-center text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60 w-12 whitespace-nowrap border-r border-border/60">
               STT
             </th>
-            <th className="px-3 py-2.5 text-left text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60 border-r border-border/40">
+            <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60 border-r border-border/60 min-w-[160px]">
               Hạng mục (Hàng)
             </th>
-            <th className="px-3 py-2.5 text-right text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60 w-40 whitespace-nowrap">
+            <th className="px-4 py-3 text-right text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60 w-40 whitespace-nowrap">
               Số tiền (VND)
             </th>
           </tr>
@@ -142,41 +144,49 @@ export function VerticalTable({
             return (
               <tr
                 key={col.id}
-                draggable
-                onDragStart={(e) => {
+                draggable={!readOnly}
+                onDragStart={!readOnly ? (e) => {
                   e.stopPropagation();
                   onColDragStart(col.id);
-                }}
-                onDragOver={(e) => {
+                } : undefined}
+                onDragOver={!readOnly ? (e) => {
                   onColDragOver(e, col.id);
                   onColDragOverTx(e, col);
-                }}
-                onDragLeave={onColDragLeaveTx}
-                onDrop={(e) => onColDropTx(e, col)}
-                onDragEnd={onColDragEnd}
+                } : undefined}
+                onDragLeave={!readOnly ? onColDragLeaveTx : undefined}
+                onDrop={!readOnly ? (e) => onColDropTx(e, col) : undefined}
+                onDragEnd={!readOnly ? onColDragEnd : undefined}
                 className={cn(
-                  'border-b last:border-b-0 hover:bg-muted/20 transition-colors cursor-grab active:cursor-grabbing group/row relative border-t-2 border-transparent',
-                  col.kind === 'formula' && 'bg-amber-500/5',
-                  activeDragOverColId === col.id && 'bg-primary/10 border-t-primary/70 scale-[1.01] shadow-sm',
+                  'border-b border-border/60 last:border-b-0 transition-all duration-200 relative',
+                  col.kind === 'formula' && 'bg-amber-500/3 hover:bg-amber-500/6 dark:bg-amber-500/6 dark:hover:bg-amber-500/1',
+                  col.kind === 'system' && 'bg-blue-500/2 hover:bg-blue-500/4 dark:bg-blue-500/4 dark:hover:bg-blue-500/8',
+                  col.kind === 'category' && 'hover:bg-muted/15',
+                  !readOnly && 'cursor-grab active:cursor-grabbing group/row',
+                  !readOnly && activeDragOverColId === col.id && 'bg-primary/10 border-t-primary/70 scale-[1.01] shadow-sm',
                 )}
               >
                 {/* Cột STT */}
-                <td className="px-3 py-3 text-center text-xs text-muted-foreground/50 w-12 border-r border-border/40">
+                <td className="px-3 py-3.5 text-center text-xs text-muted-foreground/50 w-12 border-r border-border/60">
                   {index + 1}
                 </td>
 
                 {/* Cột Tên hạng mục */}
-                <td className="px-3 py-3 border-r border-border/40">
+                <td className="px-4 py-3.5 border-r border-border/60 min-w-[160px]">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-1.5 min-w-0">
                       {label && (
-                        <span className="inline-flex items-center justify-center size-5 rounded-md bg-primary/10 text-primary text-[9px] font-bold shrink-0">
+                        <span className={cn(
+                          "inline-flex items-center justify-center size-5.5 rounded-full text-[10px] font-bold shrink-0",
+                          col.kind === 'formula' && "bg-amber-500/10 text-amber-600 dark:text-amber-400",
+                          col.kind === 'system' && "bg-blue-500/10 text-blue-600 dark:text-blue-400",
+                          col.kind === 'category' && "bg-primary/10 text-primary"
+                        )}>
                           {label}
                         </span>
                       )}
                       {col.kind === 'formula' && (
                         <span className="inline-flex items-center justify-center size-5 rounded-md bg-amber-500/10 text-amber-600 shrink-0">
-                          <CalculatorIcon className="size-3" />
+                          <Sigma className="size-3" />
                         </span>
                       )}
                       {col.kind === 'system' && (
@@ -188,10 +198,16 @@ export function VerticalTable({
                         </span>
                       )}
                       {col.kind === 'category' && (
-                        <IconPreview name={col.categoryIcon} className="size-3.5 shrink-0 text-muted-foreground" />
+                        <IconPreview
+                          name={col.categoryIcon}
+                          className={cn(
+                            "size-4 shrink-0",
+                            col.categoryType === 'income' ? 'text-emerald-500' : 'text-rose-500'
+                          )}
+                        />
                       )}
 
-                      {editingColumnId === col.id ? (
+                      {editingColumnId === col.id && !readOnly ? (
                         <Input
                           ref={colNameInputRef}
                           value={editColumnName}
@@ -204,6 +220,12 @@ export function VerticalTable({
                           className="h-5 w-32 text-xs rounded px-1 font-semibold"
                           onClick={(e) => e.stopPropagation()}
                         />
+                      ) : readOnly ? (
+                        <div className="flex items-center gap-1 select-none">
+                          <span className="text-xs font-semibold truncate text-foreground">
+                            {col.displayName}
+                          </span>
+                        </div>
                       ) : (
                         <DropdownMenu
                           open={activeMenuColId === col.id}
@@ -293,7 +315,7 @@ export function VerticalTable({
                         </span>
                       )}
                       {col.kind === 'formula' && (
-                        <span className="text-[9px] font-medium text-amber-600/60 truncate max-w-[150px] ml-1.5 shrink-0">
+                        <span className="text-[9px] font-mono font-medium text-amber-700 bg-amber-500/10 dark:text-amber-400 dark:bg-amber-500/20 px-1.5 py-0.5 rounded-md ml-2 shrink-0">
                           = {decompileFormula(col.formula, columns)}
                         </span>
                       )}
@@ -309,8 +331,9 @@ export function VerticalTable({
                     }
                   }}
                   className={cn(
-                    'px-3 py-3 text-right tabular-nums text-xs w-40',
-                    col.kind === 'category' && 'cursor-pointer hover:bg-primary/5 hover:text-primary transition-colors underline decoration-dotted decoration-muted-foreground/30 underline-offset-4',
+                    'px-4 py-3.5 text-right font-mono text-[13px] tracking-tight font-bold w-40',
+                    col.kind === 'category' && 'cursor-pointer hover:bg-primary/5 hover:text-primary transition-colors',
+                    !readOnly && col.kind === 'category' && 'underline decoration-dotted decoration-muted-foreground/30 underline-offset-4',
                     getColumnValueColorClass(col, val)
                   )}
                 >
@@ -324,14 +347,14 @@ export function VerticalTable({
         {/* Dòng tổng cộng cho bảng dọc */}
         {table.showTotals !== false && (
           <tfoot>
-            <tr className="border-t-2 border-primary/20 bg-linear-to-r from-primary/5 to-primary/10">
-              <td className="px-3 py-3 text-center text-xs font-bold text-emerald-600 w-12 border-r border-border/40">
+            <tr className="border-y-2 border-emerald-500/30 bg-emerald-500/10 dark:bg-emerald-500/25">
+              <td className="px-3 py-4 text-center text-sm font-extrabold text-emerald-700 dark:text-emerald-300 border-r border-border/60">
                 Σ
               </td>
-              <td className="px-3 py-3 text-left text-xs font-bold text-emerald-600 border-r border-border/40">
+              <td className="px-4 py-4 text-left text-xs font-bold text-emerald-700 dark:text-emerald-300 border-r border-border/60">
                 Tổng thực thu/chi (chỉ cộng các dòng danh mục)
               </td>
-              <td className="px-3 py-3 text-right tabular-nums text-sm font-bold text-emerald-600 w-40">
+              <td className="px-4 py-4 text-right font-mono text-sm font-extrabold text-emerald-700 dark:text-emerald-300 w-40">
                 {formatVnd(
                   Array.from(columnTotals.entries())
                     .filter(([colId]) => {

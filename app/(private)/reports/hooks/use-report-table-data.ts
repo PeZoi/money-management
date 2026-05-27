@@ -16,9 +16,10 @@ import { evaluateFormula } from '../lib/formula-engine';
 interface UseReportTableDataParams {
   table: ReportTable;
   transactions: TransactionWithCategory[];
+  overrideTotalAccountBalance?: number;
 }
 
-export function useReportTableData({ table, transactions }: UseReportTableDataParams) {
+export function useReportTableData({ table, transactions, overrideTotalAccountBalance }: UseReportTableDataParams) {
   const { columns } = table;
   const { accounts } = useAccounts();
 
@@ -80,8 +81,9 @@ export function useReportTableData({ table, transactions }: UseReportTableDataPa
       .filter((t) => t.type === 'expense')
       .reduce((sum, t) => sum + Number(t.amount), 0);
 
-    const totalAccountBalance = accounts
-      .reduce((sum, a) => sum + Number(a.balance), 0);
+    const totalAccountBalance = overrideTotalAccountBalance !== undefined
+      ? overrideTotalAccountBalance
+      : accounts.reduce((sum, a) => sum + Number(a.balance), 0);
 
     for (const col of columns) {
       if (col.kind === 'system') {

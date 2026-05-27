@@ -157,14 +157,14 @@ export function MonthPicker({ value, onChange, className }: MonthPickerProps) {
   const isTodayYear = currentYear === today.year;
 
   return (
-    <div className={cn("flex items-center gap-1.5", className)}>
+    <div className={cn("flex items-center gap-1", className)}>
       {/* Nút lùi 1 tháng */}
       <Button
         type="button"
         variant="outline"
         size="icon"
         onClick={handlePrevMonth}
-        className="h-10 w-10 rounded-xl border-muted/50 hover:bg-accent/60 hover:text-accent-foreground active:scale-95 transition-all animate-in fade-in zoom-in duration-300"
+        className="h-10 w-9 sm:w-10 shrink-0 rounded-xl border-muted/50 hover:bg-accent/60 hover:text-accent-foreground active:scale-95 transition-all animate-in fade-in zoom-in duration-300"
         title="Tháng trước"
       >
         <ChevronLeftIcon className="h-4 w-4" />
@@ -177,17 +177,17 @@ export function MonthPicker({ value, onChange, className }: MonthPickerProps) {
             type="button"
             variant="outline"
             className={cn(
-              "h-10 px-4 rounded-xl border-muted/50 font-medium text-sm flex items-center gap-2 min-w-[155px] justify-between shadow-xs bg-card/60 backdrop-blur-xs transition-all hover:bg-accent/60 hover:text-accent-foreground",
+              "h-10 px-2 sm:px-4 rounded-xl border-muted/50 font-medium text-xs sm:text-sm flex items-center gap-1 sm:gap-2 min-w-[125px] sm:min-w-[155px] justify-between shadow-xs bg-card/60 backdrop-blur-xs transition-all hover:bg-accent/60 hover:text-accent-foreground",
               value === "all" && "text-muted-foreground"
             )}
           >
-            <div className="flex items-center gap-2">
-              <CalendarIcon className="h-4 w-4 text-primary/70" />
-              <span>{displayLabel}</span>
+            <div className="flex items-center gap-1 sm:gap-2 min-w-0">
+              <CalendarIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary/70 shrink-0" />
+              <span className="truncate">{displayLabel}</span>
             </div>
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1 shrink-0">
               {isCurrentMonthSelected && (
-                <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-primary/10 text-primary text-[9px] font-bold uppercase tracking-wider leading-none">
+                <span className="inline-flex items-center px-1 py-0.5 rounded-md bg-primary/10 text-primary text-[8px] sm:text-[9px] font-bold uppercase tracking-wider leading-none scale-90 sm:scale-100">
                   Now
                 </span>
               )}
@@ -294,7 +294,7 @@ export function MonthPicker({ value, onChange, className }: MonthPickerProps) {
         variant="outline"
         size="icon"
         onClick={handleNextMonth}
-        className="h-10 w-10 rounded-xl border-muted/50 hover:bg-accent/60 hover:text-accent-foreground active:scale-95 transition-all animate-in fade-in zoom-in duration-300"
+        className="h-10 w-9 sm:w-10 shrink-0 rounded-xl border-muted/50 hover:bg-accent/60 hover:text-accent-foreground active:scale-95 transition-all animate-in fade-in zoom-in duration-300"
         title="Tháng sau"
       >
         <ChevronRightIcon className="h-4 w-4" />

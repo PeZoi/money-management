@@ -1,8 +1,8 @@
 'use client';
 
 import {
-  CalculatorIcon,
   PlusIcon,
+  Sigma,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useCallback, useRef, useState } from 'react';
@@ -43,6 +43,8 @@ interface ReportTableCardProps {
   onUpdateTableShowTotals?: (tableId: string, showTotals: boolean) => void;
   onUpdateColumn?: (tableId: string, columnId: string, updatedColumn: ReportColumn) => void;
   dragHandle: ReactNode;
+  readOnly?: boolean;
+  overrideTotalAccountBalance?: number;
 }
 
 export function ReportTableCard({
@@ -62,12 +64,14 @@ export function ReportTableCard({
   onUpdateTableShowTotals,
   onUpdateColumn,
   dragHandle,
+  readOnly = false,
+  overrideTotalAccountBalance,
 }: ReportTableCardProps) {
   const { columns } = table;
 
   // ─── Hook tính toán dữ liệu bảng ──────────────────
   const { dataColumns, columnTransactions, maxRows, columnTotals } =
-    useReportTableData({ table, transactions });
+    useReportTableData({ table, transactions, overrideTotalAccountBalance });
 
   // ─── State UI ──────────────────────────────────────
   const [editingTransaction, setEditingTransaction] = useState<TransactionWithCategory | null>(null);
@@ -182,12 +186,12 @@ export function ReportTableCard({
   return (
     <div
       className={cn(
-        'rounded-2xl border bg-card/80 backdrop-blur-sm shadow-sm overflow-hidden transition-all',
-        isDragOver && 'ring-2 ring-primary/50 border-primary/30 shadow-lg shadow-primary/10',
+        'rounded-2xl border border-border bg-card/75 backdrop-blur-md shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden',
+        !readOnly && isDragOver && 'ring-2 ring-primary/40 border-primary/30 shadow-xl shadow-primary/10 bg-primary/2',
       )}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
+      onDragOver={!readOnly ? handleDragOver : undefined}
+      onDragLeave={!readOnly ? handleDragLeave : undefined}
+      onDrop={!readOnly ? handleDrop : undefined}
     >
       {/* Header bảng */}
       <ReportTableHeader
@@ -198,6 +202,7 @@ export function ReportTableCard({
         onUpdateTableLayout={onUpdateTableLayout}
         onUpdateTableShowTotals={onUpdateTableShowTotals}
         dragHandle={dragHandle}
+        readOnly={readOnly}
       />
 
       {/* Nội dung bảng */}
@@ -213,7 +218,7 @@ export function ReportTableCard({
               className="rounded-lg text-xs"
               onClick={() => onOpenFormulaDialog(table.id)}
             >
-              <CalculatorIcon className="size-3 mr-1" />
+              <Sigma className="size-3 mr-1" />
               Thêm {table.layout === 'vertical' ? 'dòng' : 'cột'} công thức
             </Button>
           </div>
@@ -235,6 +240,7 @@ export function ReportTableCard({
           onRenameColumn={onRenameColumn}
           onOpenFormulaDialog={onOpenFormulaDialog}
           onCellClick={setSelectedColumnForTransactions}
+          readOnly={readOnly}
         />
       ) : (
         <HorizontalTable
@@ -261,11 +267,12 @@ export function ReportTableCard({
             setEditingColumnIdForTx(col.id);
           }}
           onDummyCellClick={setSelectedColumnForTransactions}
+          readOnly={readOnly}
         />
       )}
 
       {/* Drop indicator khi kéo thả */}
-      {isDragOver && columns.length > 0 && (
+      {isDragOver && !readOnly && columns.length > 0 && (
         <div className="border-t border-dashed border-primary/40 bg-primary/5 px-4 py-3 text-center">
           <p className="text-xs text-primary font-medium animate-pulse">
             <PlusIcon className="size-3 inline mr-1" />
@@ -299,6 +306,7 @@ export function ReportTableCard({
             setSelectedColumnForTransactions(updatedColumn);
           }
         }}
+        readOnly={readOnly}
       />
 
       {/* Dialog chỉnh sửa số tiền giao dịch */}

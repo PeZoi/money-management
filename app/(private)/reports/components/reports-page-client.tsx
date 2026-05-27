@@ -2,17 +2,25 @@
 
 import {
   BarChart3Icon,
+  DownloadIcon,
   GripVerticalIcon,
+  InfoIcon,
   Loader2Icon,
   PlusIcon,
   SaveIcon,
+  UploadIcon,
 } from 'lucide-react';
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 import { MonthPicker } from '@/components/month-picker';
 import { PrivatePageShell } from '@/components/private-page-shell';
 import { Button } from '@/components/ui/button';
 import { useCategories } from '@/hooks/use-categories';
+import { useAccounts } from '@/hooks/use-accounts';
+import { useWorkspaceStore } from '@/hooks/use-workspace';
+import type { ReportExportPayload } from '@/types/report';
+import { cn } from '@/lib/utils';
 
 import { useReportTransactions } from '../hooks/use-report-transactions';
 import { useReportTables } from '../hooks/use-report-tables';
@@ -31,6 +39,13 @@ export default function ReportsPageClient() {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   });
+
+  // ─── Workspace & Accounts ──────────────────────────
+  const { activeWorkspaceId } = useWorkspaceStore();
+  const { accounts } = useAccounts();
+
+  // ─── State cho dữ liệu nhập khẩu (Tĩnh) ─────────────
+  const [importedData, setImportedData] = useState<ReportExportPayload | null>(null);
 
   // ─── Data hooks ────────────────────────────────────
   const { categories, isLoading: catLoading } = useCategories();
@@ -81,8 +96,81 @@ export default function ReportsPageClient() {
     unassignedTransactions,
   } = useReportTables(month, transactions);
 
+  // ─── Dữ liệu hiển thị (Động hoặc Tĩnh từ file import) ───
+  const displayTables = importedData ? importedData.tables : tables;
+  const displayTransactions = importedData ? importedData.transactions : transactions;
+  const isReadOnly = !!importedData;
+
   // ─── Loading state ─────────────────────────────────
   const isPageLoading = catLoading || txLoading || configLoading;
+
+  // ─── Logic Export file JSON ────────────────────────
+  const handleExport = () => {
+    if (tables.length === 0) {
+      toast.error('Không có bảng nào để xuất');
+      return;
+    }
+    try {
+      const totalAccountBalance = accounts.reduce((sum, a) => sum + Number(a.balance), 0);
+      const exportPayload: ReportExportPayload = {
+        export_version: '1.0',
+        workspace_id: activeWorkspaceId || '',
+        month,
+        export_at: new Date().toISOString(),
+        total_account_balance: totalAccountBalance,
+        tables,
+        transactions,
+      };
+
+      const blob = new Blob([JSON.stringify(exportPayload, null, 2)], {
+        type: 'application/json',
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `money-report-${month}-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      toast.success('Xuất báo cáo thành công');
+    } catch (err) {
+      toast.error('Xuất báo cáo thất bại');
+    }
+  };
+
+  // ─── Logic Import file JSON ────────────────────────
+  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const data = JSON.parse(event.target?.result as string) as ReportExportPayload;
+        if (!data.tables || !data.transactions || !data.month) {
+          toast.error('Tệp tin không đúng định dạng báo cáo');
+          return;
+        }
+        setImportedData(data);
+        setMonth(data.month);
+        toast.success(`Đã nhập báo cáo tháng ${data.month}! Hệ thống đang ở chế độ xem tệp tĩnh.`);
+      } catch (err) {
+        toast.error('Tệp tin JSON bị lỗi, không thể đọc');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = ''; // Reset để có thể chọn lại cùng file
+  };
+
+  // ─── Đổi tháng (tự thoát chế độ xem file nếu đổi tháng khác) ──
+  const handleMonthChange = (newMonth: string) => {
+    setMonth(newMonth);
+    if (importedData && importedData.month !== newMonth) {
+      setImportedData(null);
+      toast.info('Đã thoát chế độ xem tệp tĩnh do đổi tháng');
+    }
+  };
 
   return (
     <PrivatePageShell
@@ -91,24 +179,63 @@ export default function ReportsPageClient() {
       icon={BarChart3Icon}
       contentClassName="max-w-[1600px]"
       headerActions={
-        <div className="flex items-center gap-2">
-          {isSaving && (
-            <span className="flex items-center gap-1.5 text-xs text-muted-foreground animate-pulse">
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          {/* Input file ẩn cho Import */}
+          <input
+            type="file"
+            id="report-import-file"
+            className="hidden"
+            accept=".json"
+            onChange={handleImport}
+          />
+
+          {isSaving && !isReadOnly && (
+            <span className="flex items-center gap-1.5 text-[10px] sm:text-xs text-muted-foreground animate-pulse mr-1">
               <Loader2Icon className="size-3 animate-spin" />
-              Đang lưu...
+              <span className="hidden sm:inline">Đang lưu...</span>
             </span>
           )}
-          <Button
-            variant="outline"
-            size="sm"
-            className="rounded-xl"
-            onClick={() => saveTablesImmediate(tables)}
-            disabled={isSaving}
-          >
-            <SaveIcon className="size-3.5 mr-1.5" />
-            Lưu
-          </Button>
-          <MonthPicker value={month} onChange={setMonth} />
+
+          {/* Nút Lưu hiển thị ở cả Mobile và Desktop nếu không phải chế độ chỉ đọc */}
+          {!isReadOnly && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-xl px-3 h-10 sm:h-9"
+              onClick={() => saveTablesImmediate(tables)}
+              disabled={isSaving}
+            >
+              <SaveIcon className="size-3.5 mr-1.5" />
+              Lưu
+            </Button>
+          )}
+
+          {/* Nút Nhập file & Xuất file chỉ hiển thị từ màn hình sm trở lên (Desktop/Tablet) */}
+          <div className="hidden sm:flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-xl border-dashed border-primary/40 text-primary hover:bg-primary/5 hover:text-primary transition-all cursor-pointer px-3"
+              onClick={() => document.getElementById('report-import-file')?.click()}
+            >
+              <UploadIcon className="size-3.5 mr-1.5" />
+              Nhập file
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-xl hover:bg-muted cursor-pointer px-3"
+              onClick={handleExport}
+              disabled={tables.length === 0}
+              title={tables.length === 0 ? 'Tạo bảng để xuất file' : 'Xuất báo cáo hiện tại ra file JSON'}
+            >
+              <DownloadIcon className="size-3.5 mr-1.5" />
+              Xuất file
+            </Button>
+          </div>
+
+          <MonthPicker value={month} onChange={handleMonthChange} />
         </div>
       }
     >
@@ -118,80 +245,116 @@ export default function ReportsPageClient() {
           <p className="text-sm text-muted-foreground">Đang tải cấu hình...</p>
         </div>
       ) : (
-        <div className="mt-6 flex gap-6">
-          {/* Sidebar danh mục và giao dịch */}
-          <CategorySidebar
-            categories={categories}
-            usedCategoryIds={usedCategoryIds}
-            transactions={unassignedTransactions}
-          />
-
-          {/* Nội dung chính: danh sách bảng */}
-          <div className="flex-1 min-w-0 space-y-6">
-            {tables.length === 0 ? (
-              <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-muted-foreground/20 bg-card/30 p-12 text-center">
-                <div className="rounded-2xl bg-primary/10 p-4 mb-4">
-                  <BarChart3Icon className="size-8 text-primary" />
+        <div className="mt-6">
+          {/* Banner chế độ xem tệp tĩnh */}
+          {importedData && (
+            <div className="mb-6 flex items-center justify-between gap-4 rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 text-sm text-amber-800 dark:text-amber-300 animate-in fade-in duration-200">
+              <div className="flex items-center gap-2.5">
+                <InfoIcon className="size-4 text-amber-500 shrink-0" />
+                <div>
+                  <span className="font-semibold">Đang hiển thị dữ liệu báo cáo nhập từ file</span>{' '}
+                  (Tháng {importedData.month} - Xuất ngày{' '}
+                  {new Date(importedData.export_at).toLocaleString('vi-VN')}). Dữ liệu này chỉ dùng để
+                  xem thông tin và không lưu vào hệ thống của bạn.
                 </div>
-                <h3 className="text-lg font-semibold mb-1">Chưa có bảng báo cáo</h3>
-                <p className="text-sm text-muted-foreground mb-6 max-w-sm">
-                  Tạo bảng mới và kéo thả danh mục từ thanh bên để bắt đầu thiết lập
-                  báo cáo tuỳ biến theo ý bạn.
-                </p>
-                <Button onClick={handleCreateTable} className="rounded-xl">
-                  <PlusIcon className="size-4 mr-1.5" />
-                  Tạo bảng đầu tiên
-                </Button>
               </div>
-            ) : (
-              <>
-                {tables.map((table) => (
-                  <div
-                    key={table.id}
-                    draggable
-                    onDragStart={() => handleTableDragStart(table.id)}
-                    onDragOver={(e) => handleTableDragOver(e, table.id)}
-                    onDragEnd={handleTableDragEnd}
-                    className="group/table-drag"
-                  >
-                    <ReportTableCard
-                      table={table}
-                      transactions={transactions}
-                      month={month}
-                      onRenameTable={handleRenameTable}
-                      onDeleteTable={handleDeleteTable}
-                      onDropCategory={handleDropCategory}
-                      onDeleteColumn={handleDeleteColumn}
-                      onRenameColumn={handleRenameColumn}
-                      onReorderColumns={handleReorderColumns}
-                      onOpenFormulaDialog={handleOpenFormulaDialog}
-                      onAssignTransaction={handleAssignTransaction}
-                      onUnassignTransaction={handleUnassignTransaction}
-                      onUpdateTableLayout={handleUpdateTableLayout}
-                      onUpdateTableShowTotals={handleUpdateTableShowTotals}
-                      onUpdateColumn={handleUpdateColumn}
-                      dragHandle={
-                        <button
-                          className="cursor-grab active:cursor-grabbing p-1 rounded-lg text-muted-foreground/50 hover:text-muted-foreground hover:bg-accent/60 transition-colors"
-                          title="Kéo để sắp xếp bảng"
-                        >
-                          <GripVerticalIcon className="size-4" />
-                        </button>
-                      }
-                    />
-                  </div>
-                ))}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setImportedData(null)}
+                className="rounded-lg text-xs border-amber-500/20 hover:bg-amber-500/10 hover:text-amber-900 shrink-0 cursor-pointer"
+              >
+                Đóng chế độ xem file
+              </Button>
+            </div>
+          )}
 
-                <Button
-                  variant="outline"
-                  onClick={handleCreateTable}
-                  className="w-full rounded-xl border-dashed border-muted-foreground/30 hover:border-primary/50 hover:bg-primary/5 h-12 text-muted-foreground hover:text-primary transition-all"
-                >
-                  <PlusIcon className="size-4 mr-1.5" />
-                  Thêm bảng mới
-                </Button>
-              </>
+          <div className="flex flex-col lg:flex-row gap-6">
+            {/* Sidebar danh mục và giao dịch (Ẩn ở chế độ chỉ đọc) */}
+            {!isReadOnly && (
+              <CategorySidebar
+                categories={categories}
+                usedCategoryIds={usedCategoryIds}
+                transactions={unassignedTransactions}
+              />
             )}
+
+            {/* Nội dung chính: danh sách bảng */}
+            <div className="flex-1 min-w-0 space-y-6">
+              {displayTables.length === 0 ? (
+                <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-muted-foreground/20 bg-card/30 p-12 text-center">
+                  <div className="rounded-2xl bg-primary/10 p-4 mb-4">
+                    <BarChart3Icon className="size-8 text-primary" />
+                  </div>
+                  <h3 className="text-lg font-semibold mb-1">Chưa có bảng báo cáo</h3>
+                  <p className="text-sm text-muted-foreground mb-6 max-w-sm">
+                    {isReadOnly
+                      ? 'Tệp tin báo cáo này không chứa bất kỳ bảng nào.'
+                      : 'Tạo bảng mới và kéo thả danh mục từ thanh bên để bắt đầu thiết lập báo cáo tuỳ biến theo ý bạn.'}
+                  </p>
+                  {!isReadOnly && (
+                    <Button onClick={handleCreateTable} className="rounded-xl">
+                      <PlusIcon className="size-4 mr-1.5" />
+                      Tạo bảng đầu tiên
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                <>
+                  {displayTables.map((table) => (
+                    <div
+                      key={table.id}
+                      draggable={!isReadOnly}
+                      onDragStart={!isReadOnly ? () => handleTableDragStart(table.id) : undefined}
+                      onDragOver={!isReadOnly ? (e) => handleTableDragOver(e, table.id) : undefined}
+                      onDragEnd={!isReadOnly ? handleTableDragEnd : undefined}
+                      className={cn('group/table-drag', !isReadOnly && 'cursor-grab active:cursor-grabbing')}
+                    >
+                      <ReportTableCard
+                        table={table}
+                        transactions={displayTransactions}
+                        month={month}
+                        onRenameTable={handleRenameTable}
+                        onDeleteTable={handleDeleteTable}
+                        onDropCategory={handleDropCategory}
+                        onDeleteColumn={handleDeleteColumn}
+                        onRenameColumn={handleRenameColumn}
+                        onReorderColumns={handleReorderColumns}
+                        onOpenFormulaDialog={handleOpenFormulaDialog}
+                        onAssignTransaction={handleAssignTransaction}
+                        onUnassignTransaction={handleUnassignTransaction}
+                        onUpdateTableLayout={handleUpdateTableLayout}
+                        onUpdateTableShowTotals={handleUpdateTableShowTotals}
+                        onUpdateColumn={handleUpdateColumn}
+                        readOnly={isReadOnly}
+                        overrideTotalAccountBalance={importedData?.total_account_balance}
+                        dragHandle={
+                          !isReadOnly ? (
+                            <button
+                              className="cursor-grab active:cursor-grabbing p-1 rounded-lg text-muted-foreground/50 hover:text-muted-foreground hover:bg-accent/60 transition-colors"
+                              title="Kéo để sắp xếp bảng"
+                            >
+                              <GripVerticalIcon className="size-4" />
+                            </button>
+                          ) : null
+                        }
+                      />
+                    </div>
+                  ))}
+
+                  {!isReadOnly && (
+                    <Button
+                      variant="outline"
+                      onClick={handleCreateTable}
+                      className="w-full rounded-xl border-dashed border-muted-foreground/30 hover:border-primary/50 hover:bg-primary/5 h-12 text-muted-foreground hover:text-primary transition-all"
+                    >
+                      <PlusIcon className="size-4 mr-1.5" />
+                      Thêm bảng mới
+                    </Button>
+                  )}
+                </>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -203,7 +366,7 @@ export default function ReportsPageClient() {
         onOpenChange={setFormulaDialogOpen}
         columns={
           formulaTargetTableId
-            ? tables.find((t) => t.id === formulaTargetTableId)?.columns ?? []
+            ? displayTables.find((t) => t.id === formulaTargetTableId)?.columns ?? []
             : []
         }
         editColumn={formulaEditColumn}

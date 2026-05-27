@@ -13,13 +13,25 @@ export function formatVnd(value: number): string {
 // ─── Lấy class màu sắc số tiền theo loại cột ────────
 
 export function getColumnValueColorClass(col: ReportColumn, val: number): string {
-  if (val === 0) return 'text-muted-foreground/40';
+  if (val === 0) return 'text-muted-foreground/30 font-mono';
 
   if (col.kind === 'formula') {
-    return 'text-foreground font-bold';
+    if (val < 0) return 'text-rose-600 dark:text-rose-400 font-bold';
+    return 'text-amber-600 dark:text-amber-400 font-bold';
   }
   if (col.kind === 'system') {
-    return 'text-foreground font-semibold';
+    if (col.systemMetric === 'total_expense') return 'text-rose-600 dark:text-rose-400 font-semibold';
+    if (col.systemMetric === 'total_income') return 'text-emerald-600 dark:text-emerald-400 font-semibold';
+    if (col.systemMetric === 'month_balance') {
+      return val < 0 ? 'text-rose-600 dark:text-rose-400 font-semibold' : 'text-emerald-600 dark:text-emerald-400 font-semibold';
+    }
+    return 'text-blue-600 dark:text-blue-400 font-semibold';
+  }
+  if (col.kind === 'category') {
+    if (col.categoryType === 'income') {
+      return 'text-emerald-600 dark:text-emerald-400 font-semibold';
+    }
+    return 'text-rose-600 dark:text-rose-400 font-medium';
   }
   return 'text-foreground';
 }

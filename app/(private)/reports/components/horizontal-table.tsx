@@ -1,11 +1,11 @@
 'use client';
 
 import {
-  CalculatorIcon,
   EyeIcon,
   MoreVerticalIcon,
   PencilIcon,
   ScaleIcon,
+  Sigma,
   Trash2Icon,
   TrendingDownIcon,
   TrendingUpIcon,
@@ -64,6 +64,7 @@ interface HorizontalTableProps {
   onCellClick: (col: ReportColumn) => void;
   onTxCellClick: (tx: TransactionWithCategory, col: ReportColumn) => void;
   onDummyCellClick: (col: ReportColumn) => void;
+  readOnly?: boolean;
 }
 
 export function HorizontalTable({
@@ -87,6 +88,7 @@ export function HorizontalTable({
   onCellClick,
   onTxCellClick,
   onDummyCellClick,
+  readOnly = false,
 }: HorizontalTableProps) {
   // ─── Đổi tên cột (inline edit) ────────────────────
   const [editingColumnId, setEditingColumnId] = useState<string | null>(null);
@@ -177,12 +179,12 @@ export function HorizontalTable({
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-sm">
+      <table className="w-full min-w-max text-sm">
         {/* Header cột */}
         <thead>
-          <tr className="border-b bg-muted/20">
+          <tr className="border-b bg-muted/40 text-muted-foreground">
             {/* Cột STT */}
-            <th className="px-3 py-2.5 text-center text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60 w-12 whitespace-nowrap border-r border-border/40">
+            <th className="px-3 py-3 text-center text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60 w-12 whitespace-nowrap border-r border-border/60">
               STT
             </th>
             {columns.map((col) => {
@@ -194,36 +196,37 @@ export function HorizontalTable({
               return (
                 <th
                   key={col.id}
-                  draggable
-                  onDragStart={(e) => {
+                  draggable={!readOnly}
+                  onDragStart={!readOnly ? (e) => {
                     e.stopPropagation();
                     onColDragStart(col.id);
-                  }}
-                  onDragOver={(e) => {
+                  } : undefined}
+                  onDragOver={!readOnly ? (e) => {
                     onColDragOver(e, col.id);
                     onColDragOverTx(e, col);
-                  }}
-                  onDragLeave={onColDragLeaveTx}
-                  onDrop={(e) => onColDropTx(e, col)}
-                  onDragEnd={onColDragEnd}
+                  } : undefined}
+                  onDragLeave={!readOnly ? onColDragLeaveTx : undefined}
+                  onDrop={!readOnly ? (e) => onColDropTx(e, col) : undefined}
+                  onDragEnd={!readOnly ? onColDragEnd : undefined}
                   className={cn(
-                    'px-3 py-2.5 text-right whitespace-nowrap cursor-grab active:cursor-grabbing group/col transition-all relative border-t-2 border-t-transparent border-r last:border-r-0 border-r-border/40',
+                    'px-4 py-3 text-right whitespace-nowrap group/col transition-all relative border-t-2 border-t-transparent border-r last:border-r-0 border-r-border/20',
+                    !readOnly && 'cursor-grab active:cursor-grabbing',
                     col.kind === 'formula' && 'bg-amber-500/2',
                     col.kind === 'system' && 'bg-blue-500/2',
-                    activeDragOverColId === col.id && 'bg-primary/10 border-t-primary/70 scale-[1.02] shadow-sm',
+                    !readOnly && activeDragOverColId === col.id && 'bg-primary/10 border-t-primary/70 scale-[1.02] shadow-sm',
                   )}
                   style={col.width ? { width: col.width, minWidth: col.width, maxWidth: col.width } : { minWidth: '130px' }}
                 >
                   <div className="flex items-center justify-between gap-1">
                     <div className="flex items-center gap-1 min-w-0">
                       {label && (
-                        <span className="inline-flex items-center justify-center size-5 rounded-md bg-primary/10 text-primary text-[9px] font-bold shrink-0">
+                        <span className="inline-flex items-center justify-center size-5.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold shrink-0">
                           {label}
                         </span>
                       )}
                       {col.kind === 'formula' && (
                         <span className="inline-flex items-center justify-center size-5 rounded-md bg-amber-500/10 text-amber-600 shrink-0">
-                          <CalculatorIcon className="size-3" />
+                          <Sigma className="size-3" />
                         </span>
                       )}
                       {col.kind === 'system' && (
@@ -235,10 +238,16 @@ export function HorizontalTable({
                         </span>
                       )}
                       {col.kind === 'category' && (
-                        <IconPreview name={col.categoryIcon} className="size-3.5 shrink-0 text-muted-foreground" />
+                        <IconPreview
+                          name={col.categoryIcon}
+                          className={cn(
+                            "size-4 shrink-0",
+                            col.categoryType === 'income' ? 'text-emerald-500' : 'text-rose-500'
+                          )}
+                        />
                       )}
 
-                      {editingColumnId === col.id ? (
+                      {editingColumnId === col.id && !readOnly ? (
                         <Input
                           ref={colNameInputRef}
                           value={editColumnName}
@@ -250,6 +259,29 @@ export function HorizontalTable({
                           }}
                           className="h-5 w-24 text-xs rounded px-1"
                         />
+                      ) : readOnly ? (
+                        <div className="flex items-center gap-1 select-none">
+                          <span className="text-xs font-semibold truncate text-foreground">
+                            {col.displayName}
+                          </span>
+                          {col.kind === 'category' && (
+                            <span
+                              className={cn(
+                                'px-1 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider shrink-0 scale-90 border',
+                                col.categoryType === 'expense'
+                                  ? 'bg-rose-500/10 text-rose-600 border-rose-500/20'
+                                  : 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
+                              )}
+                            >
+                              {col.categoryType === 'expense' ? 'Chi' : 'Thu'}
+                            </span>
+                          )}
+                          {col.kind === 'system' && (
+                            <span className="px-1 py-0.5 rounded bg-blue-500/10 text-blue-600 border border-blue-500/20 text-[8px] font-bold uppercase tracking-wider shrink-0 scale-90">
+                              Hệ thống
+                            </span>
+                          )}
+                        </div>
                       ) : (
                         <DropdownMenu
                           open={activeMenuColId === col.id}
@@ -275,7 +307,7 @@ export function HorizontalTable({
                               {col.kind === 'category' && (
                                 <span
                                   className={cn(
-                                    'px-1 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider shrink-0 scale-90 border',
+                                    'px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider shrink-0 scale-90 border',
                                     col.categoryType === 'expense'
                                       ? 'bg-rose-500/10 text-rose-600 border-rose-500/20'
                                       : 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
@@ -285,7 +317,7 @@ export function HorizontalTable({
                                 </span>
                               )}
                               {col.kind === 'system' && (
-                                <span className="px-1 py-0.5 rounded bg-blue-500/10 text-blue-600 border border-blue-500/20 text-[8px] font-bold uppercase tracking-wider shrink-0 scale-90">
+                                <span className="px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-600 border border-blue-500/20 text-[8px] font-bold uppercase tracking-wider shrink-0 scale-90">
                                   Hệ thống
                                 </span>
                               )}
@@ -346,46 +378,30 @@ export function HorizontalTable({
                     </div>
                   </div>
 
-                  {/* Badge loại cột */}
-                  {col.kind === 'category' && (
-                    <span
-                      className={cn(
-                        'mt-0.5 inline-block text-[9px] font-bold uppercase tracking-wider',
-                        col.categoryType === 'expense'
-                          ? 'text-rose-500/60'
-                          : 'text-emerald-500/60',
-                      )}
-                    >
-                      {col.categoryType === 'expense' ? 'Chi' : 'Thu'}
-                    </span>
-                  )}
-                  {col.kind === 'system' && (
-                    <span className="mt-0.5 inline-block text-[9px] font-bold uppercase tracking-wider text-blue-500/60 truncate max-w-[100px]">
-                      Hệ thống
-                    </span>
-                  )}
                   {col.kind === 'formula' && (
-                    <span className="mt-0.5 inline-block text-[9px] font-medium text-amber-600/60 truncate max-w-[100px]">
+                    <span className="mt-1 block text-[9px] font-medium text-amber-600/60 truncate max-w-[120px] tracking-tight">
                       = {decompileFormula(col.formula, columns)}
                     </span>
                   )}
                   {/* Resizer */}
-                  <div
-                    onMouseDown={(e) => handleResizeStart(e, col.id)}
-                    className="absolute right-0 top-0 bottom-0 w-1.5 cursor-col-resize hover:bg-primary/60 active:bg-primary z-10 opacity-0 group-hover/col:opacity-100 transition-opacity"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      e.preventDefault();
-                    }}
-                  />
+                  {!readOnly && (
+                    <div
+                      onMouseDown={(e) => handleResizeStart(e, col.id)}
+                      className="absolute right-0 top-0 bottom-0 w-1.5 cursor-col-resize hover:bg-primary/60 active:bg-primary z-10 opacity-0 group-hover/col:opacity-100 transition-opacity"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                      }}
+                    />
+                  )}
                 </th>
               );
             })}
 
             {/* Cột tổng */}
             {table.showTotals !== false && (
-              <th className="px-3 py-2.5 text-right whitespace-nowrap bg-primary/5 min-w-[120px] border-l border-border/40">
-                <span className="text-xs font-bold text-primary">Tổng</span>
+              <th className="px-4 py-3.5 text-right whitespace-nowrap bg-emerald-500/10 dark:bg-emerald-500/20 min-w-[120px] border-l border-emerald-500/20">
+                <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Tổng</span>
               </th>
             )}
             {/* Cột Spacer */}
@@ -420,9 +436,9 @@ export function HorizontalTable({
             return (
               <tr
                 key={rowIdx}
-                className="border-b last:border-b-0 hover:bg-muted/20 transition-colors"
+                className="border-b last:border-b-0 hover:bg-muted/15 transition-colors"
               >
-                <td className="px-3 py-2 text-center text-xs text-muted-foreground/50 border-r border-border/40">
+                <td className="px-3 py-2.5 text-center text-xs text-muted-foreground/50 border-r border-border/60">
                   {rowIdx + 1}
                 </td>
                 {columns.map((col) => {
@@ -435,7 +451,11 @@ export function HorizontalTable({
                     <td
                       key={col.id}
                       onClick={() => {
-                        if (tx) {
+                        if (readOnly) {
+                          if (col.kind === 'category') {
+                            onCellClick(col);
+                          }
+                        } else if (tx) {
                           const isDummy = !('account_id' in tx);
                           if (isDummy) {
                             onDummyCellClick(col);
@@ -446,20 +466,24 @@ export function HorizontalTable({
                       }}
                       style={col.width ? { width: col.width, minWidth: col.width, maxWidth: col.width } : { minWidth: '130px' }}
                       className={cn(
-                        'px-3 py-2 text-right tabular-nums text-xs border-r last:border-r-0 border-border/40',
-                        col.kind === 'formula' && 'bg-amber-500/[0.01]',
-                        col.kind === 'system' && 'bg-blue-500/[0.01]',
-                        tx && 'cursor-pointer hover:bg-primary/5 hover:text-primary transition-colors underline decoration-dotted decoration-muted-foreground/30 underline-offset-4',
+                        'px-4 py-3 text-right font-mono text-[13px] tracking-tight border-r last:border-r-0 border-border/60',
+                        col.kind === 'formula' && 'bg-amber-500/1',
+                        col.kind === 'system' && 'bg-blue-500/1',
+                        tx && !readOnly && 'cursor-pointer hover:bg-primary/5 hover:text-primary transition-colors underline decoration-dotted decoration-muted-foreground/30 underline-offset-4',
+                        col.kind === 'category' && readOnly && 'cursor-pointer hover:bg-primary/5 hover:text-primary transition-colors',
                         getColumnValueColorClass(col, val)
                       )}
-                      title={tx ? `Nhấp để sửa giá trị giao dịch: ${tx.note || 'Không có ghi chú'}` : undefined}
+                      title={readOnly && col.kind === 'category' ? 'Nhấp để xem danh sách giao dịch' : (tx ? `Nhấp để sửa giá trị giao dịch: ${tx.note || 'Không có ghi chú'}` : undefined)}
                     >
                       {col.kind === 'system' ? (rowIdx === 0 ? formatVnd(columnTotals.get(col.id) ?? 0) : '—') : formatVnd(val)}
                     </td>
                   );
                 })}
                 {table.showTotals !== false && (
-                  <td className="px-3 py-2 text-right tabular-nums text-xs font-medium bg-primary/5 text-primary border-l border-border/40">
+                  <td className={cn(
+                    "px-4 py-3 text-right font-mono text-[13px] tracking-tight font-bold bg-emerald-500/10 dark:bg-emerald-500/20 border-l border-emerald-500/20",
+                    rowTotal < 0 ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400"
+                  )}>
                     {formatVnd(rowTotal)}
                   </td>
                 )}
@@ -473,8 +497,8 @@ export function HorizontalTable({
         {/* Dòng tổng cộng */}
         {table.showTotals !== false && (
           <tfoot>
-            <tr className="border-t-2 border-primary/20 bg-linear-to-r from-primary/5 to-primary/10">
-              <td className="px-3 py-3 text-center text-xs font-bold text-emerald-600 border-r border-border/40">
+            <tr className="border-y-2 border-emerald-500/30 bg-emerald-500/10 dark:bg-emerald-500/25">
+              <td className="px-3 py-3.5 text-center text-sm font-extrabold text-emerald-700 dark:text-emerald-300 border-r border-emerald-500/20">
                 Σ
               </td>
               {columns.map((col) => {
@@ -484,13 +508,13 @@ export function HorizontalTable({
                     key={col.id}
                     style={col.width ? { width: col.width, minWidth: col.width, maxWidth: col.width } : { minWidth: '130px' }}
                     className={cn(
-                      'px-3 py-3 text-right tabular-nums text-sm font-bold border-r last:border-r-0 border-border/40',
+                      'px-4 py-3.5 text-right font-mono text-[13px] tracking-tight font-bold border-r last:border-r-0 border-border/60',
                       col.kind === 'formula'
-                        ? 'text-amber-600'
+                        ? 'text-amber-700 dark:text-amber-400'
                         : col.kind === 'system'
-                          ? 'text-blue-600'
+                          ? 'text-blue-700 dark:text-blue-400'
                           : col.kind === 'category'
-                            ? 'text-emerald-600'
+                            ? 'text-emerald-700 dark:text-emerald-300'
                             : 'text-foreground',
                     )}
                   >
@@ -498,7 +522,7 @@ export function HorizontalTable({
                   </td>
                 );
               })}
-              <td className="px-3 py-3 text-right tabular-nums text-sm font-bold text-emerald-600 border-l border-border/40">
+              <td className="px-4 py-3.5 text-right font-mono text-sm font-extrabold text-emerald-700 dark:text-emerald-300 border-l border-emerald-500/20">
                 {formatVnd(
                   Array.from(columnTotals.entries())
                     .filter(([colId]) => {

@@ -3,7 +3,7 @@
  * Cấu hình bảng được lưu dưới dạng JSONB trong bảng `report_configs`.
  */
 
-import type { IsoDateString, UuidString } from './database';
+import type { IsoDateString, UuidString, TransactionWithCategory } from './database';
 
 // ─── Giao dịch giả (chỉ xuất hiện ở report) ───────────
 export interface ReportDummyTransaction {
@@ -86,3 +86,14 @@ export interface ReportConfigUpsertPayload {
   month: string;
   tables: ReportTable[];
 }
+
+export interface ReportExportPayload {
+  export_version: string;
+  workspace_id: string;
+  month: string;
+  export_at: string;
+  total_account_balance: number;
+  tables: ReportTable[];
+  transactions: TransactionWithCategory[];
+}
+
