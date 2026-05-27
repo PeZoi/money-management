@@ -69,7 +69,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   return (
     <Sidebar {...props}>
-      <SidebarHeader className="p-3">
+      <SidebarHeader className="p-3 pt-[calc(env(safe-area-inset-top)+12px)]">
         <WorkspaceSwitcher />
         <Separator className="mt-2.5 opacity-40" />
       </SidebarHeader>
