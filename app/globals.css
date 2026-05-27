@@ -146,3 +146,13 @@
     display: none; /* Chrome, Safari and Opera */
   }
 }
+
+/* Ép màu highlight bôi đen text theo primary color của hệ thống */
+::selection {
+  background-color: var(--primary) !important;
+  color: var(--primary-foreground) !important;
+}
+::-moz-selection {
+  background-color: var(--primary) !important;
+  color: var(--primary-foreground) !important;
+}
