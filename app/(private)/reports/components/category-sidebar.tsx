@@ -34,7 +34,7 @@ export function CategorySidebar({ categories, usedCategoryIds, transactions }: C
     <aside className="hidden lg:block w-64 shrink-0 sticky top-20 self-start">
       <div className="rounded-2xl border bg-card/80 backdrop-blur-sm shadow-sm overflow-hidden flex flex-col max-h-[82vh] transition-all">
         {/* Header */}
-        <div className="px-4 py-3 border-b bg-gradient-to-r from-primary/5 to-transparent">
+        <div className="px-4 py-3 border-b bg-linear-to-r from-primary/5 to-transparent">
           <h3 className="text-sm font-semibold tracking-tight flex items-center gap-2">
             <PackageIcon className="size-4 text-primary" />
             Thiết lập báo cáo

@@ -38,9 +38,42 @@ function GoogleGlyph(props: React.SVGProps<SVGSVGElement>) {
   );
 }
 
+/** Kiểm tra xem trình duyệt hiện tại có phải WebView nhúng (Zalo, FB, IG...) hay không */
+function detectWebView(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  const ua = navigator.userAgent || '';
+  // Các WebView phổ biến trên mobile mà Google chặn OAuth
+  const webViewPatterns = [
+    /FBAN|FBAV/i,          // Facebook
+    /Instagram/i,          // Instagram
+    /Zalo/i,               // Zalo
+    /Line\//i,             // Line
+    /\bwv\b/i,             // Android WebView generic
+    /WebView/i,            // Generic WebView
+    /MicroMessenger/i,     // WeChat / Zalo internal
+    /Twitter/i,            // Twitter/X in-app
+    /Snapchat/i,           // Snapchat
+    /Pinterest/i,          // Pinterest
+    /LinkedIn/i,           // LinkedIn
+  ];
+  return webViewPatterns.some((pattern) => pattern.test(ua));
+}
+
 export default function LoginPage() {
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [isWebView, setIsWebView] = React.useState(false);
+
+  // Detect WebView sau khi mount (client-side only)
+  React.useEffect(() => {
+    const isWv = detectWebView();
+    if (isWv) {
+      // Tránh setState đồng bộ trong effect bằng cách đưa vào microtask/animation frame
+      window.requestAnimationFrame(() => {
+        setIsWebView(true);
+      });
+    }
+  }, []);
 
   async function signInWithGoogle() {
     setError(null);
@@ -129,22 +162,43 @@ export default function LoginPage() {
             </p>
 
             <div className="mt-10 space-y-4">
-              <button
-                type="button"
-                disabled={loading}
-                onClick={signInWithGoogle}
-                style={{ background: ctaGradient }}
-                className="flex w-full items-center justify-center gap-3 rounded-lg px-5 py-4 text-base font-semibold text-white shadow-lg transition hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2d6330] disabled:pointer-events-none disabled:opacity-60 cursor-pointer"
-              >
-                <GoogleGlyph className="h-5 w-5 shrink-0" />
-                {loading ? 'Đang chuyển hướng...' : 'Tiếp tục với Google'}
-              </button>
+              {isWebView ? (
+                /* Cảnh báo khi mở trong WebView — Google chặn OAuth từ trình duyệt nhúng */
+                <div className="rounded-2xl border border-amber-300 bg-amber-50 px-5 py-5 text-sm leading-relaxed text-amber-900 shadow-sm">
+                  <p className="mb-2 flex items-center gap-2 font-semibold text-amber-800">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 shrink-0 text-amber-500" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.168 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 6a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 6zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                    </svg>
+                    Không thể đăng nhập từ đây
+                  </p>
+                  <p className="text-amber-700">
+                    Google chặn đăng nhập từ trình duyệt nhúng (Zalo, Facebook...) vì lý do bảo mật.
+                  </p>
+                  <p className="mt-3 font-medium text-amber-800">
+                    👉 Nhấn vào <strong>⋯</strong> hoặc <strong>⫶</strong> ở góc trên → chọn{' '}
+                    <strong>&quot;Mở trong trình duyệt&quot;</strong> (Chrome / Safari) để đăng nhập.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    disabled={loading}
+                    onClick={signInWithGoogle}
+                    style={{ background: ctaGradient }}
+                    className="flex w-full items-center justify-center gap-3 rounded-lg px-5 py-4 text-base font-semibold text-white shadow-lg transition hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2d6330] disabled:pointer-events-none disabled:opacity-60 cursor-pointer"
+                  >
+                    <GoogleGlyph className="h-5 w-5 shrink-0" />
+                    {loading ? 'Đang chuyển hướng...' : 'Tiếp tục với Google'}
+                  </button>
 
-              {error ? (
-                <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
-                  {error}
-                </p>
-              ) : null}
+                  {error ? (
+                    <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
+                      {error}
+                    </p>
+                  ) : null}
+                </>
+              )}
             </div>
 
             <p className="mt-10 text-center text-xs text-neutral-500 sm:text-left">

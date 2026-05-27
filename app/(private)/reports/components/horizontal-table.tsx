@@ -207,9 +207,9 @@ export function HorizontalTable({
                   onDrop={(e) => onColDropTx(e, col)}
                   onDragEnd={onColDragEnd}
                   className={cn(
-                    'px-3 py-2.5 text-right whitespace-nowrap cursor-grab active:cursor-grabbing group/col transition-all relative border-t-2 border-transparent border-r last:border-r-0 border-border/40',
-                    col.kind === 'formula' && 'bg-amber-500/[0.02]',
-                    col.kind === 'system' && 'bg-blue-500/[0.02]',
+                    'px-3 py-2.5 text-right whitespace-nowrap cursor-grab active:cursor-grabbing group/col transition-all relative border-t-2 border-t-transparent border-r last:border-r-0 border-r-border/40',
+                    col.kind === 'formula' && 'bg-amber-500/2',
+                    col.kind === 'system' && 'bg-blue-500/2',
                     activeDragOverColId === col.id && 'bg-primary/10 border-t-primary/70 scale-[1.02] shadow-sm',
                   )}
                   style={col.width ? { width: col.width, minWidth: col.width, maxWidth: col.width } : { minWidth: '130px' }}

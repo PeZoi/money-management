@@ -59,7 +59,7 @@ export function TimeFilterBar({
   };
 
   return (
-    <div className="sticky top-2 sm:top-4 z-30 mt-5 space-y-4 rounded-3xl border bg-card/80 p-4 sm:p-5 shadow-sm backdrop-blur-md animate-in fade-in slide-in-from-top-2 duration-300">
+    <div className="sticky top-[calc(env(safe-area-inset-top)+0.5rem)] sm:top-[calc(env(safe-area-inset-top)+1rem)] z-30 mt-5 space-y-4 rounded-3xl border bg-card/80 p-4 sm:p-5 shadow-sm backdrop-blur-md animate-in fade-in slide-in-from-top-2 duration-300">
       <div className="flex flex-col items-center justify-center gap-4 sm:flex-row sm:items-center sm:justify-between">
         
         {/* Segmented Control cho timeRange (Đồng bộ style và có điểm nhấn primary khi active) */}

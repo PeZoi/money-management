@@ -17,7 +17,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <AppSidebar />
         {/* pb-24 md:pb-0 để chừa khoảng trống cho thanh điều hướng dưới cùng trên mobile */}
         <SidebarInset className="pb-24 md:pb-0">
-          <header className="flex h-16 shrink-0 items-center justify-between border-b px-4">
+          <header className="flex h-[calc(4rem+env(safe-area-inset-top))] shrink-0 items-center justify-between border-b px-4 pt-[env(safe-area-inset-top)] bg-background">
             <div className="flex items-center gap-2">
               <SidebarTrigger className="-ml-1" />
               <Separator orientation="vertical" className="data-vertical:h-4 data-vertical:self-auto" />
