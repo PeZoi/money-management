@@ -63,6 +63,7 @@ export function useDashboardPage() {
   // Tránh Hydration Mismatch bằng cách chỉ render client sau khi đã mount
   const [mounted, setMounted] = React.useState(false);
   React.useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
 
@@ -184,7 +185,7 @@ export function useDashboardPage() {
         throw new Error(json.error || 'Xóa thất bại');
       }
       handleMutationSuccess();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
     }
   };

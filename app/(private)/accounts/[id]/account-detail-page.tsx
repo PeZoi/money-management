@@ -42,7 +42,6 @@ export default function AccountDetailPage({ id }: AccountDetailPageProps) {
     setActiveTab,
     editOpen,
     setEditOpen,
-    sortDirection,
     setSortDirection,
     month,
     setMonth,

@@ -34,6 +34,7 @@ export const ChartContainer = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<'div'> & {
     config: ChartConfig;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     children: React.ReactElement<any>;
   }
 >(({ id, className, config, children, ...props }, ref) => {

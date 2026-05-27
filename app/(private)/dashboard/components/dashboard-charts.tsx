@@ -20,7 +20,6 @@ import {
   PieChartIcon, 
   BarChart3Icon, 
   HelpCircleIcon,
-  ArrowRightLeftIcon,
   ArrowUpRightIcon,
   ArrowDownRightIcon
 } from 'lucide-react';
