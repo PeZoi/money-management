@@ -136,7 +136,7 @@ export default function ReportsPageClient() {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
       toast.success('Xuất báo cáo thành công');
-    } catch (err) {
+    } catch {
       toast.error('Xuất báo cáo thất bại');
     }
   };
@@ -157,7 +157,7 @@ export default function ReportsPageClient() {
         setImportedData(data);
         setMonth(data.month);
         toast.success(`Đã nhập báo cáo tháng ${data.month}! Hệ thống đang ở chế độ xem tệp tĩnh.`);
-      } catch (err) {
+      } catch {
         toast.error('Tệp tin JSON bị lỗi, không thể đọc');
       }
     };

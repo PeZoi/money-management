@@ -61,13 +61,8 @@ export function FormulaColumnDialog({
     }
     return 'expense';
   });
-  const [columnKind, setColumnKind] = useState<'data' | 'system'>(() => {
-    if (editColumn && editColumn.kind === 'system') {
-      return 'system';
-    }
-    return 'data';
-  });
-  const [systemMetric, setSystemMetric] = useState<'month_balance' | 'account_balance' | 'total_expense' | 'total_income'>(() => {
+  const columnKind = editColumn && editColumn.kind === 'system' ? 'system' : 'data';
+  const [systemMetric, setSystemMetric] = useState<'month_balance' | 'account_balance' | 'total_expense' | 'total_income' | 'avg_daily_expense' | 'transaction_count'>(() => {
     if (editColumn && editColumn.kind === 'system') {
       return editColumn.systemMetric;
     }
@@ -81,6 +76,8 @@ export function FormulaColumnDialog({
       case 'account_balance': return 'Số dư tài khoản';
       case 'total_expense': return 'Tổng tiền chi';
       case 'total_income': return 'Tổng tiền thu nhập';
+      case 'avg_daily_expense': return 'Chi tiêu trung bình ngày';
+      case 'transaction_count': return 'Tổng số lượng giao dịch';
       default: return '';
     }
   };

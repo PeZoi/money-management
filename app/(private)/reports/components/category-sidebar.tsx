@@ -370,7 +370,7 @@ function DraggableTransaction({ transaction }: { transaction: TransactionWithCat
 // ─── Một chỉ số hệ thống có thể kéo thả ───────────────
 
 interface DraggableSystemMetricProps {
-  id: 'month_balance' | 'account_balance' | 'total_expense' | 'total_income';
+  id: 'month_balance' | 'account_balance' | 'total_expense' | 'total_income' | 'avg_daily_expense' | 'transaction_count';
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   color: string;

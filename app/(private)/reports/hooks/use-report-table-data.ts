@@ -133,7 +133,7 @@ export function useReportTableData({ table, transactions, month, overrideTotalAc
       }
     }
     return totals;
-  }, [columns, columnTransactions, transactions, accounts]);
+  }, [columns, columnTransactions, transactions, accounts, month, overrideTotalAccountBalance]);
 
   return {
     dataColumns,
