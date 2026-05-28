@@ -161,34 +161,8 @@ export function FormulaColumnDialog({
             {editColumn ? 'Sửa hạng mục cấu hình' : 'Thêm hạng mục cấu hình'}
           </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground">
-            Tạo cột trống (kéo thả giao dịch), nhập công thức hoặc hiển thị chỉ số tài chính của hệ thống.
+            Tạo cột trống (kéo thả giao dịch) hoặc nhập công thức tính toán.
           </DialogDescription>
-
-          {/* Tab selector */}
-          <div className="flex border-b text-xs font-semibold text-muted-foreground mt-4 pt-2">
-            <button
-              type="button"
-              onClick={() => setColumnKind('data')}
-              className={cn(
-                "flex-1 pb-2 border-b-2 text-center transition-all cursor-pointer",
-                columnKind === 'data' ? "border-primary text-primary font-bold" : "border-transparent hover:text-foreground"
-              )}
-              disabled={!!editColumn} // Khi sửa không cho phép đổi loại
-            >
-              Dữ liệu & Công thức
-            </button>
-            <button
-              type="button"
-              onClick={() => setColumnKind('system')}
-              className={cn(
-                "flex-1 pb-2 border-b-2 text-center transition-all cursor-pointer",
-                columnKind === 'system' ? "border-primary text-primary font-bold" : "border-transparent hover:text-foreground"
-              )}
-              disabled={!!editColumn}
-            >
-              Chỉ số hệ thống
-            </button>
-          </div>
         </DialogHeader>
 
         <div className="space-y-5 py-4">

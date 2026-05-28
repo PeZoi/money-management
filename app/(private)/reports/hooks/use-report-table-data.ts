@@ -16,10 +16,29 @@ import { evaluateFormula } from '../lib/formula-engine';
 interface UseReportTableDataParams {
   table: ReportTable;
   transactions: TransactionWithCategory[];
+  month: string;
   overrideTotalAccountBalance?: number;
 }
 
-export function useReportTableData({ table, transactions, overrideTotalAccountBalance }: UseReportTableDataParams) {
+function getDaysInMonthToDivide(monthStr: string): number {
+  if (!monthStr) return 30;
+  const [year, month] = monthStr.split('-').map(Number);
+  if (!year || !month) return 30;
+
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1;
+  const currentDate = now.getDate();
+
+  const totalDaysInMonth = new Date(year, month, 0).getDate();
+
+  if (year === currentYear && month === currentMonth) {
+    return Math.max(1, currentDate);
+  }
+  return totalDaysInMonth;
+}
+
+export function useReportTableData({ table, transactions, month, overrideTotalAccountBalance }: UseReportTableDataParams) {
   const { columns } = table;
   const { accounts } = useAccounts();
 
@@ -96,6 +115,11 @@ export function useReportTableData({ table, transactions, overrideTotalAccountBa
           value = realIncomeTotal - realExpenseTotal;
         } else if (col.systemMetric === 'account_balance') {
           value = totalAccountBalance;
+        } else if (col.systemMetric === 'avg_daily_expense') {
+          const days = getDaysInMonthToDivide(month);
+          value = realExpenseTotal / days;
+        } else if (col.systemMetric === 'transaction_count') {
+          value = transactions.length;
         }
         totals.set(col.id, value);
       }

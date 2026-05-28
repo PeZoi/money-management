@@ -1,7 +1,17 @@
 'use client';
 
-import { GripVerticalIcon, PackageIcon } from 'lucide-react';
+import {
+  CalendarIcon,
+  GripVerticalIcon,
+  HashIcon,
+  PackageIcon,
+  ScaleIcon,
+  TrendingDownIcon,
+  TrendingUpIcon,
+  WalletIcon,
+} from 'lucide-react';
 import { useRef, useState } from 'react';
+import { toast } from 'sonner';
 
 import { cn } from '@/lib/utils';
 import type { CategoryUi } from '@/types/category';
@@ -14,10 +24,17 @@ interface CategorySidebarProps {
   categories: CategoryUi[];
   usedCategoryIds: Set<string>;
   transactions: TransactionWithCategory[];
+  onDeleteColumn?: (tableId: string, columnId: string) => void;
 }
 
-export function CategorySidebar({ categories, usedCategoryIds, transactions }: CategorySidebarProps) {
-  const [activeTab, setActiveTab] = useState<'categories' | 'transactions'>('categories');
+export function CategorySidebar({
+  categories,
+  usedCategoryIds,
+  transactions,
+  onDeleteColumn,
+}: CategorySidebarProps) {
+  const [activeTab, setActiveTab] = useState<'categories' | 'transactions' | 'system'>('categories');
+  const [isDragOverCol, setIsDragOverCol] = useState(false);
 
   const expenseCategories = categories.filter((c) => c.type === 'expense');
   const incomeCategories = categories.filter((c) => c.type === 'income');
@@ -30,17 +47,50 @@ export function CategorySidebar({ categories, usedCategoryIds, transactions }: C
   const expenseTransactions = displayTransactions.filter((tx) => tx.type === 'expense');
   const incomeTransactions = displayTransactions.filter((tx) => tx.type === 'income');
 
+  const handleDragOverCol = (e: React.DragEvent) => {
+    if (e.dataTransfer.types.includes('application/report-column-id')) {
+      e.preventDefault();
+      setIsDragOverCol(true);
+    }
+  };
+
+  const handleDragLeaveCol = () => {
+    setIsDragOverCol(false);
+  };
+
+  const handleDropCol = (e: React.DragEvent) => {
+    const columnId = e.dataTransfer.getData('application/report-column-id');
+    const tableId = e.dataTransfer.getData('application/report-source-table-id');
+    if (columnId && tableId && onDeleteColumn) {
+      e.preventDefault();
+      onDeleteColumn(tableId, columnId);
+      setIsDragOverCol(false);
+      toast.success('Đã loại bỏ cột khỏi bảng');
+    }
+  };
+
   return (
-    <aside className="hidden lg:block w-64 shrink-0 sticky top-20 self-start">
-      <div className="rounded-2xl border bg-card/80 backdrop-blur-sm shadow-sm overflow-hidden flex flex-col max-h-[82vh] transition-all">
+    <aside
+      className="hidden lg:block w-64 shrink-0 sticky top-20 self-start"
+      onDragOver={handleDragOverCol}
+      onDragLeave={handleDragLeaveCol}
+      onDrop={handleDropCol}
+    >
+      <div className={cn(
+        'rounded-2xl border bg-card/80 backdrop-blur-sm shadow-sm overflow-hidden flex flex-col max-h-[82vh] transition-all duration-200',
+        isDragOverCol && 'ring-2 ring-rose-500/50 border-rose-500/40 bg-rose-500/5 scale-[1.02]',
+      )}>
         {/* Header */}
-        <div className="px-4 py-3 border-b bg-linear-to-r from-primary/5 to-transparent">
+        <div className={cn(
+          'px-4 py-3 border-b bg-linear-to-r from-primary/5 to-transparent transition-colors duration-200',
+          isDragOverCol && 'from-rose-500/10 border-rose-500/20',
+        )}>
           <h3 className="text-sm font-semibold tracking-tight flex items-center gap-2">
-            <PackageIcon className="size-4 text-primary" />
-            Thiết lập báo cáo
+            <PackageIcon className={cn('size-4 text-primary transition-all duration-200', isDragOverCol && 'text-rose-500 animate-bounce')} />
+            {isDragOverCol ? 'Thả vào đây để xóa cột' : 'Thiết lập báo cáo'}
           </h3>
           <p className="text-[10px] text-muted-foreground mt-0.5">
-            Kéo thả danh mục hoặc giao dịch vào bảng
+            {isDragOverCol ? 'Thả cột để xóa khỏi bảng báo cáo' : 'Kéo thả danh mục hoặc giao dịch vào bảng'}
           </p>
         </div>
 
@@ -73,11 +123,22 @@ export function CategorySidebar({ categories, usedCategoryIds, transactions }: C
               </span>
             )}
           </button>
+          <button
+            onClick={() => setActiveTab('system')}
+            className={cn(
+              'flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer',
+              activeTab === 'system'
+                ? 'bg-background text-primary shadow-sm'
+                : 'text-muted-foreground hover:bg-background/50',
+            )}
+          >
+            Hệ thống
+          </button>
         </div>
 
         {/* Content Area */}
         <div className="flex-1 overflow-y-auto min-h-0 divide-y">
-          {activeTab === 'categories' ? (
+          {activeTab === 'categories' && (
             <>
               {/* Chi tiêu */}
               <div className="px-3 py-3">
@@ -119,7 +180,9 @@ export function CategorySidebar({ categories, usedCategoryIds, transactions }: C
                 </div>
               </div>
             </>
-          ) : (
+          )}
+
+          {activeTab === 'transactions' && (
             <>
               {/* Giao dịch Chi tiêu */}
               <div className="px-3 py-3">
@@ -159,6 +222,52 @@ export function CategorySidebar({ categories, usedCategoryIds, transactions }: C
                 </div>
               </div>
             </>
+          )}
+
+          {activeTab === 'system' && (
+            <div className="px-3 py-3">
+              <h4 className="text-[10px] font-bold uppercase tracking-wider text-blue-500/80 mb-2 px-1">
+                Chỉ số hệ thống
+              </h4>
+              <div className="space-y-1">
+                <DraggableSystemMetric
+                  id="month_balance"
+                  label="Số dư trong tháng"
+                  icon={ScaleIcon}
+                  color="text-amber-600 bg-amber-500/10"
+                />
+                <DraggableSystemMetric
+                  id="account_balance"
+                  label="Số dư tài khoản"
+                  icon={WalletIcon}
+                  color="text-blue-600 bg-blue-500/10"
+                />
+                <DraggableSystemMetric
+                  id="total_income"
+                  label="Tổng tiền thu nhập"
+                  icon={TrendingUpIcon}
+                  color="text-emerald-600 bg-emerald-500/10"
+                />
+                <DraggableSystemMetric
+                  id="total_expense"
+                  label="Tổng tiền chi"
+                  icon={TrendingDownIcon}
+                  color="text-rose-600 bg-rose-500/10"
+                />
+                <DraggableSystemMetric
+                  id="avg_daily_expense"
+                  label="Chi tiêu trung bình ngày"
+                  icon={CalendarIcon}
+                  color="text-orange-600 bg-orange-500/10"
+                />
+                <DraggableSystemMetric
+                  id="transaction_count"
+                  label="Tổng số lượng giao dịch"
+                  icon={HashIcon}
+                  color="text-indigo-600 bg-indigo-500/10"
+                />
+              </div>
+            </div>
           )}
         </div>
       </div>
@@ -254,6 +363,40 @@ function DraggableTransaction({ transaction }: { transaction: TransactionWithCat
       )}>
         {new Intl.NumberFormat('vi-VN', { style: 'decimal', maximumFractionDigits: 0 }).format(Number(transaction.amount))}đ
       </span>
+    </div>
+  );
+}
+
+// ─── Một chỉ số hệ thống có thể kéo thả ───────────────
+
+interface DraggableSystemMetricProps {
+  id: 'month_balance' | 'account_balance' | 'total_expense' | 'total_income';
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  color: string;
+}
+
+function DraggableSystemMetric({ id, label, icon: Icon, color }: DraggableSystemMetricProps) {
+  const handleDragStart = (e: React.DragEvent) => {
+    e.dataTransfer.setData(
+      'application/report-system-metric',
+      JSON.stringify({ id, label }),
+    );
+    e.dataTransfer.effectAllowed = 'copy';
+  };
+
+  return (
+    <div
+      draggable
+      onDragStart={handleDragStart}
+      className="flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm transition-all cursor-grab active:cursor-grabbing hover:bg-accent/60 hover:shadow-sm active:scale-[0.97]"
+      title={`Kéo "${label}" vào bảng`}
+    >
+      <GripVerticalIcon className="size-3 shrink-0 text-muted-foreground/50" />
+      <span className={cn('inline-flex items-center justify-center size-5.5 rounded-lg shrink-0', color)}>
+        <Icon className="size-3" />
+      </span>
+      <span className="truncate text-xs font-semibold">{label}</span>
     </div>
   );
 }

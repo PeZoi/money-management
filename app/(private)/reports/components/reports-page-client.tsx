@@ -10,7 +10,7 @@ import {
   SaveIcon,
   UploadIcon,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 
 import { MonthPicker } from '@/components/month-picker';
@@ -57,6 +57,7 @@ export default function ReportsPageClient() {
     configLoading,
     isSaving,
     saveTablesImmediate,
+    hasUnsavedChanges,
 
     // Delete confirm dialog
     deleteConfirmOpen,
@@ -77,6 +78,7 @@ export default function ReportsPageClient() {
     handleUpdateTableLayout,
     handleUpdateTableShowTotals,
     handleDropCategory,
+    handleDropSystemMetric,
     handleDeleteColumn,
     handleRenameColumn,
     handleUpdateColumn,
@@ -163,8 +165,30 @@ export default function ReportsPageClient() {
     e.target.value = ''; // Reset để có thể chọn lại cùng file
   };
 
+  // ─── Cảnh báo người dùng khi reload hoặc tắt tab nếu chưa lưu ──
+  useEffect(() => {
+    if (!hasUnsavedChanges) return;
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = 'Bạn có những thay đổi chưa được lưu. Bạn có chắc chắn muốn rời đi?';
+      return e.returnValue;
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [hasUnsavedChanges]);
+
   // ─── Đổi tháng (tự thoát chế độ xem file nếu đổi tháng khác) ──
   const handleMonthChange = (newMonth: string) => {
+    if (hasUnsavedChanges) {
+      const confirmLeave = window.confirm(
+        'Bạn có những thay đổi chưa lưu. Việc chuyển đổi tháng sẽ làm mất các thay đổi này. Bạn có chắc chắn muốn tiếp tục?'
+      );
+      if (!confirmLeave) return;
+    }
     setMonth(newMonth);
     if (importedData && importedData.month !== newMonth) {
       setImportedData(null);
@@ -196,12 +220,22 @@ export default function ReportsPageClient() {
             </span>
           )}
 
+          {/* Hiển thị badge ⚠️ Có thay đổi chưa lưu */}
+          {hasUnsavedChanges && !isReadOnly && (
+            <span className="flex items-center gap-1 text-[10px] sm:text-xs font-semibold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-1.5 rounded-xl border border-amber-500/20 mr-1 sm:mr-2 animate-in fade-in duration-300">
+              ⚠️ <span className="hidden sm:inline">Chưa lưu thay đổi</span>
+            </span>
+          )}
+
           {/* Nút Lưu hiển thị ở cả Mobile và Desktop nếu không phải chế độ chỉ đọc */}
           {!isReadOnly && (
             <Button
-              variant="outline"
+              variant={hasUnsavedChanges ? "default" : "outline"}
               size="sm"
-              className="rounded-xl px-3 h-10 sm:h-9"
+              className={cn(
+                "rounded-xl px-3 h-10 sm:h-9 transition-all duration-300",
+                hasUnsavedChanges && "bg-primary text-primary-foreground shadow-md hover:bg-primary/90"
+              )}
               onClick={() => saveTablesImmediate(tables)}
               disabled={isSaving}
             >
@@ -276,6 +310,7 @@ export default function ReportsPageClient() {
                 categories={categories}
                 usedCategoryIds={usedCategoryIds}
                 transactions={unassignedTransactions}
+                onDeleteColumn={handleDeleteColumn}
               />
             )}
 
@@ -317,6 +352,7 @@ export default function ReportsPageClient() {
                         onRenameTable={handleRenameTable}
                         onDeleteTable={handleDeleteTable}
                         onDropCategory={handleDropCategory}
+                        onDropSystemMetric={handleDropSystemMetric}
                         onDeleteColumn={handleDeleteColumn}
                         onRenameColumn={handleRenameColumn}
                         onReorderColumns={handleReorderColumns}

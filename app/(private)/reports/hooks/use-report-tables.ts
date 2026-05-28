@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 
 import type {
   ReportCategoryColumn,
@@ -20,7 +20,6 @@ export function useReportTables(month: string, transactions: TransactionWithCate
     isLoading: configLoading,
     isSuccess: configSuccess,
     isSaving,
-    saveTablesDebounced,
     saveTablesImmediate,
   } = useReportConfig(month);
 
@@ -51,14 +50,17 @@ export function useReportTables(month: string, transactions: TransactionWithCate
   const [formulaTargetTableId, setFormulaTargetTableId] = useState<string | null>(null);
   const [formulaEditColumn, setFormulaEditColumn] = useState<ReportColumn | null>(null);
 
-  // ─── Auto-save khi tables thay đổi ─────────────────
+  // ─── Cập nhật state tables cục bộ ──────────────────
   const persistTables = useCallback(
     (updated: ReportTable[]) => {
       setTables(updated);
-      saveTablesDebounced(updated);
     },
-    [saveTablesDebounced],
+    [],
   );
+
+  const hasUnsavedChanges = useMemo(() => {
+    return JSON.stringify(tables) !== JSON.stringify(savedTables);
+  }, [tables, savedTables]);
 
   // ─── Tạo bảng mới ─────────────────────────────────
   const handleCreateTable = useCallback(() => {
@@ -137,6 +139,34 @@ export function useReportTables(month: string, transactions: TransactionWithCate
       }),
     );
   }, [tables, persistTables]);
+
+  // ─── Thêm cột chỉ số hệ thống (drop từ sidebar) ────
+  const handleDropSystemMetric = useCallback(
+    (
+      tableId: string,
+      metricId: 'month_balance' | 'account_balance' | 'total_expense' | 'total_income',
+      label: string,
+    ) => {
+      persistTables(
+        tables.map((t) => {
+          if (t.id !== tableId) return t;
+          const alreadyExists = t.columns.some(
+            (c) => c.kind === 'system' && c.systemMetric === metricId,
+          );
+          if (alreadyExists) return t;
+
+          const newCol: ReportColumn = {
+            id: crypto.randomUUID(),
+            kind: 'system',
+            systemMetric: metricId,
+            displayName: label,
+          };
+          return { ...t, columns: [...t.columns, newCol] };
+        }),
+      );
+    },
+    [tables, persistTables],
+  );
 
   // ─── Xóa cột ──────────────────────────────────────
   const handleDeleteColumn = useCallback((tableId: string, columnId: string) => {
@@ -242,12 +272,7 @@ export function useReportTables(month: string, transactions: TransactionWithCate
 
   const handleTableDragEnd = useCallback(() => {
     dragTableId.current = null;
-    // Lưu thứ tự mới — dùng setTables callback để lấy state mới nhất
-    setTables((current) => {
-      saveTablesDebounced(current);
-      return current;
-    });
-  }, [saveTablesDebounced]);
+  }, []);
 
   // ─── Gán / gỡ gán giao dịch visually vào cột ──────
   const handleAssignTransaction = useCallback((tableId: string, columnId: string, transactionId: string) => {
@@ -311,6 +336,7 @@ export function useReportTables(month: string, transactions: TransactionWithCate
     configLoading,
     isSaving,
     saveTablesImmediate,
+    hasUnsavedChanges,
 
     // Delete confirm dialog
     deleteConfirmOpen,
@@ -331,6 +357,7 @@ export function useReportTables(month: string, transactions: TransactionWithCate
     handleUpdateTableLayout,
     handleUpdateTableShowTotals,
     handleDropCategory,
+    handleDropSystemMetric,
     handleDeleteColumn,
     handleRenameColumn,
     handleUpdateColumn,

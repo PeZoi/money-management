@@ -34,7 +34,7 @@ export interface ReportCategoryColumn {
 export interface ReportSystemColumn {
   id: string; // UUID tự sinh phía client
   kind: 'system';
-  systemMetric: 'month_balance' | 'account_balance' | 'total_expense' | 'total_income';
+  systemMetric: 'month_balance' | 'account_balance' | 'total_expense' | 'total_income' | 'avg_daily_expense' | 'transaction_count';
   displayName: string; // Tên hiển thị (vd: "Số dư tài khoản", "Tổng tiền chi")
   width?: number; // Độ rộng cột (px)
 }

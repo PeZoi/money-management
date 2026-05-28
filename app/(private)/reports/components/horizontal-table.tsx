@@ -1,7 +1,9 @@
 'use client';
 
 import {
+  CalendarIcon,
   EyeIcon,
+  HashIcon,
   MoreVerticalIcon,
   PencilIcon,
   ScaleIcon,
@@ -47,7 +49,7 @@ interface HorizontalTableProps {
   columnTotals: ColumnTotalsMap;
   maxRows: number;
   // Column drag-drop
-  onColDragStart: (colId: string) => void;
+  onColDragStart: (colId: string, e: React.DragEvent) => void;
   onColDragOver: (e: React.DragEvent, targetColId: string) => void;
   onColDragEnd: () => void;
   // Transaction drag-drop vào cột
@@ -199,7 +201,7 @@ export function HorizontalTable({
                   draggable={!readOnly}
                   onDragStart={!readOnly ? (e) => {
                     e.stopPropagation();
-                    onColDragStart(col.id);
+                    onColDragStart(col.id, e);
                   } : undefined}
                   onDragOver={!readOnly ? (e) => {
                     onColDragOver(e, col.id);
@@ -235,6 +237,8 @@ export function HorizontalTable({
                           {col.systemMetric === 'month_balance' && <ScaleIcon className="size-3" />}
                           {col.systemMetric === 'total_income' && <TrendingUpIcon className="size-3" />}
                           {col.systemMetric === 'total_expense' && <TrendingDownIcon className="size-3" />}
+                          {col.systemMetric === 'avg_daily_expense' && <CalendarIcon className="size-3" />}
+                          {col.systemMetric === 'transaction_count' && <HashIcon className="size-3" />}
                         </span>
                       )}
                       {col.kind === 'category' && (
@@ -421,7 +425,8 @@ export function HorizontalTable({
                 const txs = columnTransactions.get(col.id) ?? [];
                 const val = txs[rowIdx] ? Number(txs[rowIdx].amount) : 0;
                 rowColValues.set(col.id, val);
-                rowTotal += val;
+                const multiplier = col.categoryType === 'expense' ? -1 : 1;
+                rowTotal += val * multiplier;
               }
             }
 
@@ -522,16 +527,27 @@ export function HorizontalTable({
                   </td>
                 );
               })}
-              <td className="px-4 py-3.5 text-right font-mono text-sm font-extrabold text-emerald-700 dark:text-emerald-300 border-l border-emerald-500/20">
-                {formatVnd(
-                  Array.from(columnTotals.entries())
-                    .filter(([colId]) => {
-                      const col = columns.find((c) => c.id === colId);
-                      return col?.kind === 'category';
-                    })
-                    .reduce((sum, [, val]) => sum + val, 0),
-                )}
-              </td>
+              {(() => {
+                const grandTotal = Array.from(columnTotals.entries())
+                  .filter(([colId]) => {
+                    const col = columns.find((c) => c.id === colId);
+                    return col?.kind === 'category';
+                  })
+                  .reduce((sum, [colId, val]) => {
+                    const col = columns.find((c) => c.id === colId);
+                    const multiplier = col && col.kind === 'category' && col.categoryType === 'expense' ? -1 : 1;
+                    return sum + val * multiplier;
+                  }, 0);
+
+                return (
+                  <td className={cn(
+                    "px-4 py-3.5 text-right font-mono text-sm font-extrabold border-l border-emerald-500/20",
+                    grandTotal < 0 ? "text-rose-700 dark:text-rose-400" : "text-emerald-700 dark:text-emerald-300"
+                  )}>
+                    {formatVnd(grandTotal)}
+                  </td>
+                );
+              })()}
               {/* Cột Spacer */}
               <td className="p-0 border-none bg-transparent"></td>
             </tr>

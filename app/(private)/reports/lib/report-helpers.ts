@@ -20,11 +20,12 @@ export function getColumnValueColorClass(col: ReportColumn, val: number): string
     return 'text-amber-600 dark:text-amber-400 font-bold';
   }
   if (col.kind === 'system') {
-    if (col.systemMetric === 'total_expense') return 'text-rose-600 dark:text-rose-400 font-semibold';
+    if (col.systemMetric === 'total_expense' || col.systemMetric === 'avg_daily_expense') return 'text-rose-600 dark:text-rose-400 font-semibold';
     if (col.systemMetric === 'total_income') return 'text-emerald-600 dark:text-emerald-400 font-semibold';
     if (col.systemMetric === 'month_balance') {
       return val < 0 ? 'text-rose-600 dark:text-rose-400 font-semibold' : 'text-emerald-600 dark:text-emerald-400 font-semibold';
     }
+    if (col.systemMetric === 'transaction_count') return 'text-foreground font-semibold';
     return 'text-blue-600 dark:text-blue-400 font-semibold';
   }
   if (col.kind === 'category') {
@@ -48,6 +49,10 @@ export function getSystemMetricIconClass(metric: string): string {
       return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400';
     case 'total_expense':
       return 'bg-rose-500/10 text-rose-600 dark:text-rose-400';
+    case 'avg_daily_expense':
+      return 'bg-orange-500/10 text-orange-600 dark:text-orange-400';
+    case 'transaction_count':
+      return 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400';
     default:
       return 'bg-muted text-muted-foreground';
   }

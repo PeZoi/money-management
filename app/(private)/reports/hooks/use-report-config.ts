@@ -60,6 +60,7 @@ export function useReportConfig(month: string) {
       queryClient.invalidateQueries({
         queryKey: ['report-config', activeWorkspaceId, month],
       });
+      toast.success('Đã lưu cấu hình báo cáo thành công');
     },
     onError: (err: Error) => {
       toast.error(err.message || 'Không thể lưu cấu hình báo cáo');

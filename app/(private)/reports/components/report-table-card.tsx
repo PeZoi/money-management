@@ -33,6 +33,11 @@ interface ReportTableCardProps {
   onRenameTable: (tableId: string, newName: string) => void;
   onDeleteTable: (tableId: string) => void;
   onDropCategory: (tableId: string, category: CategoryUi) => void;
+  onDropSystemMetric?: (
+    tableId: string,
+    metricId: 'month_balance' | 'account_balance' | 'total_expense' | 'total_income',
+    label: string,
+  ) => void;
   onDeleteColumn: (tableId: string, columnId: string) => void;
   onRenameColumn: (tableId: string, columnId: string, newName: string) => void;
   onReorderColumns: (tableId: string, newColumns: ReportColumn[]) => void;
@@ -54,6 +59,7 @@ export function ReportTableCard({
   onRenameTable,
   onDeleteTable,
   onDropCategory,
+  onDropSystemMetric,
   onDeleteColumn,
   onRenameColumn,
   onReorderColumns,
@@ -71,7 +77,7 @@ export function ReportTableCard({
 
   // ─── Hook tính toán dữ liệu bảng ──────────────────
   const { dataColumns, columnTransactions, maxRows, columnTotals } =
-    useReportTableData({ table, transactions, overrideTotalAccountBalance });
+    useReportTableData({ table, transactions, month, overrideTotalAccountBalance });
 
   // ─── State UI ──────────────────────────────────────
   const [editingTransaction, setEditingTransaction] = useState<TransactionWithCategory | null>(null);
@@ -79,11 +85,14 @@ export function ReportTableCard({
   const [activeDragOverColId, setActiveDragOverColId] = useState<string | null>(null);
   const [selectedColumnForTransactions, setSelectedColumnForTransactions] = useState<ReportColumn | null>(null);
 
-  // ─── Drop zone cho danh mục ────────────────────────
+  // ─── Drop zone cho danh mục và chỉ số hệ thống ───────
   const [isDragOver, setIsDragOver] = useState(false);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
-    if (e.dataTransfer.types.includes('application/report-category')) {
+    if (
+      e.dataTransfer.types.includes('application/report-category') ||
+      e.dataTransfer.types.includes('application/report-system-metric')
+    ) {
       e.preventDefault();
       e.dataTransfer.dropEffect = 'copy';
       setIsDragOver(true);
@@ -98,23 +107,45 @@ export function ReportTableCard({
     (e: React.DragEvent) => {
       e.preventDefault();
       setIsDragOver(false);
-      const raw = e.dataTransfer.getData('application/report-category');
-      if (!raw) return;
-      try {
-        const category = JSON.parse(raw) as CategoryUi;
-        onDropCategory(table.id, category);
-      } catch {
-        // Bỏ qua lỗi parse
+
+      // 1. Thả cột danh mục
+      const rawCategory = e.dataTransfer.getData('application/report-category');
+      if (rawCategory) {
+        try {
+          const category = JSON.parse(rawCategory) as CategoryUi;
+          onDropCategory(table.id, category);
+          return;
+        } catch {
+          // Bỏ qua
+        }
+      }
+
+      // 2. Thả cột chỉ số hệ thống
+      const rawMetric = e.dataTransfer.getData('application/report-system-metric');
+      if (rawMetric && onDropSystemMetric) {
+        try {
+          const metric = JSON.parse(rawMetric) as {
+            id: 'month_balance' | 'account_balance' | 'total_expense' | 'total_income';
+            label: string;
+          };
+          onDropSystemMetric(table.id, metric.id, metric.label);
+          toast.success(`Đã thêm chỉ số "${metric.label}" vào bảng`);
+        } catch {
+          // Bỏ qua
+        }
       }
     },
-    [onDropCategory, table.id],
+    [onDropCategory, onDropSystemMetric, table.id],
   );
 
   // ─── Kéo thả sắp xếp cột ─────────────────────────
   const dragColId = useRef<string | null>(null);
 
-  const handleColDragStart = (colId: string) => {
+  const handleColDragStart = (colId: string, e: React.DragEvent) => {
     dragColId.current = colId;
+    e.dataTransfer.setData('application/report-column-id', colId);
+    e.dataTransfer.setData('application/report-source-table-id', table.id);
+    e.dataTransfer.effectAllowed = 'move';
   };
 
   const handleColDragOver = (e: React.DragEvent, targetColId: string) => {
