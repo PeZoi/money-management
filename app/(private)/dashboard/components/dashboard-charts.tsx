@@ -19,7 +19,6 @@ import {
   TrendingUpIcon, 
   PieChartIcon, 
   BarChart3Icon, 
-  HelpCircleIcon,
   ArrowUpRightIcon,
   ArrowDownRightIcon
 } from 'lucide-react';
@@ -96,7 +95,7 @@ const CustomPieTooltip = ({ active, payload }: CustomPieTooltipProps) => {
             {data.id !== 'other' ? (
               <IconPreview name={data.icon} className="size-3.5" />
             ) : (
-              <HelpCircleIcon className="size-3.5" />
+              <span className="text-xs shrink-0 select-none">🏷️</span>
             )}
           </div>
           <span className="text-foreground font-bold">{data.name}</span>
@@ -157,7 +156,7 @@ export function DashboardCharts({
     expenses.forEach((t) => {
       const catId = t.category_id || 'other';
       const catName = t.category?.name || 'Khác';
-      const catIcon = t.category?.icon || 'help-circle';
+      const catIcon = t.category?.icon || '🏷️';
       const amount = Number(t.amount || 0);
 
       if (groups[catId]) {
@@ -413,7 +412,7 @@ export function DashboardCharts({
                       {item.id !== 'other' ? (
                         <IconPreview name={item.icon} className="size-3.5" />
                       ) : (
-                        <HelpCircleIcon className="size-3.5" />
+                        <span className="text-xs shrink-0 select-none">🏷️</span>
                       )}
                     </div>
                     <span className="font-bold text-xs text-foreground/80 truncate group-hover/acc:text-foreground">{item.name}</span>

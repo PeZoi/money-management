@@ -149,7 +149,7 @@ export default function CreateCategoryDialog({
           </div>
 
           <div className="grid gap-2">
-            <Label>Icon danh mục</Label>
+            <Label>Emoji danh mục</Label>
             <div className="flex flex-wrap items-center gap-2">
               <IconPickerDialog
                 value={draftIcon}

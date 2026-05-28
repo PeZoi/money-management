@@ -103,7 +103,7 @@ export function EditAmountDialog({
         <DialogHeader className="space-y-1 pb-4 border-b">
           <DialogTitle className="flex items-center gap-2 text-base font-semibold text-foreground">
             <span className="inline-flex items-center justify-center size-8 rounded-xl bg-emerald-500/10 text-emerald-600">
-              <IconPreview name={transaction.category?.icon} className="size-4.5" />
+              <IconPreview name={transaction.category?.icon || '🏷️'} className="size-4.5" />
             </span>
             Sửa số tiền giao dịch
           </DialogTitle>

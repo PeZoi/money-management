@@ -280,7 +280,7 @@ export function useAccountDetailPage(id: string) {
     expenseTransactions.forEach((t) => {
       const catId = t.category_id || 'other';
       const catName = t.category?.name || 'Khác';
-      const catIcon = t.category?.icon || '';
+      const catIcon = t.category?.icon || '🏷️';
       const amount = Number(t.amount);
 
       const existing = map.get(catId);

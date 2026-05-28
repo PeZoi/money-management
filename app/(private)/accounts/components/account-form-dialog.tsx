@@ -7,22 +7,22 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
-import { BanknoteIcon, BuildingIcon, Loader2Icon, PiggyBankIcon, SmartphoneIcon, WalletIcon } from 'lucide-react';
+import { Loader2Icon } from 'lucide-react';
 
 import { useAccountForm } from '../hooks/use-account-form';
 
 const ACCOUNT_TYPES = [
-  { value: 'cash', label: 'Tiền mặt', icon: WalletIcon, color: '#10b981', description: 'Tiền trong ví, tay' },
-  { value: 'bank', label: 'Ngân hàng', icon: BuildingIcon, color: '#6366f1', description: 'Tài khoản ngân hàng' },
-  { value: 'e_wallet', label: 'Ví điện tử', icon: SmartphoneIcon, color: '#f59e0b', description: 'MoMo, ZaloPay...' },
+  { value: 'cash', label: 'Tiền mặt', icon: '💵', color: '#10b981', description: 'Tiền trong ví, tay' },
+  { value: 'bank', label: 'Ngân hàng', icon: '🏦', color: '#6366f1', description: 'Tài khoản ngân hàng' },
+  { value: 'e_wallet', label: 'Ví điện tử', icon: '📱', color: '#f59e0b', description: 'MoMo, ZaloPay...' },
   {
     value: 'investment',
     label: 'Đầu tư',
-    icon: PiggyBankIcon,
+    icon: '📈',
     color: '#ec4899',
     description: 'Chứng khoán, tiết kiệm',
   },
-  { value: 'other', label: 'Khác', icon: BanknoteIcon, color: '#64748b', description: 'Loại tài khoản khác' },
+  { value: 'other', label: 'Khác', icon: '🪙', color: '#64748b', description: 'Loại tài khoản khác' },
 ] as const;
 
 const PRESET_COLORS = [
@@ -99,7 +99,6 @@ export default function AccountFormDialog({ open, onOpenChange, account, onSucce
               <Label>Loại tài khoản</Label>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {ACCOUNT_TYPES.map((t) => {
-                  const Icon = t.icon;
                   const isSelected = type === t.value;
                   return (
                     <button
@@ -117,13 +116,13 @@ export default function AccountFormDialog({ open, onOpenChange, account, onSucce
                     >
                       <span
                         className={cn(
-                          'flex size-10 shrink-0 items-center justify-center rounded-xl border shadow-sm',
+                          'flex size-10 shrink-0 items-center justify-center rounded-xl border shadow-sm text-xl',
                           isSelected
                             ? 'border-primary/30 bg-primary/15 text-primary'
                             : 'border-border bg-muted/40 text-muted-foreground',
                         )}
                       >
-                        <Icon className="size-4.5" aria-hidden />
+                        {t.icon}
                       </span>
                       <div className="min-w-0">
                         <div className={cn('text-sm font-semibold', isSelected && 'text-primary')}>{t.label}</div>

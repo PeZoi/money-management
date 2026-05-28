@@ -38,21 +38,21 @@ import IconPreview from "@/components/icons/icon-preview";
 const LOCAL_STORAGE_KEY = "money-setup-dismissed";
 
 const DEFAULT_EXPENSE_CATEGORIES = [
-  { name: "Ăn uống", icon: "Utensils", type: "expense", color: "#ef4444" },
-  { name: "Di chuyển", icon: "Car", type: "expense", color: "#3b82f6" },
-  { name: "Mua sắm", icon: "ShoppingBag", type: "expense", color: "#10b981" },
-  { name: "Nhà cửa", icon: "Home", type: "expense", color: "#f59e0b" },
-  { name: "Hóa đơn", icon: "Zap", type: "expense", color: "#6366f1" },
-  { name: "Giải trí", icon: "Gift", type: "expense", color: "#ec4899" },
-  { name: "Sức khỏe", icon: "HeartPulse", type: "expense", color: "#14b8a6" },
-  { name: "Học tập", icon: "GraduationCap", type: "expense", color: "#8b5cf6" },
+  { name: "Ăn uống", icon: "🍽️", type: "expense", color: "#ef4444" },
+  { name: "Di chuyển", icon: "🚗", type: "expense", color: "#3b82f6" },
+  { name: "Mua sắm", icon: "🛍️", type: "expense", color: "#10b981" },
+  { name: "Nhà cửa", icon: "🏠", type: "expense", color: "#f59e0b" },
+  { name: "Hóa đơn", icon: "⚡", type: "expense", color: "#6366f1" },
+  { name: "Giải trí", icon: "🎮", type: "expense", color: "#ec4899" },
+  { name: "Sức khỏe", icon: "💊", type: "expense", color: "#14b8a6" },
+  { name: "Học tập", icon: "🎓", type: "expense", color: "#8b5cf6" },
 ];
 
 const DEFAULT_INCOME_CATEGORIES = [
-  { name: "Lương", icon: "Banknote", type: "income", color: "#10b981" },
-  { name: "Đầu tư", icon: "TrendingUp", type: "income", color: "#3b82f6" },
-  { name: "Tiền thưởng", icon: "Gift", type: "income", color: "#f59e0b" },
-  { name: "Phụ thu", icon: "Briefcase", type: "income", color: "#ec4899" },
+  { name: "Lương", icon: "💵", type: "income", color: "#10b981" },
+  { name: "Đầu tư", icon: "📈", type: "income", color: "#3b82f6" },
+  { name: "Tiền thưởng", icon: "🎉", type: "income", color: "#f59e0b" },
+  { name: "Phụ thu", icon: "💼", type: "income", color: "#ec4899" },
 ];
 
 const ACCOUNT_PRESETS = [

@@ -1,6 +1,6 @@
 'use client';
 
-import { GripVerticalIcon, PackageIcon, HelpCircleIcon } from 'lucide-react';
+import { GripVerticalIcon, PackageIcon } from 'lucide-react';
 import { useRef, useState } from 'react';
 
 import { cn } from '@/lib/utils';
@@ -240,7 +240,7 @@ function DraggableTransaction({ transaction }: { transaction: TransactionWithCat
       {transaction.category ? (
         <IconPreview name={transaction.category.icon} className="size-3.5 text-muted-foreground shrink-0" />
       ) : (
-        <HelpCircleIcon className="size-3.5 text-muted-foreground shrink-0" />
+        <span className="text-sm shrink-0">🏷️</span>
       )}
       <div className="min-w-0 flex-1">
         <p className="font-semibold text-foreground truncate">{transaction.note || 'Không ghi chú'}</p>

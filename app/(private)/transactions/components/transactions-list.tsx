@@ -119,7 +119,7 @@ function TransactionRow({
   // Thả tay
   const handleTouchEnd = () => {
     isDragging.current = false;
-    
+
     if (rowRef.current) {
       rowRef.current.style.transition = 'transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)';
     }
@@ -238,7 +238,9 @@ function TransactionRow({
           {t.category?.icon ? (
             <IconPreview name={t.category.icon} className={cn('size-28', amountIconClass)} />
           ) : (
-            <AmountIcon className={cn('size-28', amountIconClass)} aria-hidden />
+            <span className="inline-flex items-center justify-center text-8xl select-none leading-none font-normal">
+              {t.type === 'transfer' ? '🔄' : '🏷️'}
+            </span>
           )}
         </div>
 
@@ -250,25 +252,25 @@ function TransactionRow({
           )}
         >
           {t.category?.icon ? (
-            <>
-              <IconPreview name={t.category.icon} className={cn('size-5.5', amountIconClass)} />
-              {/* Badge phụ góc dưới bên phải thể hiện thu/chi */}
-              <span
-                className={cn(
-                  'absolute -bottom-1 -right-1 flex size-5 items-center justify-center rounded-full border bg-background shadow-xs text-[10px]',
-                  isIncome
-                    ? 'border-emerald-500/20 text-emerald-500'
-                    : isTransfer
-                      ? 'border-blue-500/20 text-blue-500'
-                      : 'border-rose-500/20 text-rose-500',
-                )}
-              >
-                <AmountIcon className="size-3" aria-hidden />
-              </span>
-            </>
+            <IconPreview name={t.category.icon} className={cn('size-5.5', amountIconClass)} />
           ) : (
-            <AmountIcon className={cn('size-6', amountIconClass)} aria-hidden />
+            <span className="inline-flex items-center justify-center text-[1.375rem] select-none leading-none font-normal -translate-y-px">
+              {t.type === 'transfer' ? '🔄' : '🏷️'}
+            </span>
           )}
+          {/* Badge phụ góc dưới bên phải thể hiện thu/chi */}
+          <span
+            className={cn(
+              'absolute -bottom-1 -right-1 flex size-5 items-center justify-center rounded-full border bg-background shadow-xs text-[10px]',
+              isIncome
+                ? 'border-emerald-500/20 text-emerald-500'
+                : isTransfer
+                  ? 'border-blue-500/20 text-blue-500'
+                  : 'border-rose-500/20 text-rose-500',
+            )}
+          >
+            <AmountIcon className="size-3" aria-hidden />
+          </span>
         </div>
 
         {/* Info phân cấp rõ ràng (Note > Category > Date) */}

@@ -16,5 +16,5 @@ export type CategoryFormValues = z.infer<typeof categorySchema>;
 export const categoryDefaultValues: CategoryFormValues = {
   name: '',
   type: 'expense',
-  icon: 'Tag',
+  icon: '🏷️',
 };

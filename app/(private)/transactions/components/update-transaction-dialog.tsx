@@ -15,7 +15,6 @@ import {
   Calendar as CalendarIcon,
   ChevronsUpDown,
   CreditCardIcon,
-  HelpCircleIcon,
   Loader2Icon,
   TrendingDownIcon,
   TrendingUpIcon,
@@ -139,11 +138,11 @@ export default function UpdateTransactionDialog({ transaction, open, onOpenChang
                     >
                       <span
                         className={cn(
-                          'flex size-10 shrink-0 items-center justify-center rounded-xl border transition-colors',
+                          'flex size-10 shrink-0 items-center justify-center rounded-xl border transition-colors text-xl',
                           classes.iconSpan,
                         )}
                       >
-                        <HelpCircleIcon className="size-5" />
+                        🏷️
                       </span>
                       <span className="text-xs font-semibold truncate max-w-full">Khác</span>
                     </button>

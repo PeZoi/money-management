@@ -215,9 +215,6 @@ function CategoryCard({
                 <h3 className="truncate font-semibold tracking-tight text-foreground/95 transition-colors group-hover:text-foreground">
                   {c.name}
                 </h3>
-                <p className="mt-0.5 truncate text-[10px] text-muted-foreground font-medium">
-                  Icon: <span className="font-mono text-muted-foreground/80">{c.icon}</span>
-                </p>
               </div>
               <Badge
                 className={cn(

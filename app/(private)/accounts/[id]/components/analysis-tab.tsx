@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/chart';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { TransactionWithCategory } from '@/types/database';
-import { BarChart3Icon, HelpCircleIcon, PieChartIcon } from 'lucide-react';
+import { BarChart3Icon, PieChartIcon } from 'lucide-react';
 import { CartesianGrid, Cell, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
 interface CustomPieTooltipProps {
@@ -38,7 +38,7 @@ const CustomPieTooltip = ({ active, payload }: CustomPieTooltipProps) => {
             {data.id !== 'other' ? (
               <IconPreview name={data.icon} className="size-3.5" />
             ) : (
-              <HelpCircleIcon className="size-3.5" />
+              <span className="text-xs shrink-0 select-none">🏷️</span>
             )}
           </div>
           <span className="text-foreground font-bold">{data.name}</span>
@@ -271,7 +271,7 @@ export function AnalysisTab({
                       {item.id !== 'other' ? (
                         <IconPreview name={item.icon} className="size-4" />
                       ) : (
-                        <HelpCircleIcon className="size-4" />
+                        <span className="text-sm shrink-0 select-none">🏷️</span>
                       )}
                     </div>
                     <span className="font-bold text-xs text-foreground/90 truncate">{item.name}</span>
