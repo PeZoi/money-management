@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as React from "react";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { useWorkspaceStore } from "@/hooks/use-workspace";
 import { useTheme } from "@/components/theme-provider";
@@ -76,6 +77,76 @@ export function useSettings() {
     groupForHistory?.id ?? null
   );
   const [groupToDelete, setGroupToDelete] = React.useState<ArchivedWorkspace | null>(null);
+
+  // Tab 2 extension: Reset Personal Workspace Transactions States
+  const queryClient = useQueryClient();
+  const [resetRange, setResetRange] = React.useState<"all" | "day" | "month" | "year">("all");
+  const [resetValue, setResetValue] = React.useState("");
+  const [keepBalance, setKeepBalance] = React.useState(true);
+  const [confirmKeyword, setConfirmKeyword] = React.useState("");
+  const [isResetting, setIsResetting] = React.useState(false);
+  const [openResetDialog, setOpenResetDialog] = React.useState(false);
+
+  // Synchronize resetValue with resetRange
+  React.useEffect(() => {
+    const now = new Date();
+    if (resetRange === "day") {
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, "0");
+      const d = String(now.getDate()).padStart(2, "0");
+      setResetValue(`${y}-${m}-${d}`);
+    } else if (resetRange === "month") {
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, "0");
+      setResetValue(`${y}-${m}`);
+    } else if (resetRange === "year") {
+      setResetValue(String(now.getFullYear()));
+    } else {
+      setResetValue("");
+    }
+  }, [resetRange]);
+
+  const handleResetTransactions = async () => {
+    if (confirmKeyword !== "XÓA VĨNH VIỄN") {
+      toast.error("Từ khóa xác nhận chưa đúng.");
+      return;
+    }
+    if (!activeWorkspaceId) return;
+
+    setIsResetting(true);
+    try {
+      const res = await fetch("/api/transactions/reset", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          workspace_id: activeWorkspaceId,
+          range: resetRange,
+          value: resetValue,
+          keep_balance: keepBalance,
+        }),
+      });
+
+      const result = await res.json();
+      if (!res.ok) {
+        throw new Error(result.error || "Không thể dọn dẹp giao dịch");
+      }
+
+      toast.success(`Đã xóa vĩnh viễn ${result.deleted_count || 0} giao dịch thành công.`);
+      setOpenResetDialog(false);
+      setConfirmKeyword("");
+      
+      // Invalidate queries
+      queryClient.invalidateQueries({ queryKey: ["transactions", activeWorkspaceId] });
+      queryClient.invalidateQueries({ queryKey: ["accounts", activeWorkspaceId] });
+      queryClient.invalidateQueries({ queryKey: ["transactions-today", activeWorkspaceId] });
+      queryClient.invalidateQueries({ queryKey: ["transactions-report", activeWorkspaceId] });
+      queryClient.invalidateQueries({ queryKey: ["transactions-report-prev", activeWorkspaceId] });
+    } catch (err: any) {
+      toast.error(err.message || "Đã xảy ra lỗi trong quá trình reset.");
+    } finally {
+      setIsResetting(false);
+    }
+  };
 
   // Tab 4: Workspace Invitations
   const { data: invitations = [], isLoading: invitationsLoading } = useWorkspaceInvitations();
@@ -317,5 +388,18 @@ export function useSettings() {
     invitationsLoading,
     acceptInvitation,
     declineInvitation,
+    // Reset transactions states & handlers
+    resetRange,
+    setResetRange,
+    resetValue,
+    setResetValue,
+    keepBalance,
+    setKeepBalance,
+    confirmKeyword,
+    setConfirmKeyword,
+    isResetting,
+    openResetDialog,
+    setOpenResetDialog,
+    handleResetTransactions,
   };
 }

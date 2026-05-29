@@ -123,6 +123,18 @@ export default function SettingsPage() {
     invitationsLoading,
     acceptInvitation,
     declineInvitation,
+    resetRange,
+    setResetRange,
+    resetValue,
+    setResetValue,
+    keepBalance,
+    setKeepBalance,
+    confirmKeyword,
+    setConfirmKeyword,
+    isResetting,
+    openResetDialog,
+    setOpenResetDialog,
+    handleResetTransactions,
   } = useSettings();
 
   const acceptedMembers = React.useMemo(() => members.filter((m) => m.status !== "pending"), [members]);
@@ -161,8 +173,12 @@ export default function SettingsPage() {
                 : "border-transparent text-muted-foreground hover:text-foreground"
             )}
           >
-            <UsersIcon className="size-4" />
-            Cài đặt nhóm
+            {activeWorkspace?.is_personal ? (
+              <BuildingIcon className="size-4" />
+            ) : (
+              <UsersIcon className="size-4" />
+            )}
+            {activeWorkspace?.is_personal ? "Quản lý Workspace" : "Cài đặt nhóm"}
           </button>
           <button
             onClick={() => setActiveTab("archived")}
@@ -336,16 +352,188 @@ export default function SettingsPage() {
         {activeTab === "group" && (
           <div className="grid gap-6">
             {activeWorkspace?.is_personal ? (
-              <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-card py-16 px-4 text-center shadow-xs">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-                  <BuildingIcon className="h-6 w-6" />
-                </div>
-                <h3 className="mt-4 text-lg font-semibold">Đang ở Workspace Cá nhân</h3>
-                <p className="mt-2 max-w-md text-sm text-muted-foreground">
-                  Cài đặt nhóm chỉ áp dụng cho các Workspace dạng Nhóm dùng chung. 
-                  Hãy chọn một nhóm chi tiêu từ menu chuyển Workspace ở góc trên bên trái để tiếp tục.
-                </p>
-              </div>
+              <>
+                {/* 1. Workspace Info */}
+                <section className="rounded-xl border border-border bg-card p-5 shadow-xs">
+                  <h2 className="text-base font-semibold">Thông tin Workspace Cá nhân</h2>
+                  <p className="text-xs text-muted-foreground mt-1">Workspace mặc định phục vụ cho quản lý chi tiêu cá nhân của riêng bạn.</p>
+
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2 max-w-xl">
+                    <div className="rounded-lg border border-border bg-muted/10 p-3">
+                      <span className="text-xs text-muted-foreground">Tên Workspace</span>
+                      <p className="text-sm font-semibold mt-0.5">{activeWorkspace?.name || "Cá nhân"}</p>
+                    </div>
+                    <div className="rounded-lg border border-border bg-muted/10 p-3">
+                      <span className="text-xs text-muted-foreground">Loại tài khoản</span>
+                      <p className="text-sm font-semibold mt-0.5 text-primary flex items-center gap-1.5">
+                        <span className="inline-block w-2 h-2 rounded-full bg-primary animate-pulse" />
+                        Cá nhân (Không chia sẻ)
+                      </p>
+                    </div>
+                  </div>
+                </section>
+
+                <section className="rounded-xl border border-red-500/20 bg-linear-to-br from-red-500/5 via-red-500/[0.01] to-red-500/[0.03] p-6 shadow-xs relative overflow-hidden dark:border-red-500/30 dark:from-red-950/20 dark:via-red-950/5 dark:to-red-950/10">
+                  <div className="absolute -top-12 -right-12 w-32 h-32 bg-red-500/10 rounded-full blur-3xl pointer-events-none dark:bg-red-500/5" />
+                  <div className="absolute -bottom-12 -left-12 w-32 h-32 bg-red-500/5 rounded-full blur-3xl pointer-events-none dark:bg-red-500/2" />
+                  
+                  <div className="flex items-start gap-4">
+                    <div className="flex size-10 items-center justify-center rounded-xl bg-destructive/10 text-destructive shadow-xs shrink-0 transition-transform duration-300 hover:scale-105">
+                      <AlertTriangleIcon className="size-5" />
+                    </div>
+                    <div className="space-y-1">
+                      <h2 className="text-base font-bold tracking-tight text-foreground">Quản lý Dữ liệu & Reset</h2>
+                      <p className="text-xs text-muted-foreground max-w-md leading-relaxed">
+                        Xóa vĩnh viễn dữ liệu giao dịch trong Workspace cá nhân theo phạm vi thời gian. Hành động này được thực hiện trực tiếp trên cơ sở dữ liệu và <span className="text-destructive font-medium">không thể khôi phục</span>.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 grid gap-5 max-w-xl">
+                    {/* Range Selector (Modern Cards Grid) */}
+                    <div className="flex flex-col gap-2.5">
+                      <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Phạm vi dọn dẹp dữ liệu</label>
+                      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                        {[
+                          { value: "all", label: "Tất cả", desc: "Xóa toàn bộ", icon: CoinsIcon },
+                          { value: "day", label: "Theo ngày", desc: "Chọn 1 ngày", icon: CalendarIcon },
+                          { value: "month", label: "Theo tháng", desc: "Chọn 1 tháng", icon: CalendarIcon },
+                          { value: "year", label: "Theo năm", desc: "Chọn 1 năm", icon: CalendarIcon },
+                        ].map((item) => {
+                          const Icon = item.icon;
+                          const isSelected = resetRange === item.value;
+                          return (
+                            <button
+                              key={item.value}
+                              type="button"
+                              onClick={() => setResetRange(item.value as "all" | "day" | "month" | "year")}
+                              className={cn(
+                                "flex flex-col items-center justify-center text-center p-3.5 rounded-xl border transition-all duration-300 cursor-pointer relative overflow-hidden group select-none h-[92px]",
+                                isSelected
+                                  ? "border-destructive bg-destructive/5 text-destructive shadow-xs"
+                                  : "border-border bg-card hover:bg-muted/40 hover:border-muted-foreground/30 text-muted-foreground hover:text-foreground"
+                              )}
+                            >
+                              {isSelected && (
+                                <div className="absolute top-0 right-0 w-2 h-2 bg-destructive rounded-bl-sm" />
+                              )}
+                              <Icon className={cn("size-5 mb-2 transition-transform duration-300 group-hover:scale-110", isSelected ? "text-destructive" : "text-muted-foreground")} />
+                              <span className="text-xs font-bold block">{item.label}</span>
+                              <span className="text-[9px] text-muted-foreground/80 mt-0.5 block">{item.desc}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Value Input (Conditional Picker Container) */}
+                    {resetRange !== "all" && (
+                      <div className="rounded-xl border border-border/60 bg-muted/10 p-4 transition-all duration-300 animate-in fade-in slide-in-from-top-1.5 duration-200">
+                        {resetRange === "day" && (
+                          <div className="flex flex-col gap-2">
+                            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Chọn ngày cụ thể</label>
+                            <Input
+                              type="date"
+                              value={resetValue}
+                              onChange={(e) => setResetValue(e.target.value)}
+                              required
+                              className="bg-background max-w-xs rounded-lg"
+                            />
+                          </div>
+                        )}
+
+                        {resetRange === "month" && (
+                          <div className="flex flex-col gap-2">
+                            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Chọn tháng cụ thể</label>
+                            <Input
+                              type="month"
+                              value={resetValue}
+                              onChange={(e) => setResetValue(e.target.value)}
+                              required
+                              className="bg-background max-w-xs rounded-lg"
+                            />
+                          </div>
+                        )}
+
+                        {resetRange === "year" && (
+                          <div className="flex flex-col gap-2">
+                            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Chọn năm cụ thể</label>
+                            <select
+                              value={resetValue}
+                              onChange={(e) => setResetValue(e.target.value)}
+                              className="rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all cursor-pointer max-w-xs"
+                            >
+                              {Array.from({ length: 6 }, (_, i) => {
+                                const y = new Date().getFullYear() - i;
+                                return (
+                                  <option key={y} value={y}>
+                                    Năm {y}
+                                  </option>
+                                );
+                              })}
+                            </select>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Keep balance switch (Modern colored container) */}
+                    <div className={cn(
+                      "flex items-center justify-between rounded-xl border p-4 transition-all duration-300",
+                      keepBalance 
+                        ? "border-emerald-500/20 bg-emerald-500/2" 
+                        : "border-border bg-muted/20"
+                    )}>
+                      <div className="flex items-start gap-3 text-left">
+                        <div className={cn(
+                          "flex size-8 items-center justify-center rounded-lg mt-0.5 shrink-0 transition-colors duration-300",
+                          keepBalance ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-muted text-muted-foreground"
+                        )}>
+                          <CoinsIcon className="size-4" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-foreground">Giữ nguyên số dư tài khoản</p>
+                          <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed max-w-md">
+                            {keepBalance 
+                              ? "Bảo lưu số dư ví: Thích hợp khi hết năm và muốn dọn dẹp giao dịch để bắt đầu năm mới với số dư thực tế." 
+                              : "Hoàn lại số dư theo giao dịch: Thích hợp khi bạn muốn xóa sạch dữ liệu chạy thử để đưa ví về 0."}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={keepBalance}
+                        onClick={() => setKeepBalance(!keepBalance)}
+                        className={cn(
+                          "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                          keepBalance ? "bg-emerald-500" : "bg-muted-foreground/30"
+                        )}
+                      >
+                        <span
+                          className={cn(
+                            "pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-lg ring-0 transition-transform duration-200 ease-in-out",
+                            keepBalance ? "translate-x-5" : "translate-x-0"
+                          )}
+                        />
+                      </button>
+                    </div>
+
+                    {/* Submit Button */}
+                    <div className="pt-3 border-t border-border/40 flex justify-end">
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        onClick={() => setOpenResetDialog(true)}
+                        className="font-semibold shadow-xs hover:shadow-md transition-all duration-300 rounded-xl h-10 px-5 gap-1.5 cursor-pointer"
+                      >
+                        <TrashIcon className="size-4" />
+                        Tiến hành Reset Giao dịch
+                      </Button>
+                    </div>
+                  </div>
+                </section>
+              </>
             ) : (
               <>
                 {/* 1. Group info & Rename */}
@@ -928,6 +1116,73 @@ export default function SettingsPage() {
             <Button variant="destructive" onClick={handleDeleteArchivedGroup} disabled={isSubmitting}>
               {isSubmitting && <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />}
               Xác nhận xóa
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* dialog 7: Reset Workspace Transactions Confirm */}
+      <Dialog open={openResetDialog} onOpenChange={(open) => {
+        setOpenResetDialog(open);
+        if (!open) setConfirmKeyword("");
+      }}>
+        <DialogContent className="sm:max-w-md rounded-2xl border border-border">
+          <DialogHeader>
+            <DialogTitle className="text-destructive flex items-center gap-2 text-lg font-bold">
+              <AlertTriangleIcon className="size-5 text-destructive animate-bounce" />
+              Xác nhận xóa vĩnh viễn?
+            </DialogTitle>
+            <div className="space-y-4 pt-3 text-sm text-muted-foreground text-left">
+              <div className="rounded-xl border border-destructive/20 bg-destructive/2 px-4 py-3 space-y-2">
+                <p className="text-xs font-semibold text-destructive uppercase tracking-wider">Thông số Reset dữ liệu</p>
+                <div className="grid grid-cols-[100px_1fr] gap-y-2 gap-x-2 text-xs">
+                  <span className="text-muted-foreground">Workspace:</span>
+                  <span className="font-semibold text-foreground">{activeWorkspace?.name || "Cá nhân"}</span>
+                  
+                  <span className="text-muted-foreground">Phạm vi thời gian:</span>
+                  <span className="font-semibold text-destructive">
+                    {resetRange === "all" && "Toàn bộ lịch sử"}
+                    {resetRange === "day" && `Ngày ${resetValue}`}
+                    {resetRange === "month" && `Tháng ${resetValue}`}
+                    {resetRange === "year" && `Năm ${resetValue}`}
+                  </span>
+
+                  <span className="text-muted-foreground">Trạng thái ví:</span>
+                  <span className="font-semibold text-foreground">
+                    {keepBalance ? "Giữ nguyên số dư hiện tại" : "Hoàn trả về 0 / ban đầu"}
+                  </span>
+                </div>
+              </div>
+              
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Cảnh báo: Hành động này sẽ dọn dẹp toàn bộ dữ liệu giao dịch đã chọn trong cơ sở dữ liệu. Tất cả hóa đơn, thu chi liên quan sẽ bị <span className="text-destructive font-bold">mất vĩnh viễn</span> và không có cách nào khôi phục.
+              </p>
+
+              <div className="space-y-1.5 pt-1">
+                <label className="text-xs font-bold text-foreground block">
+                  Nhập chính xác <span className="text-destructive font-extrabold uppercase tracking-wide">XÓA VĨNH VIỄN</span> để xác nhận:
+                </label>
+                <Input
+                  value={confirmKeyword}
+                  onChange={(e) => setConfirmKeyword(e.target.value)}
+                  placeholder="Gõ đúng từ khóa..."
+                  className="border-destructive/30 focus-visible:ring-destructive rounded-lg h-9 text-sm"
+                />
+              </div>
+            </div>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0 border-t border-border/50 pt-4 mt-2">
+            <Button variant="outline" className="rounded-lg text-xs" onClick={() => setOpenResetDialog(false)} disabled={isResetting}>
+              Hủy bỏ
+            </Button>
+            <Button
+              variant="destructive"
+              className="rounded-lg text-xs font-semibold gap-1.5"
+              onClick={handleResetTransactions}
+              disabled={isResetting || confirmKeyword !== "XÓA VĨNH VIỄN"}
+            >
+              {isResetting && <Loader2Icon className="h-3.5 w-3.5 animate-spin" />}
+              Xác nhận xóa dữ liệu
             </Button>
           </DialogFooter>
         </DialogContent>
