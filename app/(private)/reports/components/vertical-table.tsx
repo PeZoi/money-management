@@ -227,7 +227,7 @@ export function VerticalTable({
                       ) : readOnly ? (
                         <div className="flex items-center gap-1 select-none">
                           <span className="text-xs font-semibold truncate text-foreground">
-                            {col.displayName}
+                            {col.displayName.replace(/\s*\(Chỉ số\)/gi, '')}
                           </span>
                         </div>
                       ) : (
@@ -249,7 +249,7 @@ export function VerticalTable({
                                 className="text-xs font-semibold truncate hover:text-primary transition-colors"
                                 title="Nhấp 1 lần để mở menu, nhấp đúp để đổi tên"
                               >
-                                {col.displayName}
+                                {col.displayName.replace(/\s*\(Chỉ số\)/gi, '')}
                               </span>
                               <MoreVerticalIcon className="size-3.5 text-muted-foreground/40 group-hover/trigger:text-muted-foreground transition-colors shrink-0" />
                             </div>

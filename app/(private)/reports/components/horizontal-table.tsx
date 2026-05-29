@@ -266,7 +266,7 @@ export function HorizontalTable({
                       ) : readOnly ? (
                         <div className="flex items-center gap-1 select-none">
                           <span className="text-xs font-semibold truncate text-foreground">
-                            {col.displayName}
+                            {col.displayName.replace(/\s*\(Chỉ số\)/gi, '')}
                           </span>
                           {col.kind === 'category' && (
                             <span
@@ -305,7 +305,7 @@ export function HorizontalTable({
                                 className="text-xs font-semibold truncate hover:text-primary transition-colors"
                                 title="Nhấp 1 lần để mở menu, nhấp đúp để đổi tên"
                               >
-                                {col.displayName}
+                                {col.displayName.replace(/\s*\(Chỉ số\)/gi, '')}
                               </span>
 
                               {col.kind === 'category' && (

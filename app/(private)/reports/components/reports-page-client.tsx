@@ -4,11 +4,9 @@ import {
   BarChart3Icon,
   DownloadIcon,
   GripVerticalIcon,
-  InfoIcon,
   Loader2Icon,
   PlusIcon,
   SaveIcon,
-  UploadIcon,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
@@ -18,12 +16,11 @@ import { PrivatePageShell } from '@/components/private-page-shell';
 import { Button } from '@/components/ui/button';
 import { useCategories } from '@/hooks/use-categories';
 import { useAccounts } from '@/hooks/use-accounts';
-import { useWorkspaceStore } from '@/hooks/use-workspace';
-import type { ReportExportPayload } from '@/types/report';
 import { cn } from '@/lib/utils';
 
 import { useReportTransactions } from '../hooks/use-report-transactions';
 import { useReportTables } from '../hooks/use-report-tables';
+import { exportReportToExcel } from '../lib/export-excel';
 import { CategorySidebar } from './category-sidebar';
 import { FormulaColumnDialog } from './formula-column-dialog';
 import { ReportTableCard } from './report-table-card';
@@ -41,11 +38,7 @@ export default function ReportsPageClient() {
   });
 
   // ─── Workspace & Accounts ──────────────────────────
-  const { activeWorkspaceId } = useWorkspaceStore();
   const { accounts } = useAccounts();
-
-  // ─── State cho dữ liệu nhập khẩu (Tĩnh) ─────────────
-  const [importedData, setImportedData] = useState<ReportExportPayload | null>(null);
 
   // ─── Data hooks ────────────────────────────────────
   const { categories, isLoading: catLoading } = useCategories();
@@ -98,71 +91,26 @@ export default function ReportsPageClient() {
     unassignedTransactions,
   } = useReportTables(month, transactions);
 
-  // ─── Dữ liệu hiển thị (Động hoặc Tĩnh từ file import) ───
-  const displayTables = importedData ? importedData.tables : tables;
-  const displayTransactions = importedData ? importedData.transactions : transactions;
-  const isReadOnly = !!importedData;
+  // ─── Dữ liệu hiển thị (Không còn chế độ nhập file) ───
+  const displayTables = tables;
+  const displayTransactions = transactions;
+  const isReadOnly = false;
 
   // ─── Loading state ─────────────────────────────────
   const isPageLoading = catLoading || txLoading || configLoading;
 
-  // ─── Logic Export file JSON ────────────────────────
   const handleExport = () => {
     if (tables.length === 0) {
       toast.error('Không có bảng nào để xuất');
       return;
     }
-    try {
-      const totalAccountBalance = accounts.reduce((sum, a) => sum + Number(a.balance), 0);
-      const exportPayload: ReportExportPayload = {
-        export_version: '1.0',
-        workspace_id: activeWorkspaceId || '',
-        month,
-        export_at: new Date().toISOString(),
-        total_account_balance: totalAccountBalance,
-        tables,
-        transactions,
-      };
 
-      const blob = new Blob([JSON.stringify(exportPayload, null, 2)], {
-        type: 'application/json',
-      });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `money-report-${month}-${new Date().toISOString().slice(0, 10)}.json`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-      toast.success('Xuất báo cáo thành công');
-    } catch {
-      toast.error('Xuất báo cáo thất bại');
+    const success = exportReportToExcel({ tables, transactions, accounts, month });
+    if (success) {
+      toast.success('Xuất báo cáo Excel thành công');
+    } else {
+      toast.error('Xuất báo cáo Excel thất bại');
     }
-  };
-
-  // ─── Logic Import file JSON ────────────────────────
-  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const data = JSON.parse(event.target?.result as string) as ReportExportPayload;
-        if (!data.tables || !data.transactions || !data.month) {
-          toast.error('Tệp tin không đúng định dạng báo cáo');
-          return;
-        }
-        setImportedData(data);
-        setMonth(data.month);
-        toast.success(`Đã nhập báo cáo tháng ${data.month}! Hệ thống đang ở chế độ xem tệp tĩnh.`);
-      } catch {
-        toast.error('Tệp tin JSON bị lỗi, không thể đọc');
-      }
-    };
-    reader.readAsText(file);
-    e.target.value = ''; // Reset để có thể chọn lại cùng file
   };
 
   // ─── Cảnh báo người dùng khi reload hoặc tắt tab nếu chưa lưu ──
@@ -181,7 +129,7 @@ export default function ReportsPageClient() {
     };
   }, [hasUnsavedChanges]);
 
-  // ─── Đổi tháng (tự thoát chế độ xem file nếu đổi tháng khác) ──
+  // ─── Đổi tháng ──
   const handleMonthChange = (newMonth: string) => {
     if (hasUnsavedChanges) {
       const confirmLeave = window.confirm(
@@ -190,10 +138,6 @@ export default function ReportsPageClient() {
       if (!confirmLeave) return;
     }
     setMonth(newMonth);
-    if (importedData && importedData.month !== newMonth) {
-      setImportedData(null);
-      toast.info('Đã thoát chế độ xem tệp tĩnh do đổi tháng');
-    }
   };
 
   return (
@@ -204,15 +148,6 @@ export default function ReportsPageClient() {
       contentClassName="max-w-[1600px]"
       headerActions={
         <div className="flex items-center gap-1.5 sm:gap-2">
-          {/* Input file ẩn cho Import */}
-          <input
-            type="file"
-            id="report-import-file"
-            className="hidden"
-            accept=".json"
-            onChange={handleImport}
-          />
-
           {isSaving && !isReadOnly && (
             <span className="flex items-center gap-1.5 text-[10px] sm:text-xs text-muted-foreground animate-pulse mr-1">
               <Loader2Icon className="size-3 animate-spin" />
@@ -244,28 +179,18 @@ export default function ReportsPageClient() {
             </Button>
           )}
 
-          {/* Nút Nhập file & Xuất file chỉ hiển thị từ màn hình sm trở lên (Desktop/Tablet) */}
+          {/* Nút Xuất Excel chỉ hiển thị từ màn hình sm trở lên (Desktop/Tablet) */}
           <div className="hidden sm:flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="rounded-xl border-dashed border-primary/40 text-primary hover:bg-primary/5 hover:text-primary transition-all cursor-pointer px-3"
-              onClick={() => document.getElementById('report-import-file')?.click()}
-            >
-              <UploadIcon className="size-3.5 mr-1.5" />
-              Nhập file
-            </Button>
-
             <Button
               variant="outline"
               size="sm"
               className="rounded-xl hover:bg-muted cursor-pointer px-3"
               onClick={handleExport}
               disabled={tables.length === 0}
-              title={tables.length === 0 ? 'Tạo bảng để xuất file' : 'Xuất báo cáo hiện tại ra file JSON'}
+              title={tables.length === 0 ? 'Tạo bảng để xuất file Excel' : 'Xuất báo cáo hiện tại ra file Excel'}
             >
               <DownloadIcon className="size-3.5 mr-1.5" />
-              Xuất file
+              Xuất Excel
             </Button>
           </div>
 
@@ -280,29 +205,6 @@ export default function ReportsPageClient() {
         </div>
       ) : (
         <div className="mt-6">
-          {/* Banner chế độ xem tệp tĩnh */}
-          {importedData && (
-            <div className="mb-6 flex items-center justify-between gap-4 rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 text-sm text-amber-800 dark:text-amber-300 animate-in fade-in duration-200">
-              <div className="flex items-center gap-2.5">
-                <InfoIcon className="size-4 text-amber-500 shrink-0" />
-                <div>
-                  <span className="font-semibold">Đang hiển thị dữ liệu báo cáo nhập từ file</span>{' '}
-                  (Tháng {importedData.month} - Xuất ngày{' '}
-                  {new Date(importedData.export_at).toLocaleString('vi-VN')}). Dữ liệu này chỉ dùng để
-                  xem thông tin và không lưu vào hệ thống của bạn.
-                </div>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setImportedData(null)}
-                className="rounded-lg text-xs border-amber-500/20 hover:bg-amber-500/10 hover:text-amber-900 shrink-0 cursor-pointer"
-              >
-                Đóng chế độ xem file
-              </Button>
-            </div>
-          )}
-
           <div className="flex flex-col lg:flex-row gap-6">
             {/* Sidebar danh mục và giao dịch (Ẩn ở chế độ chỉ đọc) */}
             {!isReadOnly && (
@@ -364,7 +266,6 @@ export default function ReportsPageClient() {
                         onUpdateTableShowTotals={handleUpdateTableShowTotals}
                         onUpdateColumn={handleUpdateColumn}
                         readOnly={isReadOnly}
-                        overrideTotalAccountBalance={importedData?.total_account_balance}
                         dragHandle={
                           !isReadOnly ? (
                             <button

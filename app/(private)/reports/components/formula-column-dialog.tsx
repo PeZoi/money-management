@@ -217,7 +217,7 @@ export function FormulaColumnDialog({
                                 </span>
                               ) : null}
                               <span className="truncate text-muted-foreground group-hover/ref:text-foreground font-semibold flex-1 min-w-0">
-                                {col.displayName}
+                                {col.displayName.replace(/\s*\(Chỉ số\)/gi, '')}
                               </span>
                             </button>
                           );
