@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { PrivatePageShell } from "@/components/private-page-shell";
-import { Avatar } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
+import { PrivatePageShell } from '@/components/private-page-shell';
+import { Avatar } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -10,10 +10,10 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
-import { TransactionWithCategory } from "@/types";
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
+import { TransactionWithCategory } from '@/types';
 import {
   AlertTriangleIcon,
   ArchiveIcon,
@@ -31,20 +31,20 @@ import {
   UserPlusIcon,
   UsersIcon,
   ZapIcon,
-} from "lucide-react";
-import * as React from "react";
-import ArchivedTransactionsList from "./components/archived-transactions-list";
-import { useSettings } from "./hooks/use-settings";
-import { useAuth } from "@/hooks/use-auth";
-import { SETTINGS_KEY, getLocalStorageItem, setLocalStorageItem } from "@/functions/localstorage-fn";
+} from 'lucide-react';
+import * as React from 'react';
+import ArchivedTransactionsList from './components/archived-transactions-list';
+import { useSettings } from './hooks/use-settings';
+import { useAuth } from '@/hooks/use-auth';
+import { SETTINGS_KEY, getLocalStorageItem, setLocalStorageItem } from '@/functions/localstorage-fn';
 
 const PRESETS: Array<{ name: string; value: string }> = [
-  { name: "Xanh lá", value: "#16a34a" },
-  { name: "Xanh dương", value: "#2563eb" },
-  { name: "Tím", value: "#7c3aed" },
-  { name: "Cam", value: "#ea580c" },
-  { name: "Đỏ", value: "#dc2626" },
-  { name: "Đen", value: "#171717" },
+  { name: 'Xanh lá', value: '#16a34a' },
+  { name: 'Xanh dương', value: '#2563eb' },
+  { name: 'Tím', value: '#7c3aed' },
+  { name: 'Cam', value: '#ea580c' },
+  { name: 'Đỏ', value: '#dc2626' },
+  { name: 'Đen', value: '#171717' },
 ];
 
 export default function SettingsPage() {
@@ -56,7 +56,7 @@ export default function SettingsPage() {
 
   React.useEffect(() => {
     const saved = getLocalStorageItem(SETTINGS_KEY.SMART_TX_PREVIEW);
-    const isTrue = saved !== null ? saved === "true" : true;
+    const isTrue = saved !== null ? saved === 'true' : true;
 
     // Gom nhóm setState vào luồng bất đồng bộ để tránh linter warning
     setTimeout(() => {
@@ -137,9 +137,8 @@ export default function SettingsPage() {
     handleResetTransactions,
   } = useSettings();
 
-  const acceptedMembers = React.useMemo(() => members.filter((m) => m.status !== "pending"), [members]);
-  const pendingMembers = React.useMemo(() => members.filter((m) => m.status === "pending"), [members]);
-
+  const acceptedMembers = React.useMemo(() => members.filter((m) => m.status !== 'pending'), [members]);
+  const pendingMembers = React.useMemo(() => members.filter((m) => m.status === 'pending'), [members]);
 
   return (
     <PrivatePageShell
@@ -153,52 +152,48 @@ export default function SettingsPage() {
       <div className="mt-8 border-b border-border overflow-x-auto no-scrollbar">
         <div className="flex space-x-6 min-w-max pb-px">
           <button
-            onClick={() => setActiveTab("appearance")}
+            onClick={() => setActiveTab('appearance')}
             className={cn(
-              "pb-4 text-sm font-semibold border-b-2 transition-colors relative flex items-center gap-2 whitespace-nowrap cursor-pointer",
-              activeTab === "appearance"
-                ? "border-primary text-primary"
-                : "border-transparent text-muted-foreground hover:text-foreground"
+              'pb-4 text-sm font-semibold border-b-2 transition-colors relative flex items-center gap-2 whitespace-nowrap cursor-pointer',
+              activeTab === 'appearance'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground',
             )}
           >
             <SettingsIcon className="size-4" />
             Giao diện
           </button>
           <button
-            onClick={() => setActiveTab("group")}
+            onClick={() => setActiveTab('group')}
             className={cn(
-              "pb-4 text-sm font-semibold border-b-2 transition-colors relative flex items-center gap-2 whitespace-nowrap cursor-pointer",
-              activeTab === "group"
-                ? "border-primary text-primary"
-                : "border-transparent text-muted-foreground hover:text-foreground"
+              'pb-4 text-sm font-semibold border-b-2 transition-colors relative flex items-center gap-2 whitespace-nowrap cursor-pointer',
+              activeTab === 'group'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground',
             )}
           >
-            {activeWorkspace?.is_personal ? (
-              <BuildingIcon className="size-4" />
-            ) : (
-              <UsersIcon className="size-4" />
-            )}
-            {activeWorkspace?.is_personal ? "Quản lý Workspace" : "Cài đặt nhóm"}
+            {activeWorkspace?.is_personal ? <BuildingIcon className="size-4" /> : <UsersIcon className="size-4" />}
+            {activeWorkspace?.is_personal ? 'Quản lý Workspace' : 'Cài đặt nhóm'}
           </button>
           <button
-            onClick={() => setActiveTab("archived")}
+            onClick={() => setActiveTab('archived')}
             className={cn(
-              "pb-4 text-sm font-semibold border-b-2 transition-colors relative flex items-center gap-2 whitespace-nowrap cursor-pointer",
-              activeTab === "archived"
-                ? "border-primary text-primary"
-                : "border-transparent text-muted-foreground hover:text-foreground"
+              'pb-4 text-sm font-semibold border-b-2 transition-colors relative flex items-center gap-2 whitespace-nowrap cursor-pointer',
+              activeTab === 'archived'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground',
             )}
           >
             <ArchiveIcon className="size-4" />
             Nhóm đã lưu trữ
           </button>
           <button
-            onClick={() => setActiveTab("invitations")}
+            onClick={() => setActiveTab('invitations')}
             className={cn(
-              "pb-4 text-sm font-semibold border-b-2 transition-colors relative flex items-center gap-2 whitespace-nowrap cursor-pointer",
-              activeTab === "invitations"
-                ? "border-primary text-primary"
-                : "border-transparent text-muted-foreground hover:text-foreground"
+              'pb-4 text-sm font-semibold border-b-2 transition-colors relative flex items-center gap-2 whitespace-nowrap cursor-pointer',
+              activeTab === 'invitations'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground',
             )}
           >
             <MailIcon className="size-4" />
@@ -215,7 +210,7 @@ export default function SettingsPage() {
       {/* Tab Content */}
       <div className="mt-6">
         {/* Tab 1: Appearance */}
-        {activeTab === "appearance" && (
+        {activeTab === 'appearance' && (
           <div className="grid gap-6">
             <section className="rounded-xl border border-border bg-card p-5 shadow-xs">
               <h2 className="text-base font-semibold">Màu chủ đạo</h2>
@@ -230,7 +225,7 @@ export default function SettingsPage() {
                     className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5 text-sm hover:bg-muted transition-colors cursor-pointer"
                   >
                     <span className="h-3 w-3 rounded-full" style={{ backgroundColor: p.value }} />
-                    <span className={cn(color === p.value && "font-semibold text-primary")}>{p.name}</span>
+                    <span className={cn(color === p.value && 'font-semibold text-primary')}>{p.name}</span>
                   </button>
                 ))}
               </div>
@@ -291,7 +286,8 @@ export default function SettingsPage() {
                   <div>
                     <p className="text-sm font-medium">Xem lại trước khi lưu</p>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      Khi bật, dữ liệu nhận dạng tự động sẽ được chuyển sang tab Thủ công để bạn kiểm tra lại trước khi lưu.
+                      Khi bật, dữ liệu nhận dạng tự động sẽ được chuyển sang tab Thủ công để bạn kiểm tra lại trước khi
+                      lưu.
                     </p>
                   </div>
                 </div>
@@ -302,14 +298,14 @@ export default function SettingsPage() {
                     aria-checked={smartTxPreview}
                     onClick={() => handleToggleSmartTxPreview(!smartTxPreview)}
                     className={cn(
-                      "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                      smartTxPreview ? "bg-primary" : "bg-muted-foreground/30"
+                      'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+                      smartTxPreview ? 'bg-primary' : 'bg-muted-foreground/30',
                     )}
                   >
                     <span
                       className={cn(
-                        "pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-lg ring-0 transition-transform duration-200 ease-in-out",
-                        smartTxPreview ? "translate-x-5" : "translate-x-0"
+                        'pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-lg ring-0 transition-transform duration-200 ease-in-out',
+                        smartTxPreview ? 'translate-x-5' : 'translate-x-0',
                       )}
                     />
                   </button>
@@ -329,7 +325,9 @@ export default function SettingsPage() {
                   height={56}
                 />
                 <div className="min-w-0">
-                  <h2 className="text-base font-bold text-foreground tracking-tight">{user?.displayName || "Người dùng"}</h2>
+                  <h2 className="text-base font-bold text-foreground tracking-tight">
+                    {user?.displayName || 'Người dùng'}
+                  </h2>
                   <p className="text-xs text-muted-foreground font-medium truncate mt-1 flex items-center gap-1.5">
                     <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                     {user?.email}
@@ -349,19 +347,21 @@ export default function SettingsPage() {
         )}
 
         {/* Tab 2: Group Settings */}
-        {activeTab === "group" && (
+        {activeTab === 'group' && (
           <div className="grid gap-6">
             {activeWorkspace?.is_personal ? (
               <>
                 {/* 1. Workspace Info */}
                 <section className="rounded-xl border border-border bg-card p-5 shadow-xs">
                   <h2 className="text-base font-semibold">Thông tin Workspace Cá nhân</h2>
-                  <p className="text-xs text-muted-foreground mt-1">Workspace mặc định phục vụ cho quản lý chi tiêu cá nhân của riêng bạn.</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Workspace mặc định phục vụ cho quản lý chi tiêu cá nhân của riêng bạn.
+                  </p>
 
-                  <div className="mt-4 grid gap-3 sm:grid-cols-2 max-w-xl">
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2 w-full">
                     <div className="rounded-lg border border-border bg-muted/10 p-3">
                       <span className="text-xs text-muted-foreground">Tên Workspace</span>
-                      <p className="text-sm font-semibold mt-0.5">{activeWorkspace?.name || "Cá nhân"}</p>
+                      <p className="text-sm font-semibold mt-0.5">{activeWorkspace?.name || 'Cá nhân'}</p>
                     </div>
                     <div className="rounded-lg border border-border bg-muted/10 p-3">
                       <span className="text-xs text-muted-foreground">Loại tài khoản</span>
@@ -376,7 +376,7 @@ export default function SettingsPage() {
                 <section className="rounded-xl border border-red-500/20 bg-linear-to-br from-red-500/5 via-red-500/[0.01] to-red-500/[0.03] p-6 shadow-xs relative overflow-hidden dark:border-red-500/30 dark:from-red-950/20 dark:via-red-950/5 dark:to-red-950/10">
                   <div className="absolute -top-12 -right-12 w-32 h-32 bg-red-500/10 rounded-full blur-3xl pointer-events-none dark:bg-red-500/5" />
                   <div className="absolute -bottom-12 -left-12 w-32 h-32 bg-red-500/5 rounded-full blur-3xl pointer-events-none dark:bg-red-500/2" />
-                  
+
                   <div className="flex items-start gap-4">
                     <div className="flex size-10 items-center justify-center rounded-xl bg-destructive/10 text-destructive shadow-xs shrink-0 transition-transform duration-300 hover:scale-105">
                       <AlertTriangleIcon className="size-5" />
@@ -384,21 +384,25 @@ export default function SettingsPage() {
                     <div className="space-y-1">
                       <h2 className="text-base font-bold tracking-tight text-foreground">Quản lý Dữ liệu & Reset</h2>
                       <p className="text-xs text-muted-foreground max-w-md leading-relaxed">
-                        Xóa vĩnh viễn dữ liệu giao dịch trong Workspace cá nhân theo phạm vi thời gian. Hành động này được thực hiện trực tiếp trên cơ sở dữ liệu và <span className="text-destructive font-medium">không thể khôi phục</span>.
+                        Xóa vĩnh viễn dữ liệu giao dịch trong Workspace cá nhân theo phạm vi thời gian. Hành động này
+                        được thực hiện trực tiếp trên cơ sở dữ liệu và{' '}
+                        <span className="text-destructive font-medium">không thể khôi phục</span>.
                       </p>
                     </div>
                   </div>
 
-                  <div className="mt-6 grid gap-5 max-w-xl">
+                  <div className="mt-6 grid gap-5 w-full">
                     {/* Range Selector (Modern Cards Grid) */}
                     <div className="flex flex-col gap-2.5">
-                      <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Phạm vi dọn dẹp dữ liệu</label>
+                      <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                        Phạm vi dọn dẹp dữ liệu
+                      </label>
                       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                         {[
-                          { value: "all", label: "Tất cả", desc: "Xóa toàn bộ", icon: CoinsIcon },
-                          { value: "day", label: "Theo ngày", desc: "Chọn 1 ngày", icon: CalendarIcon },
-                          { value: "month", label: "Theo tháng", desc: "Chọn 1 tháng", icon: CalendarIcon },
-                          { value: "year", label: "Theo năm", desc: "Chọn 1 năm", icon: CalendarIcon },
+                          { value: 'all', label: 'Tất cả', desc: 'Xóa toàn bộ', icon: CoinsIcon },
+                          { value: 'day', label: 'Theo ngày', desc: 'Chọn 1 ngày', icon: CalendarIcon },
+                          { value: 'month', label: 'Theo tháng', desc: 'Chọn 1 tháng', icon: CalendarIcon },
+                          { value: 'year', label: 'Theo năm', desc: 'Chọn 1 năm', icon: CalendarIcon },
                         ].map((item) => {
                           const Icon = item.icon;
                           const isSelected = resetRange === item.value;
@@ -406,18 +410,23 @@ export default function SettingsPage() {
                             <button
                               key={item.value}
                               type="button"
-                              onClick={() => setResetRange(item.value as "all" | "day" | "month" | "year")}
+                              onClick={() => setResetRange(item.value as 'all' | 'day' | 'month' | 'year')}
                               className={cn(
-                                "flex flex-col items-center justify-center text-center p-3.5 rounded-xl border transition-all duration-300 cursor-pointer relative overflow-hidden group select-none h-[92px]",
+                                'flex flex-col items-center justify-center text-center p-3.5 rounded-xl border transition-all duration-300 cursor-pointer relative overflow-hidden group select-none h-[92px]',
                                 isSelected
-                                  ? "border-destructive bg-destructive/5 text-destructive shadow-xs"
-                                  : "border-border bg-card hover:bg-muted/40 hover:border-muted-foreground/30 text-muted-foreground hover:text-foreground"
+                                  ? 'border-destructive bg-destructive/5 text-destructive shadow-xs'
+                                  : 'border-border bg-card hover:bg-muted/40 hover:border-muted-foreground/30 text-muted-foreground hover:text-foreground',
                               )}
                             >
                               {isSelected && (
                                 <div className="absolute top-0 right-0 w-2 h-2 bg-destructive rounded-bl-sm" />
                               )}
-                              <Icon className={cn("size-5 mb-2 transition-transform duration-300 group-hover:scale-110", isSelected ? "text-destructive" : "text-muted-foreground")} />
+                              <Icon
+                                className={cn(
+                                  'size-5 mb-2 transition-transform duration-300 group-hover:scale-110',
+                                  isSelected ? 'text-destructive' : 'text-muted-foreground',
+                                )}
+                              />
                               <span className="text-xs font-bold block">{item.label}</span>
                               <span className="text-[9px] text-muted-foreground/80 mt-0.5 block">{item.desc}</span>
                             </button>
@@ -427,11 +436,13 @@ export default function SettingsPage() {
                     </div>
 
                     {/* Value Input (Conditional Picker Container) */}
-                    {resetRange !== "all" && (
+                    {resetRange !== 'all' && (
                       <div className="rounded-xl border border-border/60 bg-muted/10 p-4 transition-all duration-300 animate-in fade-in slide-in-from-top-1.5 duration-200">
-                        {resetRange === "day" && (
+                        {resetRange === 'day' && (
                           <div className="flex flex-col gap-2">
-                            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Chọn ngày cụ thể</label>
+                            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                              Chọn ngày cụ thể
+                            </label>
                             <Input
                               type="date"
                               value={resetValue}
@@ -442,9 +453,11 @@ export default function SettingsPage() {
                           </div>
                         )}
 
-                        {resetRange === "month" && (
+                        {resetRange === 'month' && (
                           <div className="flex flex-col gap-2">
-                            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Chọn tháng cụ thể</label>
+                            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                              Chọn tháng cụ thể
+                            </label>
                             <Input
                               type="month"
                               value={resetValue}
@@ -455,9 +468,11 @@ export default function SettingsPage() {
                           </div>
                         )}
 
-                        {resetRange === "year" && (
+                        {resetRange === 'year' && (
                           <div className="flex flex-col gap-2">
-                            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Chọn năm cụ thể</label>
+                            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                              Chọn năm cụ thể
+                            </label>
                             <select
                               value={resetValue}
                               onChange={(e) => setResetValue(e.target.value)}
@@ -478,25 +493,29 @@ export default function SettingsPage() {
                     )}
 
                     {/* Keep balance switch (Modern colored container) */}
-                    <div className={cn(
-                      "flex items-center justify-between rounded-xl border p-4 transition-all duration-300",
-                      keepBalance 
-                        ? "border-emerald-500/20 bg-emerald-500/2" 
-                        : "border-border bg-muted/20"
-                    )}>
+                    <div
+                      className={cn(
+                        'flex items-center justify-between rounded-xl border p-4 transition-all duration-300',
+                        keepBalance ? 'border-emerald-500/20 bg-emerald-500/2' : 'border-border bg-muted/20',
+                      )}
+                    >
                       <div className="flex items-start gap-3 text-left">
-                        <div className={cn(
-                          "flex size-8 items-center justify-center rounded-lg mt-0.5 shrink-0 transition-colors duration-300",
-                          keepBalance ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-muted text-muted-foreground"
-                        )}>
+                        <div
+                          className={cn(
+                            'flex size-8 items-center justify-center rounded-lg mt-0.5 shrink-0 transition-colors duration-300',
+                            keepBalance
+                              ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                              : 'bg-muted text-muted-foreground',
+                          )}
+                        >
                           <CoinsIcon className="size-4" />
                         </div>
                         <div>
                           <p className="text-sm font-semibold text-foreground">Giữ nguyên số dư tài khoản</p>
                           <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed max-w-md">
-                            {keepBalance 
-                              ? "Bảo lưu số dư ví: Thích hợp khi hết năm và muốn dọn dẹp giao dịch để bắt đầu năm mới với số dư thực tế." 
-                              : "Hoàn lại số dư theo giao dịch: Thích hợp khi bạn muốn xóa sạch dữ liệu chạy thử để đưa ví về 0."}
+                            {keepBalance
+                              ? 'Bảo lưu số dư ví: Thích hợp khi hết năm và muốn dọn dẹp giao dịch để bắt đầu năm mới với số dư thực tế.'
+                              : 'Hoàn lại số dư theo giao dịch: Thích hợp khi bạn muốn xóa sạch dữ liệu chạy thử để đưa ví về 0.'}
                           </p>
                         </div>
                       </div>
@@ -506,14 +525,14 @@ export default function SettingsPage() {
                         aria-checked={keepBalance}
                         onClick={() => setKeepBalance(!keepBalance)}
                         className={cn(
-                          "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                          keepBalance ? "bg-emerald-500" : "bg-muted-foreground/30"
+                          'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+                          keepBalance ? 'bg-emerald-500' : 'bg-muted-foreground/30',
                         )}
                       >
                         <span
                           className={cn(
-                            "pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-lg ring-0 transition-transform duration-200 ease-in-out",
-                            keepBalance ? "translate-x-5" : "translate-x-0"
+                            'pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-lg ring-0 transition-transform duration-200 ease-in-out',
+                            keepBalance ? 'translate-x-5' : 'translate-x-0',
                           )}
                         />
                       </button>
@@ -562,7 +581,9 @@ export default function SettingsPage() {
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-border pb-4 mb-4">
                     <div>
                       <h2 className="text-base font-semibold">Thành viên ({acceptedMembers.length})</h2>
-                      <p className="text-xs text-muted-foreground mt-1">Danh sách những người dùng chung tài khoản quỹ này.</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Danh sách những người dùng chung tài khoản quỹ này.
+                      </p>
                     </div>
 
                     {isCurrentOwner && (
@@ -604,10 +625,13 @@ export default function SettingsPage() {
                         </h3>
                         <div className="divide-y divide-border rounded-lg border border-border bg-muted/10 px-4">
                           {acceptedMembers.map((member) => {
-                            const isMemberOwner = member.role === "owner";
+                            const isMemberOwner = member.role === 'owner';
                             const isMe = member.user_id === user?.id;
                             return (
-                              <div key={member.id || member.member_id} className="flex items-center justify-between py-3">
+                              <div
+                                key={member.id || member.member_id}
+                                className="flex items-center justify-between py-3"
+                              >
                                 <div className="flex items-center gap-3">
                                   <Avatar
                                     src={member.avatar_url}
@@ -619,7 +643,7 @@ export default function SettingsPage() {
                                   <div className="min-w-0">
                                     <div className="text-sm font-semibold flex items-center gap-1.5">
                                       <span className="truncate max-w-[150px] sm:max-w-[300px]">
-                                        {member.display_name || "Chưa đặt tên"}
+                                        {member.display_name || 'Chưa đặt tên'}
                                       </span>
                                       {isMe && (
                                         <span className="inline-flex items-center rounded-sm bg-muted px-1.5 py-0.5 text-xxs font-medium text-muted-foreground">
@@ -672,7 +696,10 @@ export default function SettingsPage() {
                           </h3>
                           <div className="divide-y divide-border rounded-lg border border-border bg-muted/10 px-4">
                             {pendingMembers.map((member) => (
-                              <div key={member.id || member.member_id} className="flex items-center justify-between py-3">
+                              <div
+                                key={member.id || member.member_id}
+                                className="flex items-center justify-between py-3"
+                              >
                                 <div className="flex items-center gap-3 opacity-70">
                                   <Avatar
                                     src={member.avatar_url}
@@ -684,7 +711,7 @@ export default function SettingsPage() {
                                   <div className="min-w-0">
                                     <div className="text-sm font-semibold flex items-center gap-1.5">
                                       <span className="truncate max-w-[150px] sm:max-w-[300px]">
-                                        {member.display_name || "Chưa đặt tên"}
+                                        {member.display_name || 'Chưa đặt tên'}
                                       </span>
                                     </div>
                                     <div className="text-xs text-muted-foreground truncate max-w-[200px] sm:max-w-[300px]">
@@ -723,7 +750,9 @@ export default function SettingsPage() {
                 {/* 3. Danger Zone */}
                 <section className="rounded-xl border border-destructive/20 bg-destructive/5 p-5 shadow-xs">
                   <h2 className="text-base font-semibold text-destructive">Danger Zone</h2>
-                  <p className="text-xs text-muted-foreground mt-1">Các thao tác ảnh hưởng vĩnh viễn tới nhóm chi tiêu.</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Các thao tác ảnh hưởng vĩnh viễn tới nhóm chi tiêu.
+                  </p>
 
                   <div className="mt-4 flex flex-wrap gap-3">
                     {isCurrentOwner ? (
@@ -767,11 +796,13 @@ export default function SettingsPage() {
         )}
 
         {/* Tab 3: Archived Groups */}
-        {activeTab === "archived" && (
+        {activeTab === 'archived' && (
           <div className="grid gap-6">
             <section className="rounded-xl border border-border bg-card p-5 shadow-xs">
               <h2 className="text-base font-semibold">Danh sách nhóm đã lưu trữ</h2>
-              <p className="text-xs text-muted-foreground mt-1">Các nhóm đã giải tán. Bạn có thể xem lịch sử giao dịch cũ (chỉ đọc) hoặc xóa hẳn khỏi giao diện.</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Các nhóm đã giải tán. Bạn có thể xem lịch sử giao dịch cũ (chỉ đọc) hoặc xóa hẳn khỏi giao diện.
+              </p>
 
               {archivedLoading ? (
                 <div className="py-12 text-center text-sm text-muted-foreground flex items-center justify-center gap-2">
@@ -786,7 +817,10 @@ export default function SettingsPage() {
               ) : (
                 <div className="mt-4 divide-y divide-border">
                   {archivedGroups.map((group) => (
-                    <div key={group.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-3.5 gap-3">
+                    <div
+                      key={group.id}
+                      className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-3.5 gap-3"
+                    >
                       <div>
                         <div className="font-semibold text-sm flex items-center gap-1.5">
                           <span>{group.name}</span>
@@ -801,7 +835,12 @@ export default function SettingsPage() {
                       </div>
 
                       <div className="flex gap-2">
-                        <Button variant="outline" size="sm" onClick={() => setGroupForHistory(group)} className="text-xs">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setGroupForHistory(group)}
+                          className="text-xs"
+                        >
                           <EyeIcon className="mr-1.5 size-3.5" />
                           Xem lịch sử
                         </Button>
@@ -825,7 +864,7 @@ export default function SettingsPage() {
         )}
 
         {/* Tab 4: Invitations */}
-        {activeTab === "invitations" && (
+        {activeTab === 'invitations' && (
           <div className="grid gap-6">
             <section className="rounded-xl border border-border bg-card p-5 shadow-xs">
               <h2 className="text-base font-semibold">Lời mời vào nhóm chi tiêu</h2>
@@ -846,7 +885,10 @@ export default function SettingsPage() {
               ) : (
                 <div className="mt-4 divide-y divide-border">
                   {invitations.map((inv) => (
-                    <div key={inv.invitation_id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-4 gap-4">
+                    <div
+                      key={inv.invitation_id}
+                      className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-4 gap-4"
+                    >
                       <div className="flex items-start gap-3">
                         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary mt-0.5">
                           <UsersIcon className="h-5 w-5" />
@@ -903,7 +945,9 @@ export default function SettingsPage() {
           <DialogHeader>
             <DialogTitle>Trục xuất thành viên?</DialogTitle>
             <DialogDescription>
-              Bạn có chắc chắn muốn xóa thành viên <span className="font-semibold text-foreground">{memberToKick?.display_name || memberToKick?.email}</span> khỏi nhóm này không? Người dùng này sẽ không còn quyền xem hay tương tác với nhóm.
+              Bạn có chắc chắn muốn xóa thành viên{' '}
+              <span className="font-semibold text-foreground">{memberToKick?.display_name || memberToKick?.email}</span>{' '}
+              khỏi nhóm này không? Người dùng này sẽ không còn quyền xem hay tương tác với nhóm.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -926,11 +970,13 @@ export default function SettingsPage() {
             <DialogDescription>
               {isCurrentOwner && members.length === 1 ? (
                 <span>
-                  Bạn là thành viên duy nhất trong nhóm. Khi rời đi, nhóm sẽ bị xóa vĩnh viễn khỏi hệ thống cùng với mọi tài khoản, danh mục và giao dịch liên quan. Hành động này không thể hoàn tác.
+                  Bạn là thành viên duy nhất trong nhóm. Khi rời đi, nhóm sẽ bị xóa vĩnh viễn khỏi hệ thống cùng với mọi
+                  tài khoản, danh mục và giao dịch liên quan. Hành động này không thể hoàn tác.
                 </span>
               ) : (
                 <span>
-                  Bạn có chắc chắn muốn rời khỏi nhóm này không? Bạn sẽ mất toàn bộ quyền truy cập và dữ liệu liên quan đến nhóm chi tiêu này.
+                  Bạn có chắc chắn muốn rời khỏi nhóm này không? Bạn sẽ mất toàn bộ quyền truy cập và dữ liệu liên quan
+                  đến nhóm chi tiêu này.
                 </span>
               )}
             </DialogDescription>
@@ -939,7 +985,11 @@ export default function SettingsPage() {
             <Button variant="outline" onClick={() => setOpenLeaveDialog(false)} disabled={isSubmitting}>
               Hủy
             </Button>
-            <Button variant="destructive" onClick={isCurrentOwner && members.length === 1 ? handleArchiveGroup : handleLeaveGroup} disabled={isSubmitting}>
+            <Button
+              variant="destructive"
+              onClick={isCurrentOwner && members.length === 1 ? handleArchiveGroup : handleLeaveGroup}
+              disabled={isSubmitting}
+            >
               {isSubmitting && <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />}
               Xác nhận rời
             </Button>
@@ -948,15 +998,19 @@ export default function SettingsPage() {
       </Dialog>
 
       {/* dialog 3: Transfer Owner Dialog (For Owner leaving multi-member group) */}
-      <Dialog open={openTransferDialog} onOpenChange={(open) => {
-        setOpenTransferDialog(open);
-        if (!open) setSelectedNewOwner("");
-      }}>
+      <Dialog
+        open={openTransferDialog}
+        onOpenChange={(open) => {
+          setOpenTransferDialog(open);
+          if (!open) setSelectedNewOwner('');
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Chuyển nhượng chủ nhóm & Rời nhóm</DialogTitle>
             <DialogDescription>
-              Bạn đang là Chủ nhóm. Trước khi rời khỏi nhóm, bạn bắt buộc phải chuyển nhượng quyền Chủ nhóm (Owner) cho một thành viên khác đang hoạt động.
+              Bạn đang là Chủ nhóm. Trước khi rời khỏi nhóm, bạn bắt buộc phải chuyển nhượng quyền Chủ nhóm (Owner) cho
+              một thành viên khác đang hoạt động.
             </DialogDescription>
           </DialogHeader>
 
@@ -999,7 +1053,8 @@ export default function SettingsPage() {
               Giải tán và Lưu trữ nhóm
             </DialogTitle>
             <DialogDescription>
-              Hành động này sẽ đóng băng nhóm chi tiêu này vĩnh viễn. Tất cả thành viên sẽ chuyển sang chế độ Chỉ Đọc (Read-only) và không thể thay đổi dữ liệu được nữa.
+              Hành động này sẽ đóng băng nhóm chi tiêu này vĩnh viễn. Tất cả thành viên sẽ chuyển sang chế độ Chỉ Đọc
+              (Read-only) và không thể thay đổi dữ liệu được nữa.
             </DialogDescription>
           </DialogHeader>
 
@@ -1017,7 +1072,8 @@ export default function SettingsPage() {
                   Tất toán số dư nhóm về 0đ
                 </label>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Tự động chia đều toàn bộ tiền quỹ trong các tài khoản dùng chung của nhóm cho các thành viên. Số dư tài khoản của nhóm sẽ được đưa về 0đ.
+                  Tự động chia đều toàn bộ tiền quỹ trong các tài khoản dùng chung của nhóm cho các thành viên. Số dư
+                  tài khoản của nhóm sẽ được đưa về 0đ.
                 </p>
               </div>
             </div>
@@ -1106,7 +1162,10 @@ export default function SettingsPage() {
           <DialogHeader>
             <DialogTitle>Xóa khỏi danh sách lưu trữ?</DialogTitle>
             <DialogDescription>
-              Bạn có chắc chắn muốn xóa nhóm <span className="font-semibold text-foreground">{groupToDelete?.name}</span> khỏi danh sách lưu trữ của bạn không? Bạn sẽ không thể xem lại lịch sử giao dịch này nữa. Nếu bạn là thành viên cuối cùng của nhóm, dữ liệu nhóm sẽ bị xóa vĩnh viễn khỏi hệ thống.
+              Bạn có chắc chắn muốn xóa nhóm{' '}
+              <span className="font-semibold text-foreground">{groupToDelete?.name}</span> khỏi danh sách lưu trữ của
+              bạn không? Bạn sẽ không thể xem lại lịch sử giao dịch này nữa. Nếu bạn là thành viên cuối cùng của nhóm,
+              dữ liệu nhóm sẽ bị xóa vĩnh viễn khỏi hệ thống.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -1122,10 +1181,13 @@ export default function SettingsPage() {
       </Dialog>
 
       {/* dialog 7: Reset Workspace Transactions Confirm */}
-      <Dialog open={openResetDialog} onOpenChange={(open) => {
-        setOpenResetDialog(open);
-        if (!open) setConfirmKeyword("");
-      }}>
+      <Dialog
+        open={openResetDialog}
+        onOpenChange={(open) => {
+          setOpenResetDialog(open);
+          if (!open) setConfirmKeyword('');
+        }}
+      >
         <DialogContent className="sm:max-w-md rounded-2xl border border-border">
           <DialogHeader>
             <DialogTitle className="text-destructive flex items-center gap-2 text-lg font-bold">
@@ -1134,33 +1196,39 @@ export default function SettingsPage() {
             </DialogTitle>
             <div className="space-y-4 pt-3 text-sm text-muted-foreground text-left">
               <div className="rounded-xl border border-destructive/20 bg-destructive/2 px-4 py-3 space-y-2">
-                <p className="text-xs font-semibold text-destructive uppercase tracking-wider">Thông số Reset dữ liệu</p>
+                <p className="text-xs font-semibold text-destructive uppercase tracking-wider">
+                  Thông số Reset dữ liệu
+                </p>
                 <div className="grid grid-cols-[100px_1fr] gap-y-2 gap-x-2 text-xs">
                   <span className="text-muted-foreground">Workspace:</span>
-                  <span className="font-semibold text-foreground">{activeWorkspace?.name || "Cá nhân"}</span>
-                  
+                  <span className="font-semibold text-foreground">{activeWorkspace?.name || 'Cá nhân'}</span>
+
                   <span className="text-muted-foreground">Phạm vi thời gian:</span>
                   <span className="font-semibold text-destructive">
-                    {resetRange === "all" && "Toàn bộ lịch sử"}
-                    {resetRange === "day" && `Ngày ${resetValue}`}
-                    {resetRange === "month" && `Tháng ${resetValue}`}
-                    {resetRange === "year" && `Năm ${resetValue}`}
+                    {resetRange === 'all' && 'Toàn bộ lịch sử'}
+                    {resetRange === 'day' && `Ngày ${resetValue}`}
+                    {resetRange === 'month' && `Tháng ${resetValue}`}
+                    {resetRange === 'year' && `Năm ${resetValue}`}
                   </span>
 
                   <span className="text-muted-foreground">Trạng thái ví:</span>
                   <span className="font-semibold text-foreground">
-                    {keepBalance ? "Giữ nguyên số dư hiện tại" : "Hoàn trả về 0 / ban đầu"}
+                    {keepBalance ? 'Giữ nguyên số dư hiện tại' : 'Hoàn trả về 0 / ban đầu'}
                   </span>
                 </div>
               </div>
-              
+
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Cảnh báo: Hành động này sẽ dọn dẹp toàn bộ dữ liệu giao dịch đã chọn trong cơ sở dữ liệu. Tất cả hóa đơn, thu chi liên quan sẽ bị <span className="text-destructive font-bold">mất vĩnh viễn</span> và không có cách nào khôi phục.
+                Cảnh báo: Hành động này sẽ dọn dẹp toàn bộ dữ liệu giao dịch đã chọn trong cơ sở dữ liệu. Tất cả hóa
+                đơn, thu chi liên quan sẽ bị <span className="text-destructive font-bold">mất vĩnh viễn</span> và không
+                có cách nào khôi phục.
               </p>
 
               <div className="space-y-1.5 pt-1">
                 <label className="text-xs font-bold text-foreground block">
-                  Nhập chính xác <span className="text-destructive font-extrabold uppercase tracking-wide">XÓA VĨNH VIỄN</span> để xác nhận:
+                  Nhập chính xác{' '}
+                  <span className="text-destructive font-extrabold uppercase tracking-wide">XÓA VĨNH VIỄN</span> để xác
+                  nhận:
                 </label>
                 <Input
                   value={confirmKeyword}
@@ -1172,14 +1240,19 @@ export default function SettingsPage() {
             </div>
           </DialogHeader>
           <DialogFooter className="gap-2 sm:gap-0 border-t border-border/50 pt-4 mt-2">
-            <Button variant="outline" className="rounded-lg text-xs" onClick={() => setOpenResetDialog(false)} disabled={isResetting}>
+            <Button
+              variant="outline"
+              className="rounded-lg text-xs"
+              onClick={() => setOpenResetDialog(false)}
+              disabled={isResetting}
+            >
               Hủy bỏ
             </Button>
             <Button
               variant="destructive"
               className="rounded-lg text-xs font-semibold gap-1.5"
               onClick={handleResetTransactions}
-              disabled={isResetting || confirmKeyword !== "XÓA VĨNH VIỄN"}
+              disabled={isResetting || confirmKeyword !== 'XÓA VĨNH VIỄN'}
             >
               {isResetting && <Loader2Icon className="h-3.5 w-3.5 animate-spin" />}
               Xác nhận xóa dữ liệu
