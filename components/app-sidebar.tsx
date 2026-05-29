@@ -18,10 +18,14 @@ import {
 } from '@/components/ui/sidebar';
 import { UserMenu } from '@/components/user-menu';
 import { WorkspaceSwitcher } from '@/components/workspace-switcher';
-import { ChartPieIcon, CreditCardIcon, LayoutDashboardIcon, SettingsIcon, TagsIcon, WalletIcon } from 'lucide-react';
+import { ChartPieIcon, CreditCardIcon, LayoutDashboardIcon, Plus, SettingsIcon, TagsIcon, WalletIcon } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import CreateTransactionDialog from '@/app/(private)/transactions/components/create-transaction-dialog';
+
 
 type NavItem = {
   title: string;
@@ -65,13 +69,41 @@ function isItemActive(pathname: string, item: NavItem) {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname();
-  const { isMobile, setOpenMobile } = useSidebar();
+  const { isMobile, setOpenMobile, state } = useSidebar();
+  const [openTxDialog, setOpenTxDialog] = React.useState(false);
 
   return (
     <Sidebar {...props}>
-      <SidebarHeader className="p-3 pt-[calc(env(safe-area-inset-top)+12px)]">
+      <SidebarHeader className="p-3 pt-[calc(env(safe-area-inset-top)+12px)] gap-2.5">
         <WorkspaceSwitcher />
-        <Separator className="mt-2.5 opacity-40" />
+        
+        {/* Nút Thêm giao dịch nhanh */}
+        <SidebarMenu>
+          <SidebarMenuItem className="flex justify-center">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  onClick={() => setOpenTxDialog(true)}
+                  className={cn(
+                    "w-full rounded-xl cursor-pointer transition-all duration-300 font-semibold flex items-center justify-center shadow-md shadow-primary/15 dark:shadow-none group/btn border-transparent",
+                    "bg-primary bg-linear-to-r from-white/10 via-transparent to-black/15 hover:from-white/15 hover:to-black/25 dark:to-black/30 text-white",
+                    state === 'collapsed' ? "h-9 w-9 p-0 rounded-lg" : "h-10 gap-2 px-3"
+                  )}
+                >
+                  <Plus className={cn("transition-transform duration-300 group-hover/btn:rotate-90", state === 'collapsed' ? "size-5" : "size-4.5")} />
+                  {state !== 'collapsed' && <span>Thêm giao dịch</span>}
+                </Button>
+              </TooltipTrigger>
+              {state === 'collapsed' && (
+                <TooltipContent side="right" align="center" sideOffset={12}>
+                  Thêm giao dịch
+                </TooltipContent>
+              )}
+            </Tooltip>
+          </SidebarMenuItem>
+        </SidebarMenu>
+
+        <Separator className="mt-1 opacity-40" />
       </SidebarHeader>
       <SidebarContent className="px-2 py-2">
         {navGroups.map((group) => (
@@ -92,7 +124,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                       className={cn(
                         "relative rounded-xl px-3 py-2.5 h-10 gap-3 cursor-pointer transition-all duration-300 font-medium",
                         "hover:bg-muted/50 dark:hover:bg-muted/20 text-muted-foreground hover:text-foreground",
-                        "data-[active=true]:bg-linear-to-r data-[active=true]:from-emerald-500/12 data-[active=true]:to-teal-500/6 data-[active=true]:text-primary data-[active=true]:font-bold data-[active=true]:border-l-3 data-[active=true]:border-primary data-[active=true]:pl-2 data-[active=true]:rounded-l-none"
+                        "data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:font-bold data-[active=true]:border-l-3 data-[active=true]:border-primary data-[active=true]:pl-2 data-[active=true]:rounded-l-none"
                       )}
                     >
                       <Link
@@ -129,6 +161,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarFooter>
       )}
       <SidebarRail />
+      <CreateTransactionDialog open={openTxDialog} onOpenChange={setOpenTxDialog} />
     </Sidebar>
   );
 }

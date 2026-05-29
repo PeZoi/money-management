@@ -24,6 +24,7 @@ interface CategorySidebarProps {
   categories: CategoryUi[];
   usedCategoryIds: Set<string>;
   transactions: TransactionWithCategory[];
+  allTransactions?: TransactionWithCategory[];
   onDeleteColumn?: (tableId: string, columnId: string) => void;
 }
 
@@ -31,6 +32,7 @@ export function CategorySidebar({
   categories,
   usedCategoryIds,
   transactions,
+  allTransactions = [],
   onDeleteColumn,
 }: CategorySidebarProps) {
   const [activeTab, setActiveTab] = useState<'categories' | 'transactions' | 'system'>('categories');
@@ -154,6 +156,7 @@ export function CategorySidebar({
                         key={cat.id}
                         category={cat}
                         isUsed={usedCategoryIds.has(cat.id)}
+                        txCount={allTransactions.filter((tx) => tx.category_id === cat.id).length}
                       />
                     ))
                   )}
@@ -174,6 +177,7 @@ export function CategorySidebar({
                         key={cat.id}
                         category={cat}
                         isUsed={usedCategoryIds.has(cat.id)}
+                        txCount={allTransactions.filter((tx) => tx.category_id === cat.id).length}
                       />
                     ))
                   )}
@@ -280,9 +284,10 @@ export function CategorySidebar({
 interface DraggableCategoryProps {
   category: CategoryUi;
   isUsed: boolean;
+  txCount: number;
 }
 
-function DraggableCategory({ category, isUsed }: DraggableCategoryProps) {
+function DraggableCategory({ category, isUsed, txCount }: DraggableCategoryProps) {
   const dragRef = useRef<HTMLDivElement>(null);
 
   const handleDragStart = (e: React.DragEvent) => {
@@ -318,6 +323,11 @@ function DraggableCategory({ category, isUsed }: DraggableCategoryProps) {
       />
       <IconPreview name={category.icon} className="size-4 shrink-0 text-muted-foreground" />
       <span className="truncate text-xs font-medium">{category.name}</span>
+      {txCount > 0 && (
+        <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full font-medium ml-1">
+          {txCount}
+        </span>
+      )}
       {isUsed && (
         <span className="ml-auto text-[9px] font-bold text-muted-foreground/50 uppercase tracking-wider">
           Đã dùng

@@ -62,8 +62,8 @@ export function BottomNav() {
                 <div
                   className={cn(
                     "flex size-14 items-center justify-center rounded-full border-4 border-background bg-primary text-primary-foreground shadow-lg transition-all duration-300 group-hover:scale-105 active:scale-95 group-active:scale-95",
-                    active 
-                      ? "bg-primary shadow-primary/40 ring-2 ring-primary/20" 
+                    active
+                      ? "bg-primary shadow-primary/40 ring-2 ring-primary/20"
                       : "bg-primary/95 hover:bg-primary shadow-primary/20"
                   )}
                 >

@@ -310,6 +310,7 @@ export default function ReportsPageClient() {
                 categories={categories}
                 usedCategoryIds={usedCategoryIds}
                 transactions={unassignedTransactions}
+                allTransactions={transactions}
                 onDeleteColumn={handleDeleteColumn}
               />
             )}
