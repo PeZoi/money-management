@@ -35,28 +35,15 @@ import {
 import { cn } from "@/lib/utils";
 import IconPreview from "@/components/icons/icon-preview";
 
+import {
+  DEFAULT_EXPENSE_CATEGORIES,
+  DEFAULT_INCOME_CATEGORIES,
+} from "@/lib/constants/default-categories";
+
 const LOCAL_STORAGE_KEY = "money-setup-dismissed";
 
-const DEFAULT_EXPENSE_CATEGORIES = [
-  { name: "Ăn uống", icon: "🍽️", type: "expense", color: "#ef4444" },
-  { name: "Di chuyển", icon: "🚗", type: "expense", color: "#3b82f6" },
-  { name: "Mua sắm", icon: "🛍️", type: "expense", color: "#10b981" },
-  { name: "Nhà cửa", icon: "🏠", type: "expense", color: "#f59e0b" },
-  { name: "Hóa đơn", icon: "⚡", type: "expense", color: "#6366f1" },
-  { name: "Giải trí", icon: "🎮", type: "expense", color: "#ec4899" },
-  { name: "Sức khỏe", icon: "💊", type: "expense", color: "#14b8a6" },
-  { name: "Học tập", icon: "🎓", type: "expense", color: "#8b5cf6" },
-];
-
-const DEFAULT_INCOME_CATEGORIES = [
-  { name: "Lương", icon: "💵", type: "income", color: "#10b981" },
-  { name: "Đầu tư", icon: "📈", type: "income", color: "#3b82f6" },
-  { name: "Tiền thưởng", icon: "🎉", type: "income", color: "#f59e0b" },
-  { name: "Phụ thu", icon: "💼", type: "income", color: "#ec4899" },
-];
-
 const ACCOUNT_PRESETS = [
-  { name: "Ví tiền mặt", type: "cash", icon: "💵", color: "#10b981" },
+  { name: "Tiền mặt", type: "cash", icon: "💵", color: "#10b981" },
   { name: "Tài khoản ngân hàng", type: "bank", icon: "🏦", color: "#3b82f6" },
   { name: "Quỹ chung nhóm", type: "cash", icon: "💰", color: "#f59e0b" },
 ];

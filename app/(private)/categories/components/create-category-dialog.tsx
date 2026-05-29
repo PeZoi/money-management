@@ -9,9 +9,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
-import { Loader2Icon, SearchIcon, TrendingDownIcon, TrendingUpIcon } from 'lucide-react';
+import { Loader2Icon, SearchIcon, TrendingDownIcon, TrendingUpIcon, Trash2Icon } from 'lucide-react';
 
-import { useCategoryForm } from '@/hooks/use-categories';
+import { useCategoryForm, useCategoryMutation } from '@/hooks/use-categories';
+import { useConfirm } from '@/hooks/use-confirm';
 import { CategoryType } from '@/types/category';
 import { typeBadgeClass, typeLabel } from '../category-ui';
 
@@ -54,6 +55,28 @@ export default function CreateCategoryDialog({
     workspaceId,
     onSuccess,
   });
+  const { deleteCategory, isSubmitting: isDeleting } = useCategoryMutation();
+  const confirm = useConfirm();
+
+  const handleDeleteClick = async () => {
+    if (!categoryId) return;
+    const confirmed = await confirm({
+      title: 'Xóa danh mục',
+      message: 'Bạn có chắc chắn muốn xóa danh mục này? Các giao dịch liên kết với danh mục này sẽ chuyển sang danh mục mặc định.',
+      confirmText: 'Xóa',
+      cancelText: 'Hủy',
+      variant: 'destructive',
+    });
+    if (!confirmed) return;
+    await deleteCategory(categoryId, {
+      onSuccess: () => {
+        onSuccess?.();
+        onOpenChange(false);
+      },
+    });
+  };
+
+  const isLoading = isSubmitting || isDeleting;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -190,24 +213,42 @@ export default function CreateCategoryDialog({
         </div>
 
         {/* Phần nút điều khiển (Footer) được cố định ở chân dialog */}
-        <div className="border-t px-5 py-4 sm:px-6 bg-muted/10 shrink-0 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
+        <div className="border-t px-5 py-4 sm:px-6 bg-muted/10 shrink-0 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            {isUpdate && (
+              <Button
+                type="button"
+                variant="ghost"
+                className="rounded-xl text-rose-600 hover:text-rose-700 hover:bg-rose-500/10 font-semibold cursor-pointer active:scale-95 transition-all text-xs sm:text-sm px-3 gap-1.5 h-9 sm:h-10"
+                onClick={handleDeleteClick}
+                disabled={isLoading}
+              >
+                {isDeleting ? (
+                  <Loader2Icon className="size-4 animate-spin" />
+                ) : (
+                  <Trash2Icon className="size-4" />
+                )}
+                {isDeleting ? 'Đang xóa...' : 'Xóa danh mục'}
+              </Button>
+            )}
+          </div>
           <div className="flex items-center gap-2 justify-end">
             <Button
               type="button"
               variant="outline"
-              className="rounded-xl"
+              className="rounded-xl text-xs sm:text-sm h-9 sm:h-10"
               onClick={() => onOpenChange(false)}
-              disabled={isSubmitting}
+              disabled={isLoading}
             >
               Hủy
             </Button>
             <Button
               type="button"
-              className="rounded-xl"
+              className="rounded-xl text-xs sm:text-sm h-9 sm:h-10 cursor-pointer active:scale-95 transition-all font-semibold"
               onClick={handleSubmit}
-              disabled={isSubmitting || !draftName.trim()}
+              disabled={isLoading || !draftName.trim()}
             >
-              {isSubmitting && <Loader2Icon className="mr-2 size-4 animate-spin" />}
+              {isLoading && <Loader2Icon className="mr-2 size-4 animate-spin" />}
               {isUpdate ? 'Lưu thay đổi' : 'Tạo danh mục'}
             </Button>
           </div>

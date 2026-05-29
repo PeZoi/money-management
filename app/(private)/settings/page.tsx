@@ -26,14 +26,17 @@ import {
   LogOutIcon,
   MailIcon,
   SettingsIcon,
+  SparklesIcon,
   TrashIcon,
   UserPlusIcon,
   UsersIcon,
+  ZapIcon,
 } from "lucide-react";
 import * as React from "react";
 import ArchivedTransactionsList from "./components/archived-transactions-list";
 import { useSettings } from "./hooks/use-settings";
 import { useAuth } from "@/hooks/use-auth";
+import { SETTINGS_KEY, getLocalStorageItem, setLocalStorageItem } from "@/functions/localstorage-fn";
 
 const PRESETS: Array<{ name: string; value: string }> = [
   { name: "Xanh lá", value: "#16a34a" },
@@ -46,6 +49,26 @@ const PRESETS: Array<{ name: string; value: string }> = [
 
 export default function SettingsPage() {
   const { signOut } = useAuth();
+
+  // Cài đặt giao dịch thông minh: bật/tắt preview trước khi lưu
+  const [smartTxPreview, setSmartTxPreview] = React.useState(true);
+  const [hasMountedSmartTx, setHasMountedSmartTx] = React.useState(false);
+
+  React.useEffect(() => {
+    const saved = getLocalStorageItem(SETTINGS_KEY.SMART_TX_PREVIEW);
+    const isTrue = saved !== null ? saved === "true" : true;
+
+    // Gom nhóm setState vào luồng bất đồng bộ để tránh linter warning
+    setTimeout(() => {
+      setSmartTxPreview(isTrue);
+      setHasMountedSmartTx(true);
+    }, 0);
+  }, []);
+
+  const handleToggleSmartTxPreview = (checked: boolean) => {
+    setSmartTxPreview(checked);
+    setLocalStorageItem(SETTINGS_KEY.SMART_TX_PREVIEW, String(checked));
+  };
   const {
     theme,
     color,
@@ -234,7 +257,51 @@ export default function SettingsPage() {
               </Button>
             </section>
 
-            {/* Section 3: Tài khoản & Đăng xuất */}
+            {/* Section 3: Cài đặt giao dịch thông minh */}
+            <section className="rounded-xl border border-border bg-card p-5 shadow-xs">
+              <div className="flex items-center gap-2 mb-1">
+                <div className="flex size-8 items-center justify-center rounded-lg bg-amber-500/10">
+                  <SparklesIcon className="size-4 text-amber-500" />
+                </div>
+                <h2 className="text-base font-semibold">Giao dịch thông minh</h2>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1 mb-4">
+                Tùy chỉnh hành vi khi thêm giao dịch bằng tab Tự động (AI + nhận dạng).
+              </p>
+
+              <div className="flex items-center justify-between rounded-lg border border-border bg-muted/20 px-4 py-3">
+                <div className="flex items-center gap-3">
+                  <ZapIcon className="size-4 text-primary shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium">Xem lại trước khi lưu</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Khi bật, dữ liệu nhận dạng tự động sẽ được chuyển sang tab Thủ công để bạn kiểm tra lại trước khi lưu.
+                    </p>
+                  </div>
+                </div>
+                {hasMountedSmartTx && (
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={smartTxPreview}
+                    onClick={() => handleToggleSmartTxPreview(!smartTxPreview)}
+                    className={cn(
+                      "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                      smartTxPreview ? "bg-primary" : "bg-muted-foreground/30"
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-lg ring-0 transition-transform duration-200 ease-in-out",
+                        smartTxPreview ? "translate-x-5" : "translate-x-0"
+                      )}
+                    />
+                  </button>
+                )}
+              </div>
+            </section>
+
+            {/* Section 4: Tài khoản & Đăng xuất */}
             <section className="rounded-xl border border-border/80 bg-linear-to-r from-card to-muted/20 p-6 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5 relative overflow-hidden">
               <div className="absolute top-0 right-0 w-32 h-32 bg-primary/2 rounded-full blur-3xl pointer-events-none" />
               <div className="flex items-center gap-4 relative z-10">

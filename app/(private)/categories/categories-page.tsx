@@ -11,16 +11,18 @@ import {
   LayersIcon,
   PlusIcon,
   SearchIcon,
-  SparklesIcon
+  SparklesIcon,
 } from 'lucide-react';
 
 import CreateCategoryDialog from '@/app/(private)/categories/components/create-category-dialog';
+import ApplyDefaultCategoriesDialog from '@/app/(private)/categories/components/apply-default-dialog';
 import { useDraggable } from '@/hooks/use-draggable';
 import CategoriesList from './components/categories-list';
 import { useCategoriesPage } from './hooks/use-categories-page';
 
 export default function CategoriesPage() {
   const {
+    categories,
     fetchCategories,
     query,
     setQuery,
@@ -30,9 +32,13 @@ export default function CategoriesPage() {
     setCreateOpen,
     editingCategory,
     setEditingCategory,
+    applyDefaultsOpen,
+    setApplyDefaultsOpen,
     filtered,
     isLoading, // Nhận trạng thái tải dữ liệu từ hook
+    deletingId,
     handleDelete,
+    handleApplyDefaults,
   } = useCategoriesPage();
 
   // Hook kéo thả FAB mượt mà trên di động
@@ -45,10 +51,31 @@ export default function CategoriesPage() {
         description="Quản lý danh mục chi tiêu & thu nhập — thiết lập màu sắc & biểu tượng trực quan."
         icon={SparklesIcon}
         headerActions={
-          <Button type="button" className="hidden md:inline-flex rounded-xl shadow-sm bg-primary hover:bg-primary/90 text-primary-foreground font-medium transition-all" onClick={() => setCreateOpen(true)}>
-            <PlusIcon className="mr-2 size-4" aria-hidden />
-            Thêm danh mục
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              className={cn(
+                "rounded-xl border transition-all duration-300 text-xs sm:text-sm px-3.5 sm:px-4 h-9 sm:h-10 cursor-pointer active:scale-95 flex items-center gap-1.5 font-bold shadow-xs",
+                "bg-linear-to-r from-amber-500/10 via-primary/5 to-primary/10",
+                "border-amber-500/25 dark:border-amber-500/30 text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300",
+                "hover:shadow-md hover:shadow-amber-500/5 hover:border-amber-500/50 hover:scale-[1.02]",
+              )}
+              onClick={handleApplyDefaults}
+              disabled={isLoading}
+            >
+              <SparklesIcon className="size-3.5 sm:size-4 text-amber-500 fill-amber-500/20" />
+              <span>Áp dụng mẫu</span>
+            </Button>
+            <Button
+              type="button"
+              className="hidden md:inline-flex rounded-xl shadow-sm bg-primary hover:bg-primary/90 text-primary-foreground font-medium transition-all cursor-pointer"
+              onClick={() => setCreateOpen(true)}
+            >
+              <PlusIcon className="mr-2 size-4" aria-hidden />
+              Thêm danh mục
+            </Button>
+          </div>
         }
       >
         {/* Bộ tìm kiếm & Lọc nhanh */}
@@ -129,10 +156,13 @@ export default function CategoriesPage() {
           <CategoriesList
             categories={filtered}
             isLoading={isLoading}
+            isApplyingDefaults={applyDefaultsOpen}
+            deletingId={deletingId}
             onClearSearch={() => setQuery('')}
             onRequestCreate={() => setCreateOpen(true)}
             onRequestEdit={(category) => setEditingCategory(category)}
             onRequestDelete={handleDelete}
+            onApplyDefaults={handleApplyDefaults}
           />
         </div>
       </PrivatePageShell>
@@ -186,6 +216,13 @@ export default function CategoriesPage() {
           setCreateOpen(false);
           setEditingCategory(null);
         }}
+      />
+
+      <ApplyDefaultCategoriesDialog
+        open={applyDefaultsOpen}
+        onOpenChange={setApplyDefaultsOpen}
+        existingCategories={categories}
+        onSuccess={fetchCategories}
       />
     </>
   );

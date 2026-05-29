@@ -5,7 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import { PencilIcon, PlusIcon, SparklesIcon, Trash2Icon } from 'lucide-react';
+import { format } from 'date-fns';
+import { Loader2Icon, PencilIcon, PlusIcon, SparklesIcon, Trash2Icon } from 'lucide-react';
 
 import { CategoryUi } from '@/types/category';
 import { typeBadgeClass, typeLabel } from '../category-ui';
@@ -13,10 +14,13 @@ import { typeBadgeClass, typeLabel } from '../category-ui';
 type CategoriesListProps = {
   categories: CategoryUi[];
   isLoading?: boolean;
+  isApplyingDefaults?: boolean;
+  deletingId?: string | null;
   onClearSearch: () => void;
   onRequestCreate: () => void;
   onRequestEdit: (category: CategoryUi) => void;
   onRequestDelete: (id: string) => void;
+  onApplyDefaults?: () => void;
 };
 
 
@@ -26,10 +30,12 @@ import { useEffect, useRef } from 'react';
 // Component danh mục hỗ trợ vuốt kéo sang trái (Swipe Left to Delete)
 function CategoryCard({
   c,
+  isDeleting,
   onRequestEdit,
   onRequestDelete,
 }: {
   c: CategoryUi;
+  isDeleting?: boolean;
   onRequestEdit: (category: CategoryUi) => void;
   onRequestDelete: (id: string) => void;
 }) {
@@ -193,7 +199,10 @@ function CategoryCard({
           }
           onRequestEdit(c);
         }}
-        className="relative z-10 flex h-full cursor-pointer items-start gap-3 bg-card p-4 transition-all duration-300 select-none w-full"
+        className={cn(
+          "relative z-10 flex h-full cursor-pointer items-start gap-3 bg-card p-4 transition-all duration-300 select-none w-full",
+          isDeleting && "pointer-events-none opacity-50 bg-muted/20"
+        )}
       >
         <div className="relative flex items-start gap-3 w-full">
           {/* Icon Container */}
@@ -203,18 +212,27 @@ function CategoryCard({
               ? "border-emerald-500/20 text-emerald-500 group-hover:border-emerald-500/40" 
               : "border-rose-500/20 text-rose-500 group-hover:border-rose-500/40"
           )}>
-            <IconPreview
-              name={c.icon}
-              className="size-5 transition-transform duration-300 group-hover:scale-110"
-            />
+            {isDeleting ? (
+              <Loader2Icon className="size-5 animate-spin text-muted-foreground" />
+            ) : (
+              <IconPreview
+                name={c.icon}
+                className="size-5 transition-transform duration-300 group-hover:scale-110"
+              />
+            )}
           </div>
 
           <div className="min-w-0 flex-1">
             <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <h3 className="truncate font-semibold tracking-tight text-foreground/95 transition-colors group-hover:text-foreground">
                   {c.name}
                 </h3>
+                {c.updated_at && (
+                  <p className="mt-1 text-[10px] text-muted-foreground/75 font-normal tracking-wide whitespace-nowrap">
+                    Cập nhật: {format(new Date(c.updated_at), 'dd/MM/yyyy')}
+                  </p>
+                )}
               </div>
               <Badge
                 className={cn(
@@ -228,9 +246,20 @@ function CategoryCard({
           </div>
         </div>
 
-        {/* Nút chỉ báo chỉnh sửa nhỏ ở góc phải dưới khi hover (PC) */}
-        <div className="absolute right-3.5 bottom-3.5 opacity-0 scale-90 group-hover:opacity-100 group-hover:scale-100 transition-all duration-200 pointer-events-none">
-          <div className="rounded-lg p-1.5 bg-muted/60 text-muted-foreground/80 border border-muted/80 backdrop-blur-xs">
+        {/* Nút hành động khi hover (PC) */}
+        <div className="absolute right-3.5 bottom-3.5 flex items-center gap-1.5 opacity-0 scale-90 group-hover:opacity-100 group-hover:scale-100 transition-all duration-200 z-20">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onRequestDelete(c.id);
+            }}
+            className="rounded-lg p-1.5 bg-rose-500/10 hover:bg-rose-500 text-rose-600 hover:text-white border border-rose-500/20 hover:border-rose-500 transition-colors cursor-pointer active:scale-95"
+            title="Xóa danh mục"
+          >
+            <Trash2Icon className="size-3.5" />
+          </button>
+          <div className="rounded-lg p-1.5 bg-muted/80 text-muted-foreground/80 border border-muted/90 backdrop-blur-xs">
             <PencilIcon className="size-3.5" />
           </div>
         </div>
@@ -242,10 +271,13 @@ function CategoryCard({
 export default function CategoriesList({
   categories,
   isLoading,
+  isApplyingDefaults,
+  deletingId,
   onClearSearch,
   onRequestCreate,
   onRequestEdit,
   onRequestDelete,
+  onApplyDefaults,
 }: CategoriesListProps) {
   // Trạng thái Loading: Hiển thị 8 thẻ Skeleton giả lập cấu trúc
   if (isLoading) {
@@ -281,20 +313,35 @@ export default function CategoriesList({
   // Trạng thái không có dữ liệu phù hợp
   if (!categories.length) {
     return (
-      <div className="rounded-2xl border bg-card p-10 text-center shadow-xs">
+      <div className="rounded-2xl border bg-card p-10 text-center shadow-xs animate-in fade-in duration-300">
         <div className="mx-auto flex size-12 items-center justify-center rounded-2xl border bg-muted/30">
           <SparklesIcon className="size-5 text-muted-foreground" aria-hidden />
         </div>
         <h2 className="mt-4 text-base font-semibold">Chưa có danh mục phù hợp</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Thử đổi bộ lọc hoặc tìm bằng tên icon (ví dụ: <span className="font-mono">Wallet</span>,{' '}
-          <span className="font-mono">Home</span>).
+          Bạn chưa tạo danh mục nào hoặc không tìm thấy danh mục phù hợp. Hãy thêm mới hoặc áp dụng bộ mẫu mặc định có sẵn.
         </p>
-        <div className="mt-5 flex flex-col items-center justify-center gap-2 sm:flex-row">
-          <Button type="button" variant="outline" className="rounded-xl cursor-pointer" onClick={onClearSearch}>
+        <div className="mt-6 flex flex-col items-center justify-center gap-2 sm:flex-row">
+          <Button type="button" variant="outline" className="rounded-xl cursor-pointer w-full sm:w-auto" onClick={onClearSearch}>
             Xóa tìm kiếm
           </Button>
-          <Button type="button" className="rounded-xl cursor-pointer" onClick={onRequestCreate}>
+          {onApplyDefaults && (
+            <Button
+              type="button"
+              variant="outline"
+              className={cn(
+                "rounded-xl cursor-pointer w-full sm:w-auto gap-1.5 active:scale-95 transition-all duration-300 font-bold shadow-xs",
+                "bg-linear-to-r from-amber-500/10 via-primary/5 to-primary/10",
+                "border-amber-500/30 text-amber-600 dark:text-amber-400 hover:border-amber-500/50 hover:bg-linear-to-r hover:from-amber-500/15 hover:to-primary/20 hover:scale-[1.02]"
+              )}
+              onClick={onApplyDefaults}
+              disabled={isApplyingDefaults}
+            >
+              <SparklesIcon className="size-4 text-amber-500 fill-amber-500/20" />
+              {isApplyingDefaults ? 'Đang tạo mẫu...' : 'Áp dụng mẫu mặc định'}
+            </Button>
+          )}
+          <Button type="button" className="rounded-xl cursor-pointer w-full sm:w-auto" onClick={onRequestCreate}>
             <PlusIcon className="mr-2 size-4" aria-hidden />
             Thêm danh mục
           </Button>
@@ -309,6 +356,7 @@ export default function CategoriesList({
         <CategoryCard
           key={c.id}
           c={c}
+          isDeleting={deletingId === c.id}
           onRequestEdit={onRequestEdit}
           onRequestDelete={onRequestDelete}
         />

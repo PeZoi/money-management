@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 
@@ -13,6 +13,12 @@ import {
   type TransactionFormValues,
 } from '@/lib/validations/transaction-schema';
 import type { TransactionType } from '@/types/database';
+import { parseTransactionOnline } from '@/lib/utils/transaction-parser';
+import { getLocalStorageItem } from '@/functions/localstorage-fn';
+import { SETTINGS_KEY } from '@/functions/localstorage-fn';
+import { toast } from 'sonner';
+
+export type CreateDialogTab = 'auto' | 'manual';
 
 type UseCreateTransactionFormOptions = {
   open: boolean;
@@ -22,13 +28,24 @@ type UseCreateTransactionFormOptions = {
 
 /**
  * Hook quản lý toàn bộ logic form tạo giao dịch mới
- * Sử dụng React Hook Form + Zod validation
+ * Hỗ trợ 2 tab: Tự động (AI + Regex) và Thủ công
  */
 export function useCreateTransactionForm({ onOpenChange, onSuccess }: UseCreateTransactionFormOptions) {
   const { categories } = useCategories();
   const { isSubmitting, createTransaction } = useTransactionMutation();
   const { accounts, activeAccount } = useAccounts();
 
+  // === Tab State ===
+  const [activeTab, setActiveTab] = useState<CreateDialogTab>('auto');
+
+  // === Auto Tab State ===
+  const [autoNote, setAutoNote] = useState('');
+  const [autoAccountId, setAutoAccountId] = useState('');
+  const [autoDate, setAutoDate] = useState<Date>(new Date());
+  const [isParsing, setIsParsing] = useState(false);
+
+
+  // === Manual Tab Form (React Hook Form) ===
   const form = useForm<TransactionFormValues>({
     resolver: zodResolver(transactionSchema),
     defaultValues: transactionDefaultValues,
@@ -53,6 +70,13 @@ export function useCreateTransactionForm({ onOpenChange, onSuccess }: UseCreateT
       form.setValue('accountId', activeAccount.id);
     }
   }, [activeAccount, accountId, form]);
+
+  // Tự động gán active account cho auto tab
+  useEffect(() => {
+    if (activeAccount && !autoAccountId) {
+      setAutoAccountId(activeAccount.id);
+    }
+  }, [activeAccount, autoAccountId]);
 
   // Hàm helper lấy class CSS cho danh mục dựa vào loại giao dịch
   const getCategoryClasses = (isSelected: boolean) => {
@@ -109,6 +133,12 @@ export function useCreateTransactionForm({ onOpenChange, onSuccess }: UseCreateT
       accountId: activeAccount?.id ?? '',
       date: new Date(),
     });
+    // Reset auto tab
+    setAutoNote('');
+    setAutoAccountId(activeAccount?.id ?? '');
+    setAutoDate(new Date());
+    setActiveTab('auto');
+    setIsParsing(false);
   };
 
   const handleClose = (isOpen: boolean) => {
@@ -116,7 +146,129 @@ export function useCreateTransactionForm({ onOpenChange, onSuccess }: UseCreateT
     onOpenChange(isOpen);
   };
 
+  // === Logic xử lý Submit tab Tự động ===
+  const handleAutoSubmit = useCallback(async () => {
+    if (!autoNote.trim()) {
+      toast.error('Vui lòng nhập mô tả giao dịch');
+      return;
+    }
 
+    if (!autoAccountId) {
+      toast.error('Vui lòng chọn tài khoản');
+      return;
+    }
+
+    setIsParsing(true);
+
+    try {
+      const categoryInfos = categories.map((c) => ({
+        id: c.id,
+        name: c.name,
+        type: c.type,
+      }));
+
+      // Phân tích giao dịch hoàn toàn bằng AI (Gemini)
+      const parsed = await parseTransactionOnline(autoNote, categoryInfos);
+
+      // Đọc cài đặt preview từ localStorage
+      const previewSetting = getLocalStorageItem(SETTINGS_KEY.SMART_TX_PREVIEW);
+      // Mặc định bật preview (true) nếu chưa từng cấu hình
+      const previewEnabled = previewSetting === null ? true : previewSetting === 'true';
+
+      if (previewEnabled) {
+        // === PREVIEW MODE: Điền dữ liệu vào form thủ công rồi chuyển tab ===
+        form.setValue('type', parsed.type);
+        form.setValue('note', parsed.cleanNote);
+        form.setValue('accountId', autoAccountId);
+        form.setValue('date', autoDate);
+
+        // Set số tiền (format dạng hiển thị)
+        if (parsed.amount && parsed.amount > 0) {
+          form.setValue('amount', formatAmountInput(String(parsed.amount)));
+        }
+
+        // Set danh mục nếu tìm thấy, ngược lại reset về rỗng để hiển thị dưới dạng "Khác" trên UI
+        if (parsed.categorySuggestion) {
+          const matchedCat = categories.find(
+            (c) => c.name === parsed.categorySuggestion && c.type === parsed.type,
+          );
+          if (matchedCat) {
+            form.setValue('categoryId', matchedCat.id);
+          } else {
+            form.setValue('categoryId', '');
+          }
+        } else {
+          form.setValue('categoryId', '');
+        }
+
+        // Chuyển sang tab thủ công để xem lại
+        setActiveTab('manual');
+        toast.info('Đã nhận dạng xong! Hãy kiểm tra lại thông tin trước khi lưu.', {
+          duration: 3000,
+        });
+      } else {
+        // === DIRECT MODE: Lưu trực tiếp không cần preview ===
+        const numAmt = parsed.amount || 0;
+        if (numAmt <= 0) {
+          // Không nhận dạng được số tiền → chuyển sang manual
+          form.setValue('type', parsed.type);
+          form.setValue('note', parsed.cleanNote);
+          form.setValue('accountId', autoAccountId);
+          form.setValue('date', autoDate);
+          setActiveTab('manual');
+          toast.warning('Không nhận dạng được số tiền. Vui lòng nhập thủ công.', {
+            duration: 3000,
+          });
+          return;
+        }
+
+        // Tìm danh mục ID
+        let categoryIdForSave: string | null = null;
+        if (parsed.categorySuggestion) {
+          const matchedCat = categories.find(
+            (c) => c.name === parsed.categorySuggestion && c.type === parsed.type,
+          );
+          if (matchedCat) categoryIdForSave = matchedCat.id;
+        }
+
+        // Tránh lệch múi giờ
+        const now = new Date();
+        const formattedCreatedAt = new Date(
+          autoDate.getFullYear(),
+          autoDate.getMonth(),
+          autoDate.getDate(),
+          now.getHours(),
+          now.getMinutes(),
+          now.getSeconds(),
+        ).toISOString();
+
+        await createTransaction(
+          {
+            amount: numAmt,
+            type: parsed.type,
+            category_id: categoryIdForSave,
+            note: parsed.cleanNote || null,
+            created_at: formattedCreatedAt,
+            account_id: autoAccountId,
+          },
+          {
+            onSuccess: () => {
+              onSuccess?.();
+              handleClose(false);
+            },
+          },
+        );
+      }
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Lỗi phân tích giao dịch';
+      toast.error(message);
+    } finally {
+      setIsParsing(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoNote, autoAccountId, autoDate, categories, form, createTransaction, onSuccess]);
+
+  // === Logic Submit tab Thủ công (giữ nguyên logic cũ) ===
   const onSubmit = async (data: TransactionFormValues) => {
     const numAmt = parseAmount(data.amount);
     if (!numAmt || numAmt <= 0) return;
@@ -174,6 +326,21 @@ export function useCreateTransactionForm({ onOpenChange, onSuccess }: UseCreateT
   };
 
   return {
+    // Tab state
+    activeTab,
+    setActiveTab,
+
+    // Auto tab state
+    autoNote,
+    setAutoNote,
+    autoAccountId,
+    setAutoAccountId,
+    autoDate,
+    setAutoDate,
+    isParsing,
+    handleAutoSubmit,
+
+    // Manual tab state (existing)
     form,
     type,
     accountId,
