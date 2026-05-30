@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import { Loader2Icon, PencilIcon, PlusIcon, SparklesIcon, Trash2Icon } from 'lucide-react';
+import { Loader2Icon, PlusIcon, SparklesIcon, Trash2Icon } from 'lucide-react';
 
 import { CategoryUi } from '@/types/category';
 import { typeBadgeClass, typeLabel } from '../category-ui';
@@ -246,23 +246,7 @@ function CategoryCard({
           </div>
         </div>
 
-        {/* Nút hành động khi hover (PC) */}
-        <div className="absolute right-3.5 bottom-3.5 flex items-center gap-1.5 opacity-0 scale-90 group-hover:opacity-100 group-hover:scale-100 transition-all duration-200 z-20">
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onRequestDelete(c.id);
-            }}
-            className="rounded-lg p-1.5 bg-rose-500/10 hover:bg-rose-500 text-rose-600 hover:text-white border border-rose-500/20 hover:border-rose-500 transition-colors cursor-pointer active:scale-95"
-            title="Xóa danh mục"
-          >
-            <Trash2Icon className="size-3.5" />
-          </button>
-          <div className="rounded-lg p-1.5 bg-muted/80 text-muted-foreground/80 border border-muted/90 backdrop-blur-xs">
-            <PencilIcon className="size-3.5" />
-          </div>
-        </div>
+
       </div>
     </div>
   );

@@ -112,8 +112,13 @@ export async function DELETE(
       }, { status: 400 });
     }
 
-    const { error } = await supabase.from('accounts').delete().eq('id', id);
-    if (error) throw error;
+    // 4. Gọi Database Function (RPC) để xóa tài khoản và các giao dịch liên quan một cách an toàn (tạm tắt trigger để không làm thay đổi số dư các ví khác)
+    const { error: deleteError } = await supabase.rpc('delete_account_safe', {
+      p_account_id: id,
+    });
+
+    if (deleteError) throw deleteError;
+
     return NextResponse.json({ success: true });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Internal server error';

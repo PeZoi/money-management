@@ -222,6 +222,7 @@ export default function CategoriesPage() {
         open={applyDefaultsOpen}
         onOpenChange={setApplyDefaultsOpen}
         existingCategories={categories}
+        isLoading={isLoading}
         onSuccess={fetchCategories}
       />
     </>

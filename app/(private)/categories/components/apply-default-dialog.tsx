@@ -29,6 +29,7 @@ type ApplyDefaultCategoriesDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   existingCategories: CategoryUi[];
+  isLoading?: boolean;
   onSuccess?: () => void;
 };
 
@@ -36,6 +37,7 @@ export default function ApplyDefaultCategoriesDialog({
   open,
   onOpenChange,
   existingCategories,
+  isLoading = false,
   onSuccess,
 }: ApplyDefaultCategoriesDialogProps) {
   const { activeWorkspaceId } = useWorkspaceStore();
@@ -169,7 +171,12 @@ export default function ApplyDefaultCategoriesDialog({
 
         {/* Nội dung Form cuộn */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {totalAvailable === 0 ? (
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <Loader2Icon className="size-8 animate-spin text-primary mb-3" />
+              <p className="text-xs text-muted-foreground">Đang tải danh sách danh mục...</p>
+            </div>
+          ) : totalAvailable === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 text-center">
               <div className="size-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500 mb-3">
                 <CheckCircle2Icon className="size-6" />
@@ -296,7 +303,7 @@ export default function ApplyDefaultCategoriesDialog({
           {totalAvailable > 0 && (
             <Button
               onClick={handleSave}
-              disabled={isSubmitting || totalSelected === 0}
+              disabled={isSubmitting || totalSelected === 0 || isLoading}
               className="rounded-xl text-xs font-semibold px-5 active:scale-[0.98] transition-all bg-primary hover:bg-primary/90 text-white shadow-md shadow-primary/20 w-full sm:w-auto h-10 cursor-pointer"
               type="button"
             >

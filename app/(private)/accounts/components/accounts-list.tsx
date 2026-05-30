@@ -194,15 +194,20 @@ function AccountCard({ account, isSubmitting, onEdit, onDelete, onActivate }: Ac
       {/* Nút Xoá nằm chìm bên dưới (Chỉ hiển thị trên mobile) */}
       <button
         type="button"
+        disabled={isSubmitting}
         onClick={(e) => {
           e.stopPropagation();
           onDelete();
         }}
-        className="absolute right-0 top-0 bottom-0 z-0 flex w-20 items-center justify-center bg-rose-500 font-semibold text-white transition-colors hover:bg-rose-600 active:bg-rose-700 md:hidden"
+        className="absolute right-0 top-0 bottom-0 z-0 flex w-20 items-center justify-center bg-rose-500 font-semibold text-white transition-colors hover:bg-rose-600 active:bg-rose-700 md:hidden disabled:opacity-75 disabled:cursor-not-allowed"
       >
         <div className="flex flex-col items-center gap-1">
-          <Trash2Icon className="size-5" />
-          <span className="text-[10px] font-medium">Xóa</span>
+          {isSubmitting ? (
+            <RefreshCwIcon className="size-5 animate-spin" />
+          ) : (
+            <Trash2Icon className="size-5" />
+          )}
+          <span className="text-[10px] font-medium">{isSubmitting ? 'Đang xóa...' : 'Xóa'}</span>
         </div>
       </button>
 
@@ -303,10 +308,15 @@ function AccountCard({ account, isSubmitting, onEdit, onDelete, onActivate }: Ac
                   e.stopPropagation();
                   onDelete();
                 }}
-                className="rounded-lg cursor-pointer gap-2 text-destructive focus:text-destructive focus:bg-destructive/10"
+                disabled={isSubmitting}
+                className="rounded-lg cursor-pointer gap-2 text-destructive focus:text-destructive focus:bg-destructive/10 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Trash2Icon className="size-4" />
-                <span>Xóa tài khoản</span>
+                {isSubmitting ? (
+                  <RefreshCwIcon className="size-4 animate-spin text-destructive" />
+                ) : (
+                  <Trash2Icon className="size-4" />
+                )}
+                <span>{isSubmitting ? 'Đang xóa...' : 'Xóa tài khoản'}</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

@@ -111,7 +111,11 @@ export async function POST(req: Request) {
   }
 
   if (isBulk) {
-    const { data, error } = await session.supabase.from("categories").insert(rows).select("*");
+    // Sử dụng upsert với ignoreDuplicates để bỏ qua những danh mục đã tồn tại trong workspace mà không gây lỗi
+    const { data, error } = await session.supabase
+      .from("categories")
+      .upsert(rows, { onConflict: "workspace_id,type,name", ignoreDuplicates: true })
+      .select("*");
     if (error) {
       const status = error.code === "23505" ? 409 : 500;
       return NextResponse.json({ error: error.message }, { status });

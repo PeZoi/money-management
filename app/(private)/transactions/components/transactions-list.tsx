@@ -9,6 +9,7 @@ import {
   PlusIcon,
   ReceiptTextIcon,
   Trash2Icon,
+  RefreshCwIcon,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
@@ -17,6 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useWorkspaceStore } from '@/hooks/use-workspace';
+import { useTransactionMutation } from '@/hooks/use-transactions';
 import { useWorkspaces } from '@/hooks/use-workspaces';
 import { cn } from '@/lib/utils';
 import type { TransactionWithCategory } from '@/types/database';
@@ -49,11 +51,13 @@ const formatTime = (iso: string) => {
 // Component hàng giao dịch hỗ trợ kéo thả vuốt trái (Swipe to Delete)
 function TransactionRow({
   t,
+  isSubmitting,
   onRequestUpdate,
   onRequestDelete,
   isGroupWorkspace,
 }: {
   t: TransactionWithCategory;
+  isSubmitting: boolean;
   onRequestUpdate: (t: TransactionWithCategory) => void;
   onRequestDelete: (id: string) => void;
   isGroupWorkspace: boolean;
@@ -190,15 +194,20 @@ function TransactionRow({
       <button
         ref={deleteBtnRef}
         type="button"
+        disabled={isSubmitting}
         onClick={(e) => {
           e.stopPropagation();
           onRequestDelete(t.id);
         }}
-        className="absolute right-0 top-0 bottom-0 z-0 flex w-20 items-center justify-center bg-linear-to-l from-rose-600 to-rose-500 rounded-r-2xl font-semibold text-white shadow-inner active:opacity-90 md:hidden opacity-0 invisible transition-all duration-200"
+        className="absolute right-0 top-0 bottom-0 z-0 flex w-20 items-center justify-center bg-linear-to-l from-rose-600 to-rose-500 rounded-r-2xl font-semibold text-white shadow-inner active:opacity-90 md:hidden opacity-0 invisible transition-all duration-200 disabled:opacity-75 disabled:cursor-not-allowed"
       >
         <div className="flex flex-col items-center gap-1.5 transition-transform duration-200 active:scale-95">
-          <Trash2Icon className="size-5" />
-          <span className="text-[10px] font-semibold tracking-wide">Xóa</span>
+          {isSubmitting ? (
+            <RefreshCwIcon className="size-5 animate-spin" />
+          ) : (
+            <Trash2Icon className="size-5" />
+          )}
+          <span className="text-[10px] font-semibold tracking-wide">{isSubmitting ? 'Đang xóa...' : 'Xóa'}</span>
         </div>
       </button>
 
@@ -353,6 +362,7 @@ function TransactionRow({
             <button
               type="button"
               aria-label="Xóa giao dịch"
+              disabled={isSubmitting}
               onClick={(e) => {
                 e.stopPropagation();
                 onRequestDelete(t.id);
@@ -361,9 +371,14 @@ function TransactionRow({
                 'inline-flex size-8 items-center justify-center rounded-xl border border-border bg-background shadow-xs text-muted-foreground',
                 'transition-all duration-200 hover:scale-105 active:scale-95',
                 'hover:border-rose-500/30 hover:bg-rose-500/10 hover:text-rose-600 dark:hover:bg-rose-500/20',
+                'disabled:opacity-50 disabled:cursor-not-allowed',
               )}
             >
-              <Trash2Icon className="size-4" aria-hidden />
+              {isSubmitting ? (
+                <RefreshCwIcon className="size-4 animate-spin text-rose-500" />
+              ) : (
+                <Trash2Icon className="size-4" aria-hidden />
+              )}
             </button>
           </div>
         </div>
@@ -397,6 +412,7 @@ export default function TransactionsList({
 }: Props) {
   const { activeWorkspaceId } = useWorkspaceStore();
   const { data: workspaces = [] } = useWorkspaces();
+  const { isSubmitting } = useTransactionMutation();
 
   // Xác định xem workspace đang hoạt động có phải là nhóm hay không
   const currentWorkspace = workspaces.find((w) => w.id === activeWorkspaceId);
@@ -513,6 +529,7 @@ export default function TransactionsList({
                   <TransactionRow
                     key={t.id}
                     t={t}
+                    isSubmitting={isSubmitting}
                     onRequestUpdate={onRequestUpdate}
                     onRequestDelete={onRequestDelete}
                     isGroupWorkspace={isGroupWorkspace}

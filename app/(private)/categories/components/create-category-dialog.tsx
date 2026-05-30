@@ -213,25 +213,25 @@ export default function CreateCategoryDialog({
         </div>
 
         {/* Phần nút điều khiển (Footer) được cố định ở chân dialog */}
-        <div className="border-t px-5 py-4 sm:px-6 bg-muted/10 shrink-0 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            {isUpdate && (
-              <Button
-                type="button"
-                variant="ghost"
-                className="rounded-xl text-rose-600 hover:text-rose-700 hover:bg-rose-500/10 font-semibold cursor-pointer active:scale-95 transition-all text-xs sm:text-sm px-3 gap-1.5 h-9 sm:h-10"
-                onClick={handleDeleteClick}
-                disabled={isLoading}
-              >
-                {isDeleting ? (
-                  <Loader2Icon className="size-4 animate-spin" />
-                ) : (
-                  <Trash2Icon className="size-4" />
-                )}
-                {isDeleting ? 'Đang xóa...' : 'Xóa danh mục'}
-              </Button>
-            )}
-          </div>
+        <div className="border-t px-5 pt-4 pb-8 sm:py-4 sm:px-6 bg-muted/10 shrink-0 flex flex-row items-center justify-between gap-3">
+          {isUpdate ? (
+            <Button
+              type="button"
+              variant="ghost"
+              className="rounded-xl text-rose-600 hover:text-rose-700 hover:bg-rose-500/10 font-semibold cursor-pointer active:scale-95 transition-all text-xs sm:text-sm px-3 gap-1.5 h-9 sm:h-10"
+              onClick={handleDeleteClick}
+              disabled={isLoading}
+            >
+              {isDeleting ? (
+                <Loader2Icon className="size-4 animate-spin" />
+              ) : (
+                <Trash2Icon className="size-4" />
+              )}
+              {isDeleting ? 'Đang xóa...' : 'Xóa danh mục'}
+            </Button>
+          ) : (
+            <div /> // Giữ chỗ cho justify-between hoạt động đúng khi tạo mới
+          )}
           <div className="flex items-center gap-2 justify-end">
             <Button
               type="button"

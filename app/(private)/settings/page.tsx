@@ -12,6 +12,16 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { TransactionWithCategory } from '@/types';
 import {
@@ -34,6 +44,7 @@ import {
 } from 'lucide-react';
 import * as React from 'react';
 import ArchivedTransactionsList from './components/archived-transactions-list';
+import { MonthPicker } from '@/components/month-picker';
 import { useSettings } from './hooks/use-settings';
 import { useAuth } from '@/hooks/use-auth';
 import { SETTINGS_KEY, getLocalStorageItem, setLocalStorageItem } from '@/functions/localstorage-fn';
@@ -53,6 +64,7 @@ export default function SettingsPage() {
   // Cài đặt giao dịch thông minh: bật/tắt preview trước khi lưu
   const [smartTxPreview, setSmartTxPreview] = React.useState(true);
   const [hasMountedSmartTx, setHasMountedSmartTx] = React.useState(false);
+  const [openCalendar, setOpenCalendar] = React.useState(false);
 
   React.useEffect(() => {
     const saved = getLocalStorageItem(SETTINGS_KEY.SMART_TX_PREVIEW);
@@ -443,13 +455,36 @@ export default function SettingsPage() {
                             <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                               Chọn ngày cụ thể
                             </label>
-                            <Input
-                              type="date"
-                              value={resetValue}
-                              onChange={(e) => setResetValue(e.target.value)}
-                              required
-                              className="bg-background max-w-xs rounded-lg"
-                            />
+                            <Popover open={openCalendar} onOpenChange={setOpenCalendar}>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  className={cn(
+                                    'h-11 justify-start text-left font-normal rounded-xl border-border bg-background w-full sm:max-w-xs',
+                                    !resetValue && 'text-muted-foreground',
+                                  )}
+                                >
+                                  <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
+                                  {resetValue ? format(new Date(resetValue), 'dd/MM/yyyy') : <span>Chọn ngày</span>}
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-auto p-0" align="start">
+                                <Calendar
+                                  mode="single"
+                                  selected={resetValue ? new Date(resetValue) : undefined}
+                                  onSelect={(newDate) => {
+                                    if (newDate) {
+                                      const y = newDate.getFullYear();
+                                      const m = String(newDate.getMonth() + 1).padStart(2, '0');
+                                      const d = String(newDate.getDate()).padStart(2, '0');
+                                      setResetValue(`${y}-${m}-${d}`);
+                                      setOpenCalendar(false);
+                                    }
+                                  }}
+                                  disabled={{ after: new Date() }}
+                                />
+                              </PopoverContent>
+                            </Popover>
                           </div>
                         )}
 
@@ -458,13 +493,9 @@ export default function SettingsPage() {
                             <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                               Chọn tháng cụ thể
                             </label>
-                            <Input
-                              type="month"
-                              value={resetValue}
-                              onChange={(e) => setResetValue(e.target.value)}
-                              required
-                              className="bg-background max-w-xs rounded-lg"
-                            />
+                            <div className="w-full sm:max-w-xs">
+                              <MonthPicker value={resetValue} onChange={setResetValue} />
+                            </div>
                           </div>
                         )}
 
@@ -473,20 +504,21 @@ export default function SettingsPage() {
                             <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                               Chọn năm cụ thể
                             </label>
-                            <select
-                              value={resetValue}
-                              onChange={(e) => setResetValue(e.target.value)}
-                              className="rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all cursor-pointer max-w-xs"
-                            >
-                              {Array.from({ length: 6 }, (_, i) => {
-                                const y = new Date().getFullYear() - i;
-                                return (
-                                  <option key={y} value={y}>
-                                    Năm {y}
-                                  </option>
-                                );
-                              })}
-                            </select>
+                            <Select value={resetValue} onValueChange={setResetValue}>
+                              <SelectTrigger className="w-full sm:max-w-xs h-11 rounded-xl border-border bg-background text-sm font-medium transition-all hover:bg-muted/30">
+                                <SelectValue placeholder="Chọn năm" />
+                              </SelectTrigger>
+                              <SelectContent className="rounded-xl border shadow-lg">
+                                {Array.from({ length: 6 }, (_, i) => {
+                                  const y = new Date().getFullYear() - i;
+                                  return (
+                                    <SelectItem key={y} value={String(y)} className="rounded-lg text-xs py-2 cursor-pointer focus:bg-destructive/10 focus:text-destructive">
+                                      Năm {y}
+                                    </SelectItem>
+                                  );
+                                })}
+                              </SelectContent>
+                            </Select>
                           </div>
                         )}
                       </div>

@@ -265,7 +265,7 @@ export function useCreateTransactionForm({ onOpenChange, onSuccess }: UseCreateT
     } finally {
       setIsParsing(false);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoNote, autoAccountId, autoDate, categories, form, createTransaction, onSuccess]);
 
   // === Logic Submit tab Thủ công (giữ nguyên logic cũ) ===

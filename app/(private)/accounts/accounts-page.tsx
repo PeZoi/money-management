@@ -266,7 +266,7 @@ function SummaryCard({
                 <span className="relative inline-flex rounded-full size-1.5 bg-emerald-500"></span>
               </span>
             </div>
-            
+
             {/* Chip đồng giả lập */}
             <div className="relative flex h-4 w-6 sm:h-5 sm:w-7 shrink-0 items-center justify-center rounded-sm bg-linear-to-br from-amber-300 via-yellow-400 to-amber-500 border border-amber-200/50 shadow-xs">
               <div className="absolute inset-x-0 top-1/2 h-[0.5px] bg-amber-700/30" />
