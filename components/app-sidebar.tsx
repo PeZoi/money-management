@@ -18,13 +18,25 @@ import {
 } from '@/components/ui/sidebar';
 import { UserMenu } from '@/components/user-menu';
 import { WorkspaceSwitcher } from '@/components/workspace-switcher';
-import { ChartPieIcon, CreditCardIcon, LayoutDashboardIcon, Plus, SettingsIcon, TagsIcon, WalletIcon } from 'lucide-react';
+import { 
+  ChartPieIcon, 
+  CreditCardIcon, 
+  LayoutDashboardIcon, 
+  Plus, 
+  SettingsIcon, 
+  TagsIcon, 
+  WalletIcon,
+  ShieldAlertIcon,
+  UsersIcon,
+  BriefcaseIcon
+} from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import CreateTransactionDialog from '@/app/(private)/transactions/components/create-transaction-dialog';
+import { useAuth } from '@/hooks/use-auth';
 
 
 type NavItem = {
@@ -71,6 +83,22 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname();
   const { isMobile, setOpenMobile, state } = useSidebar();
   const [openTxDialog, setOpenTxDialog] = React.useState(false);
+  const { user } = useAuth();
+
+  const displayGroups = React.useMemo(() => {
+    const groups = [...navGroups];
+    if (user?.roleLabel === 'admin') {
+      groups.push({
+        label: 'Quản trị',
+        items: [
+          { title: 'Thống kê hệ thống', url: '/admin/dashboard', icon: ShieldAlertIcon, match: 'prefix' },
+          { title: 'Quản lý người dùng', url: '/admin/users', icon: UsersIcon, match: 'prefix' },
+          { title: 'Quản lý Workspace', url: '/admin/workspaces', icon: BriefcaseIcon, match: 'prefix' },
+        ],
+      });
+    }
+    return groups;
+  }, [user]);
 
   return (
     <Sidebar {...props}>
@@ -106,7 +134,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <Separator className="mt-1 opacity-40" />
       </SidebarHeader>
       <SidebarContent className="px-2 py-2">
-        {navGroups.map((group) => (
+        {displayGroups.map((group) => (
           <SidebarGroup key={group.label} className="py-2.5">
             <SidebarGroupLabel className="text-[10px] font-bold tracking-wider text-muted-foreground/50 uppercase px-3.5 mb-1.5 mt-0.5">
               {group.label}
