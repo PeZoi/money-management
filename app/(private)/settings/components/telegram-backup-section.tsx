@@ -97,7 +97,7 @@ export default function TelegramBackupSection() {
       {/* Trạng thái liên kết */}
       {!connection.connected ? (
         <section className="rounded-xl border border-dashed border-border bg-card p-8 text-center flex flex-col items-center justify-center">
-          <div className="flex size-14 items-center justify-center rounded-full bg-linear-to-br from-blue-400 to-blue-600 text-white shadow-md mb-4 animate-pulse">
+          <div className="flex size-14 items-center justify-center rounded-full bg-linear-to-br from-primary/80 to-primary text-primary-foreground shadow-md mb-4 animate-pulse">
             <SendIcon className="size-6 rotate-45 mr-1" />
           </div>
           <h3 className="text-base font-bold">Chưa kết nối Telegram</h3>
@@ -108,7 +108,7 @@ export default function TelegramBackupSection() {
             type="button"
             onClick={handleOpenConnect}
             disabled={isGeneratingToken}
-            className="bg-linear-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold rounded-xl px-6 py-2.5 shadow-sm hover:shadow-md transition-all cursor-pointer h-10 gap-2"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-xl px-6 py-2.5 shadow-xs hover:shadow-md transition-all cursor-pointer h-10 gap-2"
           >
             {isGeneratingToken ? (
               <Loader2Icon className="h-4 w-4 animate-spin" />
@@ -122,10 +122,10 @@ export default function TelegramBackupSection() {
         <>
           {/* Đã kết nối */}
           <section className="rounded-xl border border-border bg-card p-6 shadow-xs relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-48 h-48 bg-blue-500/2 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute top-0 right-0 w-48 h-48 bg-primary/2 rounded-full blur-3xl pointer-events-none" />
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div className="flex items-center gap-4">
-                <div className="flex size-12 items-center justify-center rounded-full bg-blue-500/10 text-blue-500 shadow-xs shrink-0">
+                <div className="flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary shadow-xs shrink-0">
                   <SendIcon className="size-5 rotate-45 mr-0.5" />
                 </div>
                 <div>
@@ -137,7 +137,7 @@ export default function TelegramBackupSection() {
                   </div>
                   <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
                     Tài khoản liên kết:
-                    <span className="font-semibold text-blue-500">
+                    <span className="font-semibold text-primary">
                       @{connection.telegram_username || 'Telegram User'}
                     </span>
                   </p>
@@ -245,67 +245,87 @@ export default function TelegramBackupSection() {
 
       {/* Dialog Hướng dẫn liên kết Telegram */}
       <Dialog open={openConnectDialog} onOpenChange={setOpenConnectDialog}>
-        <DialogContent className="max-w-md rounded-2xl border shadow-lg">
-          <DialogHeader>
-            <DialogTitle className="text-base font-bold flex items-center gap-2">
-              <SendIcon className="size-4 rotate-45 text-blue-500 mr-0.5" />
-              Kết nối Telegram Bot
-            </DialogTitle>
-            <DialogDescription className="text-xs">
-              Vui lòng thực hiện theo các bước sau để liên kết tài khoản của bạn:
-            </DialogDescription>
+        {/* Đã loại bỏ class 'relative' để tránh đè lên class 'fixed' làm lệch vị trí Dialog */}
+        <DialogContent className="max-w-md rounded-2xl border border-border bg-card p-6 shadow-xl overflow-hidden">
+          {/* Background gradient mờ tinh tế ở góc */}
+          <div className="absolute -top-10 -right-10 w-24 h-24 bg-primary/10 rounded-full blur-2xl pointer-events-none" />
+
+          <DialogHeader className="space-y-2">
+            <div className="flex items-center gap-3 text-left">
+              <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
+                <SendIcon className="size-5 rotate-45 mr-0.5" />
+              </div>
+              <div>
+                <DialogTitle className="text-base font-bold text-foreground">
+                  Kết nối Telegram Bot
+                </DialogTitle>
+                <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+                  Thực hiện 3 bước đơn giản dưới đây để liên kết tài khoản:
+                </DialogDescription>
+              </div>
+            </div>
           </DialogHeader>
 
-          <div className="space-y-4 my-2 text-xs leading-relaxed">
-            <div className="flex gap-3">
-              <div className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-[10px]">
+          {/* Hộp các bước hướng dẫn trực quan dạng card */}
+          <div className="space-y-3 my-4 text-left">
+            <div className="flex items-start gap-3 p-3 rounded-xl border border-border/40 bg-muted/10 transition-all duration-300 hover:bg-muted/20">
+              <div className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold text-xs shadow-xs">
                 1
               </div>
-              <p className="text-muted-foreground">
-                Nhấp vào nút <b>"Mở Telegram"</b> bên dưới để đi tới bot chat riêng.
-              </p>
+              <div className="text-xs space-y-0.5">
+                <p className="font-semibold text-foreground">Mở phòng chat với Bot</p>
+                <p className="text-muted-foreground leading-relaxed">
+                  Nhấn nút <span className="font-semibold text-primary">"Mở Telegram Bot"</span> ở dưới để di chuyển sang Telegram.
+                </p>
+              </div>
             </div>
 
-            <div className="flex gap-3">
-              <div className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-[10px]">
+            <div className="flex items-start gap-3 p-3 rounded-xl border border-border/40 bg-muted/10 transition-all duration-300 hover:bg-muted/20">
+              <div className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold text-xs shadow-xs">
                 2
               </div>
-              <p className="text-muted-foreground">
-                Khi cuộc trò chuyện mở ra, hãy nhấp vào nút <b>Bắt đầu (Start)</b> (hoặc gửi tin nhắn được soạn sẵn tự động) để xác thực.
-              </p>
+              <div className="text-xs space-y-0.5">
+                <p className="font-semibold text-foreground">Kích hoạt kết nối</p>
+                <p className="text-muted-foreground leading-relaxed">
+                  Khi chat mở ra, nhấn nút <span className="font-semibold text-foreground">Bắt đầu (Start)</span> để gửi mã xác thực.
+                </p>
+              </div>
             </div>
 
-            <div className="flex gap-3">
-              <div className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-[10px]">
+            <div className="flex items-start gap-3 p-3 rounded-xl border border-border/40 bg-muted/10 transition-all duration-300 hover:bg-muted/20">
+              <div className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold text-xs shadow-xs">
                 3
               </div>
-              <p className="text-muted-foreground">
-                Bot sẽ phản hồi tin nhắn kết nối thành công. Sau đó quay lại trang này, hệ thống sẽ tự động cập nhật.
-              </p>
+              <div className="text-xs space-y-0.5">
+                <p className="font-semibold text-foreground">Hoàn thành xác thực</p>
+                <p className="text-muted-foreground leading-relaxed">
+                  Bot gửi tin nhắn xác nhận. Quay lại trang này, hệ thống sẽ tự động đồng bộ trạng thái.
+                </p>
+              </div>
             </div>
           </div>
 
-          <div className="mt-4 flex flex-col gap-2">
+          <div className="mt-5 flex flex-col gap-2.5">
             <Button
               asChild
-              className="w-full bg-linear-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold rounded-xl h-10 gap-1.5"
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-xl h-11 gap-1.5 shadow-md shadow-primary/10 hover:shadow-lg hover:shadow-primary/20 active:scale-[0.99] transition-all duration-200 cursor-pointer"
             >
               <a href={connectLink} target="_blank" rel="noopener noreferrer">
                 Mở Telegram Bot
-                <ExternalLinkIcon className="size-3.5" />
+                <ExternalLinkIcon className="size-4" />
               </a>
             </Button>
             <Button
               type="button"
-              variant="ghost"
+              variant="outline"
               onClick={handleCheckConnection}
               disabled={isCheckingConnection}
-              className="w-full text-xs hover:bg-muted/40 h-9 rounded-xl gap-1.5"
+              className="w-full text-xs border-primary/10 hover:border-primary/30 text-primary hover:bg-primary/5 h-10 rounded-xl gap-1.5 active:scale-[0.99] transition-all duration-200 cursor-pointer"
             >
               {isCheckingConnection ? (
-                <Loader2Icon className="size-3.5 animate-spin" />
+                <Loader2Icon className="size-4 animate-spin text-primary" />
               ) : (
-                <RefreshCwIcon className="size-3.5" />
+                <RefreshCwIcon className="size-4" />
               )}
               Tôi đã nhấn Start - Kiểm tra kết nối
             </Button>
