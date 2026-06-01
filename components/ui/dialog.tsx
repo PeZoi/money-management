@@ -52,6 +52,8 @@ function DialogContent({
   children,
   showCloseButton = true,
   fullScreenOnMobile = false,
+  onOpenAutoFocus,
+  onCloseAutoFocus,
   ...props
 }: React.ComponentProps<typeof DialogNS.Content> & {
   showCloseButton?: boolean;
@@ -69,6 +71,22 @@ function DialogContent({
           fullScreenOnMobile && 'h-[96dvh] max-h-[96dvh]', // Xử lý nếu form yêu cầu chế độ tràn màn hình
           className
         )}
+        onOpenAutoFocus={(e) => {
+          if (onOpenAutoFocus) {
+            onOpenAutoFocus(e);
+          } else {
+            // Ngăn tự động focus vào input đầu tiên để tránh bàn phím ảo làm giật/lệch giao diện
+            e.preventDefault();
+          }
+        }}
+        onCloseAutoFocus={(e) => {
+          if (onCloseAutoFocus) {
+            onCloseAutoFocus(e);
+          } else {
+            // Ngăn cuộn nhảy màn hình khi đóng
+            e.preventDefault();
+          }
+        }}
         {...props}
       >
         {children}
@@ -107,6 +125,8 @@ function DialogContent({
           'data-closed:animate-out data-closed:fade-out-0 data-closed:slide-out-to-bottom-10 sm:data-closed:zoom-out-95 sm:data-closed:slide-out-to-bottom-0',
           className,
         )}
+        onOpenAutoFocus={onOpenAutoFocus}
+        onCloseAutoFocus={onCloseAutoFocus}
         {...props}
       >
         {!fullScreenOnMobile && (

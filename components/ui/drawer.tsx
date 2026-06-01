@@ -54,6 +54,8 @@ function DrawerOverlay({
 function DrawerContent({
   className,
   children,
+  onOpenAutoFocus,
+  onCloseAutoFocus,
   ...props
 }: React.ComponentProps<typeof DrawerPrimitive.Content>) {
   return (
@@ -65,6 +67,22 @@ function DrawerContent({
           'fixed inset-x-0 bottom-0 z-50 mt-24 flex h-auto flex-col rounded-t-3xl border border-border bg-popover bg-clip-padding text-popover-foreground shadow-lg outline-none focus:outline-none transition-transform duration-300 ease-out',
           className,
         )}
+        onOpenAutoFocus={(e) => {
+          if (onOpenAutoFocus) {
+            onOpenAutoFocus(e);
+          } else {
+            // Ngăn chặn tự động focus vào input trên mobile để tránh bàn phím ảo nhảy lên làm lệch layout
+            e.preventDefault();
+          }
+        }}
+        onCloseAutoFocus={(e) => {
+          if (onCloseAutoFocus) {
+            onCloseAutoFocus(e);
+          } else {
+            // Ngăn chặn scroll-jump khi đóng drawer
+            e.preventDefault();
+          }
+        }}
         {...props}
       >
         {/* Thanh drag handle để người dùng vuốt */}
