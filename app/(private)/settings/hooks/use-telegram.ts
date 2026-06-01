@@ -5,6 +5,9 @@ export interface TelegramConnectionInfo {
   connected: boolean;
   telegram_username: string | null;
   is_auto_backup: boolean;
+  backup_interval: "daily" | "weekly" | "monthly";
+  backup_day: number;
+  backup_hour: number;
 }
 
 export interface ConnectionTokenResponse {
@@ -12,12 +15,26 @@ export interface ConnectionTokenResponse {
   token: string;
 }
 
+export interface UpdateTelegramConfigPayload {
+  is_auto_backup?: boolean;
+  backup_interval?: "daily" | "weekly" | "monthly";
+  backup_day?: number;
+  backup_hour?: number;
+}
+
 export function useTelegram() {
   const queryClient = useQueryClient();
 
-  // 1. Query trạng thái kết nối Telegram
+  // 1. Query trạng thái kết nối Telegram và cấu hình lịch sao lưu
   const {
-    data: connection = { connected: false, telegram_username: null, is_auto_backup: false },
+    data: connection = {
+      connected: false,
+      telegram_username: null,
+      is_auto_backup: false,
+      backup_interval: "weekly",
+      backup_day: 1,
+      backup_hour: 0,
+    },
     isLoading,
     refetch,
   } = useQuery<TelegramConnectionInfo>({
@@ -63,21 +80,21 @@ export function useTelegram() {
     },
   });
 
-  // 4. Mutation thay đổi cài đặt tự động sao lưu
-  const toggleAutoBackupMutation = useMutation<void, Error, boolean>({
-    mutationFn: async (is_auto_backup: boolean) => {
+  // 4. Mutation cập nhật cài đặt cấu hình sao lưu
+  const updateConfigMutation = useMutation<void, Error, UpdateTelegramConfigPayload>({
+    mutationFn: async (payload: UpdateTelegramConfigPayload) => {
       const res = await fetch("/api/telegram/connection", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ is_auto_backup }),
+        body: JSON.stringify(payload),
       });
       if (!res.ok) {
-        throw new Error("Cập nhật cấu hình tự động sao lưu thất bại");
+        throw new Error("Cập nhật cấu hình thất bại");
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["telegram-connection"] });
-      toast.success("Cập nhật cài đặt tự động sao lưu thành công");
+      toast.success("Cập nhật cấu hình thành công");
     },
     onError: (error) => {
       toast.error(error.message || "Lỗi khi cập nhật cấu hình");
@@ -109,8 +126,8 @@ export function useTelegram() {
     isGeneratingToken: generateTokenMutation.isPending,
     disconnect: disconnectMutation.mutate,
     isDisconnecting: disconnectMutation.isPending,
-    toggleAutoBackup: toggleAutoBackupMutation.mutate,
-    isTogglingAutoBackup: toggleAutoBackupMutation.isPending,
+    updateConfig: updateConfigMutation.mutate,
+    isUpdatingConfig: updateConfigMutation.isPending,
     triggerBackup: triggerBackupMutation.mutate,
     isBackingUp: triggerBackupMutation.isPending,
   };

@@ -31,8 +31,8 @@ export default function TelegramBackupSection() {
     isGeneratingToken,
     disconnect,
     isDisconnecting,
-    toggleAutoBackup,
-    isTogglingAutoBackup,
+    updateConfig,
+    isUpdatingConfig,
     triggerBackup,
     isBackingUp,
   } = useTelegram();
@@ -62,7 +62,29 @@ export default function TelegramBackupSection() {
     }
   };
 
-  // Auto-close dialog if connected
+  // Sinh câu mô tả động dựa trên cấu hình lịch sao lưu
+  const getScheduleDescription = () => {
+    const { backup_interval, backup_day, backup_hour } = connection;
+    const hourStr = `${String(backup_hour).padStart(2, '0')}:00`;
+
+    if (backup_interval === 'daily') {
+      return `Hệ thống sẽ tự động gửi bản sao lưu mới nhất đến Telegram của bạn vào lúc ${hourStr} hàng ngày.`;
+    }
+
+    if (backup_interval === 'weekly') {
+      const days = ['Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy', 'Chủ Nhật'];
+      const dayStr = days[backup_day - 1] || 'Thứ Hai';
+      return `Hệ thống sẽ tự động gửi bản sao lưu mới nhất đến Telegram của bạn vào lúc ${hourStr} ngày ${dayStr} hàng tuần.`;
+    }
+
+    if (backup_interval === 'monthly') {
+      return `Hệ thống sẽ tự động gửi bản sao lưu mới nhất đến Telegram của bạn vào lúc ${hourStr} ngày ${backup_day} hàng tháng.`;
+    }
+
+    return '';
+  };
+
+  // Tự động đóng Dialog khi kết nối thành công
   React.useEffect(() => {
     if (connection.connected && openConnectDialog) {
       setOpenConnectDialog(false);
@@ -211,32 +233,114 @@ export default function TelegramBackupSection() {
                   <SettingsIcon className="size-4 text-primary" />
                   Tự động sao lưu định kỳ
                 </h3>
-                <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
-                  Hệ thống sẽ tự động quét và gửi một bản sao lưu dữ liệu mới nhất đến Telegram của bạn vào mỗi <b>00:00 ngày Thứ Hai hàng tuần</b>.
+                <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed min-h-[36px]">
+                  {connection.is_auto_backup ? (
+                    <span className="text-primary font-medium">💾 {getScheduleDescription()}</span>
+                  ) : (
+                    "Bật tự động sao lưu để định kỳ nhận file backup dữ liệu qua Telegram của bạn."
+                  )}
                 </p>
               </div>
 
-              <div className="mt-6 flex items-center justify-between rounded-lg border border-border bg-muted/20 px-4 py-2.5">
-                <span className="text-xs font-semibold text-foreground">Kích hoạt Auto-Backup</span>
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={connection.is_auto_backup}
-                  disabled={isTogglingAutoBackup}
-                  onClick={() => toggleAutoBackup(!connection.is_auto_backup)}
-                  className={cn(
-                    'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-                    connection.is_auto_backup ? 'bg-primary' : 'bg-muted-foreground/30',
-                    isTogglingAutoBackup && 'opacity-60 pointer-events-none'
-                  )}
-                >
-                  <span
+              <div className="mt-4 space-y-4">
+                <div className="flex items-center justify-between rounded-lg border border-border bg-muted/20 px-4 py-2.5">
+                  <span className="text-xs font-semibold text-foreground">Kích hoạt Auto-Backup</span>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={connection.is_auto_backup}
+                    disabled={isUpdatingConfig}
+                    onClick={() => updateConfig({ is_auto_backup: !connection.is_auto_backup })}
                     className={cn(
-                      'pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-lg ring-0 transition-transform duration-200 ease-in-out',
-                      connection.is_auto_backup ? 'translate-x-5' : 'translate-x-0'
+                      'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+                      connection.is_auto_backup ? 'bg-primary' : 'bg-muted-foreground/30',
+                      isUpdatingConfig && 'opacity-60 pointer-events-none'
                     )}
-                  />
-                </button>
+                  >
+                    <span
+                      className={cn(
+                        'pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-lg ring-0 transition-transform duration-200 ease-in-out',
+                        connection.is_auto_backup ? 'translate-x-5' : 'translate-x-0'
+                      )}
+                    />
+                  </button>
+                </div>
+
+                {/* Cấu hình lịch trình khi bật Auto-Backup */}
+                {connection.is_auto_backup && (
+                  <div className="p-4 rounded-xl border border-border bg-muted/10 space-y-3.5 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div className="grid grid-cols-2 gap-3">
+                      {/* Tần suất */}
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Tần suất</label>
+                        <select
+                          value={connection.backup_interval}
+                          disabled={isUpdatingConfig}
+                          onChange={(e) => {
+                            const val = e.target.value as any;
+                            // Reset ngày mặc định về 1 khi đổi tần suất
+                            updateConfig({ backup_interval: val, backup_day: 1 });
+                          }}
+                          className="w-full rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary focus:border-transparent transition-all cursor-pointer h-9 text-foreground font-medium"
+                        >
+                          <option value="daily">Hàng ngày</option>
+                          <option value="weekly">Hàng tuần</option>
+                          <option value="monthly">Hàng tháng</option>
+                        </select>
+                      </div>
+
+                      {/* Giờ */}
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Giờ sao lưu</label>
+                        <select
+                          value={connection.backup_hour}
+                          disabled={isUpdatingConfig}
+                          onChange={(e) => updateConfig({ backup_hour: Number(e.target.value) })}
+                          className="w-full rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary focus:border-transparent transition-all cursor-pointer h-9 text-foreground font-medium"
+                        >
+                          {Array.from({ length: 24 }, (_, i) => (
+                            <option key={i} value={i}>
+                              {String(i).padStart(2, '0')}:00
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Chọn Ngày (Ẩn nếu tần suất là Hàng ngày) */}
+                    {connection.backup_interval !== 'daily' && (
+                      <div className="space-y-1 animate-in fade-in duration-200">
+                        <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground font-semibold">
+                          {connection.backup_interval === 'weekly' ? 'Chọn Thứ trong tuần' : 'Chọn Ngày trong tháng'}
+                        </label>
+                        <select
+                          value={connection.backup_day}
+                          disabled={isUpdatingConfig}
+                          onChange={(e) => updateConfig({ backup_day: Number(e.target.value) })}
+                          className="w-full rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary focus:border-transparent transition-all cursor-pointer h-9 text-foreground font-medium"
+                        >
+                          {connection.backup_interval === 'weekly' ? (
+                            <>
+                              <option value={1}>Thứ Hai</option>
+                              <option value={2}>Thứ Ba</option>
+                              <option value={3}>Thứ Tư</option>
+                              <option value={4}>Thứ Năm</option>
+                              <option value={5}>Thứ Sáu</option>
+                              <option value={6}>Thứ Bảy</option>
+                              <option value={7}>Chủ Nhật</option>
+                            </>
+                          ) : (
+                            Array.from({ length: 31 }, (_, i) => (
+                              <option key={i + 1} value={i + 1}>
+                                Ngày {i + 1}
+                              </option>
+                            ))
+                          )}
+                        </select>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </section>
           </div>
@@ -245,7 +349,6 @@ export default function TelegramBackupSection() {
 
       {/* Dialog Hướng dẫn liên kết Telegram */}
       <Dialog open={openConnectDialog} onOpenChange={setOpenConnectDialog}>
-        {/* Đã loại bỏ class 'relative' để tránh đè lên class 'fixed' làm lệch vị trí Dialog */}
         <DialogContent className="max-w-md rounded-2xl border border-border bg-card p-6 shadow-xl overflow-hidden">
           {/* Background gradient mờ tinh tế ở góc */}
           <div className="absolute -top-10 -right-10 w-24 h-24 bg-primary/10 rounded-full blur-2xl pointer-events-none" />

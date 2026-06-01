@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
-// Lấy thông tin kết nối Telegram hiện tại của User
+// Lấy thông tin kết nối Telegram và lịch sao lưu tự động của User
 export async function GET() {
   const supabase = createClient();
   const { data: userData, error: userError } = await supabase.auth.getUser();
@@ -11,7 +11,7 @@ export async function GET() {
 
   const { data, error } = await supabase
     .from("user_telegram_connections")
-    .select("telegram_chat_id, telegram_username, is_auto_backup")
+    .select("telegram_chat_id, telegram_username, is_auto_backup, backup_interval, backup_day, backup_hour")
     .eq("user_id", userData.user.id)
     .maybeSingle();
 
@@ -23,6 +23,9 @@ export async function GET() {
     connected: !!data?.telegram_chat_id,
     telegram_username: data?.telegram_username || null,
     is_auto_backup: data?.is_auto_backup ?? false,
+    backup_interval: data?.backup_interval ?? "weekly",
+    backup_day: data?.backup_day ?? 1,
+    backup_hour: data?.backup_hour ?? 0,
   });
 }
 
@@ -58,7 +61,7 @@ export async function POST() {
   return NextResponse.json({ link, token });
 }
 
-// Cập nhật cấu hình tự động sao lưu (Auto Backup)
+// Cập nhật cấu hình tự động sao lưu và lịch trình tùy chỉnh
 export async function PUT(req: Request) {
   const supabase = createClient();
   const { data: userData, error: userError } = await supabase.auth.getUser();
@@ -67,11 +70,17 @@ export async function PUT(req: Request) {
   }
 
   try {
-    const { is_auto_backup } = await req.json();
+    const { is_auto_backup, backup_interval, backup_day, backup_hour } = await req.json();
+
+    const updateData: Record<string, any> = {};
+    if (typeof is_auto_backup === "boolean") updateData.is_auto_backup = is_auto_backup;
+    if (backup_interval) updateData.backup_interval = backup_interval;
+    if (typeof backup_day === "number") updateData.backup_day = backup_day;
+    if (typeof backup_hour === "number") updateData.backup_hour = backup_hour;
 
     const { error } = await supabase
       .from("user_telegram_connections")
-      .update({ is_auto_backup })
+      .update(updateData)
       .eq("user_id", userData.user.id);
 
     if (error) {
