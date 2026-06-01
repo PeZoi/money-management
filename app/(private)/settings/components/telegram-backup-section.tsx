@@ -10,6 +10,13 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   Loader2Icon,
   SendIcon,
   ShieldCheckIcon,
@@ -18,6 +25,9 @@ import {
   MessageSquareIcon,
   SettingsIcon,
   TrashIcon,
+  CalendarIcon,
+  CalendarDaysIcon,
+  ClockIcon,
 } from 'lucide-react';
 import { useTelegram } from '../hooks/use-telegram';
 import { cn } from '@/lib/utils';
@@ -197,9 +207,9 @@ export default function TelegramBackupSection() {
           </section>
 
           {/* Trigger Backup & Auto-backup Setup */}
-          <div className="grid gap-6 sm:grid-cols-2">
+          <div className="grid gap-6 sm:grid-cols-2 items-start">
             {/* Hộp sao lưu thủ công */}
-            <section className="rounded-xl border border-border bg-card p-5 shadow-xs flex flex-col justify-between">
+            <section className="rounded-xl border border-border bg-card p-5 shadow-xs flex flex-col">
               <div>
                 <h3 className="text-sm font-bold flex items-center gap-1.5">
                   <MessageSquareIcon className="size-4 text-primary" />
@@ -269,74 +279,96 @@ export default function TelegramBackupSection() {
                 {/* Cấu hình lịch trình khi bật Auto-Backup */}
                 {connection.is_auto_backup && (
                   <div className="p-4 rounded-xl border border-border bg-muted/10 space-y-3.5 animate-in fade-in slide-in-from-top-2 duration-200">
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-2 gap-4">
                       {/* Tần suất */}
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Tần suất</label>
-                        <select
+                      <div className="space-y-1.5 text-left">
+                        <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                          <CalendarDaysIcon className="size-3.5 text-primary" />
+                          Tần suất
+                        </label>
+                        <Select
                           value={connection.backup_interval}
                           disabled={isUpdatingConfig}
-                          onChange={(e) => {
-                            const val = e.target.value as any;
+                          onValueChange={(val: any) => {
                             // Reset ngày mặc định về 1 khi đổi tần suất
                             updateConfig({ backup_interval: val, backup_day: 1 });
                           }}
-                          className="w-full rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary focus:border-transparent transition-all cursor-pointer h-9 text-foreground font-medium"
                         >
-                          <option value="daily">Hàng ngày</option>
-                          <option value="weekly">Hàng tuần</option>
-                          <option value="monthly">Hàng tháng</option>
-                        </select>
+                          <SelectTrigger className="w-full h-10 rounded-xl bg-background border-border text-xs font-semibold focus:ring-1 focus:ring-primary">
+                            <SelectValue placeholder="Chọn tần suất" />
+                          </SelectTrigger>
+                          <SelectContent className="rounded-xl border shadow-md">
+                            <SelectItem value="daily" className="text-xs py-2 cursor-pointer">Hàng ngày</SelectItem>
+                            <SelectItem value="weekly" className="text-xs py-2 cursor-pointer">Hàng tuần</SelectItem>
+                            <SelectItem value="monthly" className="text-xs py-2 cursor-pointer">Hàng tháng</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
 
                       {/* Giờ */}
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Giờ sao lưu</label>
-                        <select
-                          value={connection.backup_hour}
+                      <div className="space-y-1.5 text-left">
+                        <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                          <ClockIcon className="size-3.5 text-primary" />
+                          Giờ sao lưu
+                        </label>
+                        <Select
+                          value={String(connection.backup_hour)}
                           disabled={isUpdatingConfig}
-                          onChange={(e) => updateConfig({ backup_hour: Number(e.target.value) })}
-                          className="w-full rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary focus:border-transparent transition-all cursor-pointer h-9 text-foreground font-medium"
+                          onValueChange={(val) => {
+                            updateConfig({ backup_hour: Number(val) });
+                          }}
                         >
-                          {Array.from({ length: 24 }, (_, i) => (
-                            <option key={i} value={i}>
-                              {String(i).padStart(2, '0')}:00
-                            </option>
-                          ))}
-                        </select>
+                          <SelectTrigger className="w-full h-10 rounded-xl bg-background border-border text-xs font-semibold focus:ring-1 focus:ring-primary">
+                            <SelectValue placeholder="Chọn giờ" />
+                          </SelectTrigger>
+                          <SelectContent className="rounded-xl border shadow-md max-h-[200px] overflow-y-auto">
+                            {Array.from({ length: 24 }, (_, i) => (
+                              <SelectItem key={i} value={String(i)} className="text-xs py-2 cursor-pointer">
+                                {String(i).padStart(2, '0')}:00
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
 
                     {/* Chọn Ngày (Ẩn nếu tần suất là Hàng ngày) */}
                     {connection.backup_interval !== 'daily' && (
-                      <div className="space-y-1 animate-in fade-in duration-200">
-                        <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground font-semibold">
+                      <div className="space-y-1.5 text-left animate-in fade-in duration-200">
+                        <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                          <CalendarIcon className="size-3.5 text-primary" />
                           {connection.backup_interval === 'weekly' ? 'Chọn Thứ trong tuần' : 'Chọn Ngày trong tháng'}
                         </label>
-                        <select
-                          value={connection.backup_day}
+                        <Select
+                          value={String(connection.backup_day)}
                           disabled={isUpdatingConfig}
-                          onChange={(e) => updateConfig({ backup_day: Number(e.target.value) })}
-                          className="w-full rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary focus:border-transparent transition-all cursor-pointer h-9 text-foreground font-medium"
+                          onValueChange={(val) => {
+                            updateConfig({ backup_day: Number(val) });
+                          }}
                         >
-                          {connection.backup_interval === 'weekly' ? (
-                            <>
-                              <option value={1}>Thứ Hai</option>
-                              <option value={2}>Thứ Ba</option>
-                              <option value={3}>Thứ Tư</option>
-                              <option value={4}>Thứ Năm</option>
-                              <option value={5}>Thứ Sáu</option>
-                              <option value={6}>Thứ Bảy</option>
-                              <option value={7}>Chủ Nhật</option>
-                            </>
-                          ) : (
-                            Array.from({ length: 31 }, (_, i) => (
-                              <option key={i + 1} value={i + 1}>
-                                Ngày {i + 1}
-                              </option>
-                            ))
-                          )}
-                        </select>
+                          <SelectTrigger className="w-full h-10 rounded-xl bg-background border-border text-xs font-semibold focus:ring-1 focus:ring-primary">
+                            <SelectValue placeholder="Chọn ngày" />
+                          </SelectTrigger>
+                          <SelectContent className="rounded-xl border shadow-md max-h-[200px] overflow-y-auto">
+                            {connection.backup_interval === 'weekly' ? (
+                              <>
+                                <SelectItem value="1" className="text-xs py-2 cursor-pointer">Thứ Hai</SelectItem>
+                                <SelectItem value="2" className="text-xs py-2 cursor-pointer">Thứ Ba</SelectItem>
+                                <SelectItem value="3" className="text-xs py-2 cursor-pointer">Thứ Tư</SelectItem>
+                                <SelectItem value="4" className="text-xs py-2 cursor-pointer">Thứ Năm</SelectItem>
+                                <SelectItem value="5" className="text-xs py-2 cursor-pointer">Thứ Sáu</SelectItem>
+                                <SelectItem value="6" className="text-xs py-2 cursor-pointer">Thứ Bảy</SelectItem>
+                                <SelectItem value="7" className="text-xs py-2 cursor-pointer">Chủ Nhật</SelectItem>
+                              </>
+                            ) : (
+                              Array.from({ length: 31 }, (_, i) => (
+                                <SelectItem key={i + 1} value={String(i + 1)} className="text-xs py-2 cursor-pointer">
+                                  Ngày {i + 1}
+                                </SelectItem>
+                              ))
+                            )}
+                          </SelectContent>
+                        </Select>
                       </div>
                     )}
                   </div>
