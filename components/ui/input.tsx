@@ -1,10 +1,43 @@
+'use client';
+
 import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
-function Input({ className, type, ...props }: React.ComponentProps<"input">) {
+function Input({ className, type, autoFocus, ref: forwardedRef, ...props }: React.ComponentProps<"input">) {
+  const internalRef = React.useRef<HTMLInputElement>(null);
+
+  // Hợp nhất ref bên ngoài truyền vào và ref nội bộ
+  const setRefs = React.useCallback(
+    (node: HTMLInputElement | null) => {
+      (internalRef as React.MutableRefObject<HTMLInputElement | null>).current = node;
+
+      if (typeof forwardedRef === "function") {
+        forwardedRef(node);
+      } else if (forwardedRef != null) {
+        (forwardedRef as React.MutableRefObject<HTMLInputElement | null>).current = node;
+      }
+    },
+    [forwardedRef]
+  );
+
+  // Quản lý autofocus an toàn toàn cục
+  React.useEffect(() => {
+    if (autoFocus) {
+      // Chỉ thực hiện focus bằng JS trên Desktop để tránh làm bật bàn phím ảo và lệch giao diện trên mobile
+      const isMobile = window.matchMedia("(max-width: 767px)").matches;
+      if (!isMobile) {
+        const timer = setTimeout(() => {
+          internalRef.current?.focus();
+        }, 180); // Trì hoãn nhẹ chờ Dialog/Drawer hoàn tất animation mở ra
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [autoFocus]);
+
   return (
     <input
+      ref={setRefs}
       type={type}
       data-slot="input"
       className={cn(

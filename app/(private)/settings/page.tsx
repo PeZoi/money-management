@@ -385,7 +385,7 @@ export default function SettingsPage() {
                   </div>
                 </section>
 
-                <section className="rounded-xl border border-red-500/20 bg-linear-to-br from-red-500/5 via-red-500/[0.01] to-red-500/[0.03] p-6 shadow-xs relative overflow-hidden dark:border-red-500/30 dark:from-red-950/20 dark:via-red-950/5 dark:to-red-950/10">
+                <section className="rounded-xl border border-red-500/20 bg-linear-to-br from-red-500/5 via-red-500/1 to-red-500/3 p-6 shadow-xs relative overflow-hidden dark:border-red-500/30 dark:from-red-950/20 dark:via-red-950/5 dark:to-red-950/10">
                   <div className="absolute -top-12 -right-12 w-32 h-32 bg-red-500/10 rounded-full blur-3xl pointer-events-none dark:bg-red-500/5" />
                   <div className="absolute -bottom-12 -left-12 w-32 h-32 bg-red-500/5 rounded-full blur-3xl pointer-events-none dark:bg-red-500/2" />
 
@@ -449,7 +449,7 @@ export default function SettingsPage() {
 
                     {/* Value Input (Conditional Picker Container) */}
                     {resetRange !== 'all' && (
-                      <div className="rounded-xl border border-border/60 bg-muted/10 p-4 transition-all duration-300 animate-in fade-in slide-in-from-top-1.5 duration-200">
+                      <div className="rounded-xl border border-border/60 bg-muted/10 p-4 transition-all animate-in fade-in slide-in-from-top-1.5 duration-200">
                         {resetRange === 'day' && (
                           <div className="flex flex-col gap-2">
                             <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
