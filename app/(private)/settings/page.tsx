@@ -29,6 +29,7 @@ import {
   ArchiveIcon,
   BuildingIcon,
   CalendarIcon,
+  CloudIcon,
   CoinsIcon,
   CrownIcon,
   EyeIcon,
@@ -44,6 +45,7 @@ import {
 } from 'lucide-react';
 import * as React from 'react';
 import ArchivedTransactionsList from './components/archived-transactions-list';
+import TelegramBackupSection from './components/telegram-backup-section';
 import { MonthPicker } from '@/components/month-picker';
 import { useSettings } from './hooks/use-settings';
 import { useAuth } from '@/hooks/use-auth';
@@ -215,6 +217,18 @@ export default function SettingsPage() {
                 {invitations.length}
               </span>
             )}
+          </button>
+          <button
+            onClick={() => setActiveTab('backup')}
+            className={cn(
+              'pb-4 text-sm font-semibold border-b-2 transition-colors relative flex items-center gap-2 whitespace-nowrap cursor-pointer',
+              activeTab === 'backup'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground',
+            )}
+          >
+            <CloudIcon className="size-4" />
+            Sao lưu dữ liệu
           </button>
         </div>
       </div>
@@ -968,6 +982,11 @@ export default function SettingsPage() {
               )}
             </section>
           </div>
+        )}
+
+        {/* Tab 5: Backup & Telegram */}
+        {activeTab === 'backup' && (
+          <TelegramBackupSection />
         )}
       </div>
 

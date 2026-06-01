@@ -48,7 +48,7 @@ export function useSettings() {
   const workspaces = React.useMemo(() => workspacesData, [workspacesData]);
   const activeWorkspace = workspaces.find((w) => w.id === activeWorkspaceId) ?? workspaces[0];
 
-  const [activeTab, setActiveTab] = React.useState<"appearance" | "group" | "archived" | "invitations">("appearance");
+  const [activeTab, setActiveTab] = React.useState<"appearance" | "group" | "archived" | "invitations" | "backup">("appearance");
 
   // Tab 2: Group Settings Inputs
   const [groupName, setGroupName] = React.useState("");
