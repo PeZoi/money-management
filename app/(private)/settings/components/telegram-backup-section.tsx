@@ -97,7 +97,10 @@ export default function TelegramBackupSection() {
   // Tự động đóng Dialog khi kết nối thành công
   React.useEffect(() => {
     if (connection.connected && openConnectDialog) {
-      setOpenConnectDialog(false);
+      const timer = setTimeout(() => {
+        setOpenConnectDialog(false);
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, [connection.connected, openConnectDialog]);
 
@@ -289,7 +292,7 @@ export default function TelegramBackupSection() {
                         <Select
                           value={connection.backup_interval}
                           disabled={isUpdatingConfig}
-                          onValueChange={(val: any) => {
+                          onValueChange={(val: 'daily' | 'weekly' | 'monthly') => {
                             // Reset ngày mặc định về 1 khi đổi tần suất
                             updateConfig({ backup_interval: val, backup_day: 1 });
                           }}
@@ -410,7 +413,7 @@ export default function TelegramBackupSection() {
               <div className="text-xs space-y-0.5">
                 <p className="font-semibold text-foreground">Mở phòng chat với Bot</p>
                 <p className="text-muted-foreground leading-relaxed">
-                  Nhấn nút <span className="font-semibold text-primary">"Mở Telegram Bot"</span> ở dưới để di chuyển sang Telegram.
+                  Nhấn nút <span className="font-semibold text-primary">&quot;Mở Telegram Bot&quot;</span> ở dưới để di chuyển sang Telegram.
                 </p>
               </div>
             </div>

@@ -72,7 +72,7 @@ export async function PUT(req: Request) {
   try {
     const { is_auto_backup, backup_interval, backup_day, backup_hour } = await req.json();
 
-    const updateData: Record<string, any> = {};
+    const updateData: Record<string, unknown> = {};
     if (typeof is_auto_backup === "boolean") updateData.is_auto_backup = is_auto_backup;
     if (backup_interval) updateData.backup_interval = backup_interval;
     if (typeof backup_day === "number") updateData.backup_day = backup_day;
