@@ -32,37 +32,36 @@ export async function POST() {
   const telegramChatId = connection.telegram_chat_id;
 
   try {
-    // 2. Lấy danh sách các workspace mà người dùng là thành viên chính thức
-    const { data: memberWorkspaces, error: wsError } = await supabase
-      .from("workspace_members")
-      .select("workspace_id")
-      .eq("user_id", userId)
-      .eq("status", "accepted");
+    // 2. Lấy workspace cá nhân của người dùng
+    const { data: personalWorkspace, error: wsError } = await supabase
+      .from("workspaces")
+      .select("*")
+      .eq("created_by", userId)
+      .eq("is_personal", true)
+      .maybeSingle();
 
     if (wsError) {
       return NextResponse.json({ error: wsError.message }, { status: 500 });
     }
 
-    const workspaceIds = memberWorkspaces?.map((w) => w.workspace_id) || [];
-
-    if (workspaceIds.length === 0) {
+    if (!personalWorkspace) {
       return NextResponse.json(
-        { error: "Không tìm thấy dữ liệu workspace nào để sao lưu." },
-        { status: 400 }
+        { error: "Không tìm thấy dữ liệu workspace cá nhân để sao lưu." },
+        { status: 404 }
       );
     }
 
-    // 3. Truy vấn dữ liệu từ các bảng liên quan đến các workspace của user
+    const workspaceId = personalWorkspace.id;
+
+    // 3. Truy vấn dữ liệu từ các bảng liên quan đến workspace cá nhân
     const [
-      { data: workspaces },
       { data: accounts },
       { data: categories },
       { data: transactions },
     ] = await Promise.all([
-      supabase.from("workspaces").select("*").in("id", workspaceIds),
-      supabase.from("accounts").select("*").in("workspace_id", workspaceIds),
-      supabase.from("categories").select("*").in("workspace_id", workspaceIds),
-      supabase.from("transactions").select("*").in("workspace_id", workspaceIds),
+      supabase.from("accounts").select("*").eq("workspace_id", workspaceId),
+      supabase.from("categories").select("*").eq("workspace_id", workspaceId),
+      supabase.from("transactions").select("*").eq("workspace_id", workspaceId),
     ]);
 
     // 4. Build payload dữ liệu backup
@@ -74,7 +73,7 @@ export async function POST() {
         id: userId,
         email: userEmail,
       },
-      workspaces: workspaces || [],
+      workspace: personalWorkspace,
       accounts: accounts || [],
       categories: categories || [],
       transactions: transactions || [],
@@ -100,7 +99,7 @@ export async function POST() {
       "caption",
       `💾 <b>Bản sao lưu dữ liệu Money+</b>\n\n` +
         `• <b>Thời gian:</b> ${new Date().toLocaleString("vi-VN")}\n` +
-        `• <b>Workspace:</b> ${workspaces?.length || 0}\n` +
+        `• <b>Loại dữ liệu:</b> Cá nhân\n` +
         `• <b>Tài khoản/Ví:</b> ${accounts?.length || 0}\n` +
         `• <b>Giao dịch:</b> ${transactions?.length || 0}\n\n` +
         `<i>⚠️ Đây là file chứa dữ liệu chi tiêu cá nhân của riêng bạn. Hãy lưu trữ an toàn và tuyệt đối không chia sẻ cho bất kỳ ai.</i>`

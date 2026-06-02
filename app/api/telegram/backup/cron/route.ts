@@ -92,55 +92,49 @@ async function runBackupCron(req: Request) {
       const telegramChatId = target.telegram_chat_id;
 
       try {
-        // Lấy email user từ auth
-        let userEmail = "unknown";
-        try {
-          const { data: authUser, error: authErr } = await supabaseAdmin.auth.admin.getUserById(userId);
-          if (!authErr && authUser?.user) {
-            userEmail = authUser.user.email || "unknown";
-          }
-        } catch (err: unknown) {
-          console.error(`[Backup Cron] Lỗi lấy email user ${userId}:`, err);
-        }
+        // Thiết lập email metadata mà không gọi Auth API để tránh Rate Limit (429)
+        const userEmail = target.telegram_username
+          ? `${target.telegram_username}@telegram.org`
+          : "auto-backup@moneyplus.local";
 
-        // Lấy danh sách workspace được chấp nhận của user
-        const { data: memberWorkspaces, error: wsError } = await supabaseAdmin
-          .from("workspace_members")
-          .select("workspace_id")
-          .eq("user_id", userId)
-          .eq("status", "accepted");
+        // Lấy workspace cá nhân của user
+        const { data: personalWorkspace, error: wsError } = await supabaseAdmin
+          .from("workspaces")
+          .select("*")
+          .eq("created_by", userId)
+          .eq("is_personal", true)
+          .maybeSingle();
 
         if (wsError) {
-          throw new Error(`Lấy danh sách workspace thất bại: ${wsError.message}`);
+          throw new Error(`Lấy workspace cá nhân thất bại: ${wsError.message}`);
         }
 
-        const workspaceIds = memberWorkspaces?.map((w) => w.workspace_id) || [];
-        if (workspaceIds.length === 0) {
-          // Gửi tin nhắn thông báo tài khoản không có dữ liệu để sao lưu
+        if (!personalWorkspace) {
+          // Gửi tin nhắn thông báo tài khoản không có workspace cá nhân để sao lưu
           await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               chat_id: telegramChatId.toString(),
-              text: `⚠️ <b>Thông báo sao lưu tự động Money+</b>\n\nKhông thể tiến hành sao lưu tự động vì tài khoản của bạn chưa tham gia hoặc chưa tạo workspace dữ liệu nào.`,
+              text: `⚠️ <b>Thông báo sao lưu tự động Money+</b>\n\nKhông thể tiến hành sao lưu tự động vì không tìm thấy dữ liệu workspace cá nhân của bạn.`,
               parse_mode: "HTML",
             }),
           });
-          results.push({ userId, status: "skipped", reason: "No workspaces" });
+          results.push({ userId, status: "skipped", reason: "No personal workspace" });
           continue;
         }
 
-        // Lấy chi tiết dữ liệu từ các bảng liên quan đến các workspace của user
+        const workspaceId = personalWorkspace.id;
+
+        // Lấy chi tiết dữ liệu từ các bảng liên quan đến workspace cá nhân
         const [
-          { data: workspaces },
           { data: accounts },
           { data: categories },
           { data: transactions },
         ] = await Promise.all([
-          supabaseAdmin.from("workspaces").select("*").in("id", workspaceIds),
-          supabaseAdmin.from("accounts").select("*").in("workspace_id", workspaceIds),
-          supabaseAdmin.from("categories").select("*").in("workspace_id", workspaceIds),
-          supabaseAdmin.from("transactions").select("*").in("workspace_id", workspaceIds),
+          supabaseAdmin.from("accounts").select("*").eq("workspace_id", workspaceId),
+          supabaseAdmin.from("categories").select("*").eq("workspace_id", workspaceId),
+          supabaseAdmin.from("transactions").select("*").eq("workspace_id", workspaceId),
         ]);
 
         // Tạo dữ liệu payload backup JSON
@@ -152,7 +146,7 @@ async function runBackupCron(req: Request) {
             id: userId,
             email: userEmail,
           },
-          workspaces: workspaces || [],
+          workspace: personalWorkspace,
           accounts: accounts || [],
           categories: categories || [],
           transactions: transactions || [],
@@ -170,7 +164,7 @@ async function runBackupCron(req: Request) {
           `💾 <b>Bản sao lưu dữ liệu tự động Money+</b>\n\n` +
             `• <b>Thời gian:</b> ${new Date().toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" })}\n` +
             `• <b>Tần suất:</b> ${target.backup_interval === "daily" ? "Hằng ngày" : target.backup_interval === "weekly" ? "Hằng tuần" : "Hằng tháng"}\n` +
-            `• <b>Workspace:</b> ${workspaces?.length || 0}\n` +
+            `• <b>Loại dữ liệu:</b> Cá nhân\n` +
             `• <b>Tài khoản/Ví:</b> ${accounts?.length || 0}\n` +
             `• <b>Giao dịch:</b> ${transactions?.length || 0}\n\n` +
             `<i>⚠️ Đây là file chứa dữ liệu chi tiêu cá nhân của riêng bạn. Hãy lưu trữ an toàn và tuyệt đối không chia sẻ cho bất kỳ ai.</i>`

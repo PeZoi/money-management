@@ -51,6 +51,40 @@ export default function TelegramBackupSection() {
   const [connectLink, setConnectLink] = React.useState('');
   const [isCheckingConnection, setIsCheckingConnection] = React.useState(false);
 
+  const [backupProgress, setBackupProgress] = React.useState(0);
+  const [showBackupDialog, setShowBackupDialog] = React.useState(false);
+
+  // Gửi yêu cầu sao lưu thủ công kèm giả lập tiến trình
+  const handleTriggerBackup = () => {
+    setShowBackupDialog(true);
+    setBackupProgress(0);
+
+    const progressInterval = setInterval(() => {
+      setBackupProgress((prev) => {
+        if (prev >= 95) {
+          clearInterval(progressInterval);
+          return 95;
+        }
+        const step = Math.floor(Math.random() * 4) + 2; // Tăng ngẫu nhiên từ 2-5%
+        return Math.min(prev + step, 95);
+      });
+    }, 150);
+
+    triggerBackup(undefined, {
+      onSuccess: () => {
+        clearInterval(progressInterval);
+        setBackupProgress(100);
+        setTimeout(() => {
+          setShowBackupDialog(false);
+        }, 800);
+      },
+      onError: () => {
+        clearInterval(progressInterval);
+        setShowBackupDialog(false);
+      }
+    });
+  };
+
   // Xử lý mở Dialog liên kết
   const handleOpenConnect = async () => {
     try {
@@ -225,8 +259,8 @@ export default function TelegramBackupSection() {
               <div className="mt-6">
                 <Button
                   type="button"
-                  onClick={() => triggerBackup()}
-                  disabled={isBackingUp}
+                  onClick={handleTriggerBackup}
+                  disabled={isBackingUp || showBackupDialog}
                   className="w-full bg-primary font-semibold rounded-xl h-10 gap-1.5 cursor-pointer shadow-xs hover:shadow-md transition-all"
                 >
                   {isBackingUp ? (
@@ -468,6 +502,30 @@ export default function TelegramBackupSection() {
               Tôi đã nhấn Start - Kiểm tra kết nối
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* dialog: Backup Loading Dialog */}
+      <Dialog open={showBackupDialog} onOpenChange={() => {}}>
+        <DialogContent className="sm:max-w-md rounded-2xl border border-border bg-card p-6 shadow-xl flex flex-col items-center text-center focus:outline-none">
+          <div className="flex size-14 items-center justify-center rounded-full bg-primary/10 text-primary shadow-xs mb-4">
+            <Loader2Icon className="size-8 animate-spin" />
+          </div>
+          <DialogTitle className="text-base font-bold text-foreground">
+            Đang tiến hành sao lưu ({backupProgress}%)
+          </DialogTitle>
+          <DialogDescription className="text-xs text-muted-foreground mt-2 leading-relaxed max-w-xs">
+            Hệ thống đang chuẩn bị tệp tin sao lưu bảo mật của bạn và gửi qua Telegram Bot. Quá trình này có thể mất vài giây.
+          </DialogDescription>
+          <div className="w-full bg-muted/40 rounded-full h-1.5 mt-6 overflow-hidden relative">
+            <div 
+              className="bg-primary h-1.5 rounded-full transition-all duration-300 ease-out" 
+              style={{ width: `${backupProgress}%` }}
+            />
+          </div>
+          <p className="text-[10px] text-muted-foreground/80 mt-3 italic animate-pulse">
+            Vui lòng không đóng trang này lúc này...
+          </p>
         </DialogContent>
       </Dialog>
     </div>
