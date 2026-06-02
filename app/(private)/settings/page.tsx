@@ -503,7 +503,7 @@ export default function SettingsPage() {
                     <Button
                       onClick={handleImportData}
                       disabled={!selectedFile || isImporting}
-                      className="h-10 rounded-xl px-5 font-semibold text-xs gap-1.5 cursor-pointer"
+                      className="h-10 px-5 text-xs font-semibold gap-1.5"
                     >
                       {isImporting ? (
                         <>

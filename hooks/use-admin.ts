@@ -28,6 +28,7 @@ export interface AdminWorkspace {
   owner_display_name: string | null;
   owner_avatar_url: string | null;
   member_count: number;
+  transaction_count: number;
   created_at: string;
 }
 

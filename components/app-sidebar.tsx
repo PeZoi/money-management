@@ -113,9 +113,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 <Button
                   onClick={() => setOpenTxDialog(true)}
                   className={cn(
-                    "w-full rounded-xl cursor-pointer transition-all duration-300 font-semibold flex items-center justify-center shadow-md shadow-primary/15 dark:shadow-none group/btn border-transparent",
-                    "bg-primary bg-linear-to-r from-white/10 via-transparent to-black/15 hover:from-white/15 hover:to-black/25 dark:to-black/30 text-white",
-                    state === 'collapsed' ? "h-9 w-9 p-0 rounded-lg" : "h-10 gap-2 px-3"
+                    "w-full font-semibold",
+                    state === 'collapsed' ? "h-9 w-9 p-0 rounded-lg" : "h-10 px-3"
                   )}
                 >
                   <Plus className={cn("transition-transform duration-300 group-hover/btn:rotate-90", state === 'collapsed' ? "size-5" : "size-4.5")} />

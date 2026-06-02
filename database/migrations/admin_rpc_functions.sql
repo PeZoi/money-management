@@ -86,6 +86,7 @@ RETURNS TABLE (
   owner_display_name text,
   owner_avatar_url text,
   member_count bigint,
+  transaction_count bigint,
   created_at timestamptz
 )
 LANGUAGE plpgsql
@@ -116,6 +117,7 @@ BEGIN
     )::text AS owner_display_name,
     (creator.raw_user_meta_data->>'avatar_url')::text AS owner_avatar_url,
     (SELECT count(*) FROM public.workspace_members wm WHERE wm.workspace_id = w.id)::bigint AS member_count,
+    (SELECT count(*) FROM public.transactions t WHERE t.workspace_id = w.id)::bigint AS transaction_count,
     w.created_at
   FROM public.workspaces w
   LEFT JOIN auth.users creator ON creator.id = w.created_by

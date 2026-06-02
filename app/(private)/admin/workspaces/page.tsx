@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Briefcase, Search, Layers, Users, Archive } from "lucide-react";
+import { Briefcase, Search, Layers, Users, Archive, Receipt } from "lucide-react";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 
@@ -78,6 +78,7 @@ export default function AdminWorkspacesPage() {
                 <th className="p-4 hidden sm:table-cell">Loại hình</th>
                 <th className="p-4 hidden md:table-cell">Chủ sở hữu</th>
                 <th className="p-4">Thành viên</th>
+                <th className="p-4">Giao dịch</th>
                 <th className="p-4 hidden md:table-cell">Ngày tạo</th>
                 <th className="p-4">Trạng thái</th>
               </tr>
@@ -91,6 +92,7 @@ export default function AdminWorkspacesPage() {
                     <td className="p-4 hidden sm:table-cell"><Skeleton className="h-5 w-16 rounded-full" /></td>
                     <td className="p-4 hidden md:table-cell"><Skeleton className="h-4 w-28 rounded" /></td>
                     <td className="p-4"><Skeleton className="h-4 w-8 rounded" /></td>
+                    <td className="p-4"><Skeleton className="h-4 w-8 rounded" /></td>
                     <td className="p-4 hidden md:table-cell"><Skeleton className="h-4 w-24 rounded" /></td>
                     <td className="p-4"><Skeleton className="h-5 w-20 rounded-full" /></td>
                   </tr>
@@ -98,7 +100,7 @@ export default function AdminWorkspacesPage() {
               ) : workspaces.length === 0 ? (
                 // Empty state
                 <tr>
-                  <td className="p-4 text-sm font-medium" colSpan={6}>
+                  <td className="p-4 text-sm font-medium" colSpan={7}>
                     <div className="flex flex-col items-center justify-center py-16 text-center">
                       <div className="rounded-full bg-primary/10 p-3.5 mb-3.5">
                         <Layers className="size-6 text-primary" />
@@ -127,7 +129,7 @@ export default function AdminWorkspacesPage() {
                           <p className="text-sm font-medium text-foreground truncate">{w.name}</p>
                           {/* Hiển thị thông tin bổ sung trên mobile */}
                           <p className="text-xs text-muted-foreground truncate sm:hidden">
-                            {w.is_personal ? "Cá nhân" : "Nhóm"} · {w.member_count} TV
+                            {w.is_personal ? "Cá nhân" : "Nhóm"} · {w.member_count} TV · {w.transaction_count} GD
                           </p>
                         </div>
                       </div>
@@ -164,6 +166,12 @@ export default function AdminWorkspacesPage() {
                       <div className="flex items-center gap-1.5">
                         <Users className="size-3.5 text-muted-foreground" />
                         <span className="text-sm font-medium">{w.member_count}</span>
+                      </div>
+                    </td>
+                    <td className="p-4">
+                      <div className="flex items-center gap-1.5">
+                        <Receipt className="size-3.5 text-muted-foreground" />
+                        <span className="text-sm font-medium">{w.transaction_count}</span>
                       </div>
                     </td>
                     <td className="p-4 hidden md:table-cell">

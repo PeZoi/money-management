@@ -177,7 +177,7 @@ export default function TelegramBackupSection() {
             type="button"
             onClick={handleOpenConnect}
             disabled={isGeneratingToken}
-            className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-xl px-6 py-2.5 shadow-xs hover:shadow-md transition-all cursor-pointer h-10 gap-2"
+            className="font-semibold px-6 h-10 gap-2"
           >
             {isGeneratingToken ? (
               <Loader2Icon className="h-4 w-4 animate-spin" />
@@ -261,7 +261,7 @@ export default function TelegramBackupSection() {
                   type="button"
                   onClick={handleTriggerBackup}
                   disabled={isBackingUp || showBackupDialog}
-                  className="w-full bg-primary font-semibold rounded-xl h-10 gap-1.5 cursor-pointer shadow-xs hover:shadow-md transition-all"
+                  className="w-full font-semibold h-10 gap-1.5"
                 >
                   {isBackingUp ? (
                     <Loader2Icon className="h-4 w-4 animate-spin" />
@@ -480,7 +480,7 @@ export default function TelegramBackupSection() {
           <div className="mt-5 flex flex-col gap-2.5">
             <Button
               asChild
-              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-xl h-11 gap-1.5 shadow-md shadow-primary/10 hover:shadow-lg hover:shadow-primary/20 active:scale-[0.99] transition-all duration-200 cursor-pointer"
+              className="w-full font-semibold h-11 gap-1.5"
             >
               <a href={connectLink} target="_blank" rel="noopener noreferrer">
                 Mở Telegram Bot
@@ -506,7 +506,7 @@ export default function TelegramBackupSection() {
       </Dialog>
 
       {/* dialog: Backup Loading Dialog */}
-      <Dialog open={showBackupDialog} onOpenChange={() => {}}>
+      <Dialog open={showBackupDialog} onOpenChange={() => { }}>
         <DialogContent className="sm:max-w-md rounded-2xl border border-border bg-card p-6 shadow-xl flex flex-col items-center text-center focus:outline-none">
           <div className="flex size-14 items-center justify-center rounded-full bg-primary/10 text-primary shadow-xs mb-4">
             <Loader2Icon className="size-8 animate-spin" />
@@ -518,8 +518,8 @@ export default function TelegramBackupSection() {
             Hệ thống đang chuẩn bị tệp tin sao lưu bảo mật của bạn và gửi qua Telegram Bot. Quá trình này có thể mất vài giây.
           </DialogDescription>
           <div className="w-full bg-muted/40 rounded-full h-1.5 mt-6 overflow-hidden relative">
-            <div 
-              className="bg-primary h-1.5 rounded-full transition-all duration-300 ease-out" 
+            <div
+              className="bg-primary h-1.5 rounded-full transition-all duration-300 ease-out"
               style={{ width: `${backupProgress}%` }}
             />
           </div>
