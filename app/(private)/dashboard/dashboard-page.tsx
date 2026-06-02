@@ -3,12 +3,15 @@
 import * as React from 'react';
 import {
   LayoutDashboardIcon,
-  PlusIcon
+  PlusIcon,
+  SparklesIcon
 } from 'lucide-react';
 
 import { PrivatePageShell } from '@/components/private-page-shell';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
+import { AiInsightsTab } from '@/app/(private)/dashboard/components/ai-insights-tab';
 
 // Import Custom Hook
 import { useDashboardPage } from './hooks/use-dashboard-page';
@@ -79,8 +82,11 @@ export default function DashboardPage() {
     activateAccount,
     periodLabel,
     isReportLoading,
+    currentWorkspace,
     currentTransactions,
-    prevTransactions
+    prevTransactions,
+    activeTab,
+    setActiveTab
   } = useDashboardPage();
 
   // Nếu chưa mounted xong trên client thì hiển thị skeleton
@@ -97,7 +103,7 @@ export default function DashboardPage() {
         headerActions={
           <div className="flex items-center gap-3">
             {/* Reset to Today button */}
-            {timeRange !== 'all' && (
+            {timeRange !== 'all' && activeTab === 'overview' && (
               <Button
                 type="button"
                 variant="outline"
@@ -120,74 +126,105 @@ export default function DashboardPage() {
           </div>
         }
       >
-
-        {/* TIME FILTER BAR */}
-        <TimeFilterBar
-          timeRange={timeRange}
-          setTimeRange={setTimeRange}
-          referenceDate={referenceDate}
-          setReferenceDate={setReferenceDate}
-          periodLabel={periodLabel}
-          onPrevPeriod={handlePrevPeriod}
-          onNextPeriod={handleNextPeriod}
-        />
-
-        {/* 2. KPI CARDS SECTION */}
-        <KpiCardsSection
-          stats={stats}
-          timeRange={timeRange}
-          accountsCount={accounts.length}
-        />
-
-
-
-        {/* 3. CHARTS COMPONENT */}
-        <div className="mt-6">
-          <DashboardCharts
-            isLoading={isReportLoading}
-            timeRange={timeRange}
-            trendData={trendData}
-            currentTransactions={currentTransactions}
-            prevTransactions={prevTransactions}
-            comparisonData={comparisonData}
-            onSelectBucket={setSelectedBucket}
-          />
+        {/* TAB SWITCHER */}
+        <div className="mt-4 mb-6 inline-flex p-1 rounded-2xl bg-muted/40 border backdrop-blur-xs select-none">
+          <button
+            onClick={() => setActiveTab('overview')}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 border border-transparent",
+              activeTab === 'overview'
+                ? "bg-card text-foreground shadow-xs border-border/60"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <LayoutDashboardIcon className="size-4" />
+            Tổng quan
+          </button>
+          <button
+            onClick={() => setActiveTab('ai-insights')}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 border border-transparent",
+              activeTab === 'ai-insights'
+                ? "bg-card text-foreground shadow-xs border-border/60"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <SparklesIcon className="size-4 text-amber-500" />
+            Trợ lý AI
+          </button>
         </div>
 
-        {/* 4. MY ACCOUNTS SECTION */}
-        <div className="mt-6">
-          <AccountsSection
-            accounts={accounts}
-            activatingId={activatingId}
-            setActivatingId={setActivatingId}
-            activateAccount={activateAccount}
-          />
-        </div>
+        {activeTab === 'overview' ? (
+          <>
+            {/* TIME FILTER BAR */}
+            <TimeFilterBar
+              timeRange={timeRange}
+              setTimeRange={setTimeRange}
+              referenceDate={referenceDate}
+              setReferenceDate={setReferenceDate}
+              periodLabel={periodLabel}
+              onPrevPeriod={handlePrevPeriod}
+              onNextPeriod={handleNextPeriod}
+            />
 
-        {/* 5. TODAY'S TRANSACTIONS LIST */}
-        <div className="mt-6 border bg-card/65 backdrop-blur-md rounded-3xl p-5 sm:p-6 shadow-xs">
-          <div className="flex items-center justify-between mb-5 select-none">
-            <div className="flex items-center gap-2.5">
-              <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
-                Giao dịch hôm nay
-              </h3>
-              <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-md bg-primary/10 text-primary text-xs font-semibold border border-primary/20">
-                {todayTransactions.length}
-              </span>
+            {/* 2. KPI CARDS SECTION */}
+            <KpiCardsSection
+              stats={stats}
+              timeRange={timeRange}
+              accountsCount={accounts.length}
+            />
+
+            {/* 3. CHARTS COMPONENT */}
+            <div className="mt-6">
+              <DashboardCharts
+                isLoading={isReportLoading}
+                timeRange={timeRange}
+                trendData={trendData}
+                currentTransactions={currentTransactions}
+                prevTransactions={prevTransactions}
+                comparisonData={comparisonData}
+                onSelectBucket={setSelectedBucket}
+              />
             </div>
-          </div>
 
-          <TransactionsList
-            transactions={todayTransactions}
-            isLoading={isReportLoading}
-            onRequestCreate={() => setCreateOpen(true)}
-            onRequestDelete={handleDeleteTransaction}
-            onRequestUpdate={(t) => {
-              setSelectedTransaction(t);
-              setUpdateOpen(true);
-            }}
-          />
-        </div>
+            {/* 4. MY ACCOUNTS SECTION */}
+            <div className="mt-6">
+              <AccountsSection
+                accounts={accounts}
+                activatingId={activatingId}
+                setActivatingId={setActivatingId}
+                activateAccount={activateAccount}
+              />
+            </div>
+
+            {/* 5. TODAY'S TRANSACTIONS LIST */}
+            <div className="mt-6 border bg-card/65 backdrop-blur-md rounded-3xl p-5 sm:p-6 shadow-xs">
+              <div className="flex items-center justify-between mb-5 select-none">
+                <div className="flex items-center gap-2.5">
+                  <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
+                    Giao dịch hôm nay
+                  </h3>
+                  <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-md bg-primary/10 text-primary text-xs font-semibold border border-primary/20">
+                    {todayTransactions.length}
+                  </span>
+                </div>
+              </div>
+
+              <TransactionsList
+                transactions={todayTransactions}
+                isLoading={isReportLoading}
+                onRequestCreate={() => setCreateOpen(true)}
+                onRequestDelete={handleDeleteTransaction}
+                onRequestUpdate={(t) => {
+                  setSelectedTransaction(t);
+                  setUpdateOpen(true);
+                }}
+              />
+            </div>
+          </>
+        ) : (
+          <AiInsightsTab activeWorkspaceId={currentWorkspace?.id} />
+        )}
 
       </PrivatePageShell>
 

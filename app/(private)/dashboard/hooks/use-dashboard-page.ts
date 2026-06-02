@@ -70,6 +70,7 @@ export function useDashboardPage() {
   // 1. Quản lý các State cho bộ lọc thời gian
   const [timeRange, setTimeRange] = React.useState<'week' | 'month' | 'year' | 'all'>('month');
   const [referenceDate, setReferenceDate] = React.useState<Date>(() => new Date());
+  const [activeTab, setActiveTab] = React.useState<'overview' | 'ai-insights'>('overview');
 
   // 2. State cho các hộp thoại CRUD
   const [createOpen, setCreateOpen] = React.useState(false);
@@ -450,6 +451,8 @@ export function useDashboardPage() {
     isReportLoading,
     currentWorkspace,
     currentTransactions,
-    prevTransactions
+    prevTransactions,
+    activeTab,
+    setActiveTab
   };
 }
