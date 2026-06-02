@@ -174,11 +174,13 @@ export function useTelegramBackup() {
     }
   };
 
-  // Làm mới trạng thái kết nối
+  // Làm mới trạng thái kết nối (đồng bộ avatar, họ tên, username từ Telegram)
   const handleCheckConnection = async () => {
     setIsCheckingConnection(true);
     try {
-      await telegram.refetchConnection();
+      await telegram.syncConnection();
+    } catch (err) {
+      console.error("[Telegram Sync Connection Error]", err);
     } finally {
       setIsCheckingConnection(false);
     }

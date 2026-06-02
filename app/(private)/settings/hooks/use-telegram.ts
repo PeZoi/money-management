@@ -122,6 +122,24 @@ export function useTelegram() {
     },
   });
 
+  // 6. Mutation đồng bộ thông tin Telegram (họ tên, username, avatar) thực tế từ Bot API
+  const syncConnectionMutation = useMutation<void, Error>({
+    mutationFn: async () => {
+      const res = await fetch("/api/telegram/connection", { method: "PATCH" });
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}));
+        throw new Error(json.error || "Đồng bộ thông tin Telegram thất bại");
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["telegram-connection"] });
+      toast.success("Đã đồng bộ thông tin Telegram mới nhất!");
+    },
+    onError: (error) => {
+      toast.error(error.message || "Lỗi khi đồng bộ thông tin Telegram");
+    },
+  });
+
   return {
     connection,
     isLoading,
@@ -134,5 +152,7 @@ export function useTelegram() {
     isUpdatingConfig: updateConfigMutation.isPending,
     triggerBackup: triggerBackupMutation.mutate,
     isBackingUp: triggerBackupMutation.isPending,
+    syncConnection: syncConnectionMutation.mutateAsync,
+    isSyncingConnection: syncConnectionMutation.isPending,
   };
 }
