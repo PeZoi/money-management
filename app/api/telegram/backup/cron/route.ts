@@ -156,18 +156,34 @@ async function runBackupCron(req: Request) {
         const backupStr = JSON.stringify(backupData, null, 2);
         const blob = new Blob([backupStr], { type: "application/json" });
 
+        const fileSizeKb = (blob.size / 1024).toFixed(2);
+        const intervalText = target.backup_interval === "daily" ? "Hằng ngày" : target.backup_interval === "weekly" ? "Hằng tuần" : "Hằng tháng";
+
         const formData = new FormData();
         formData.append("chat_id", telegramChatId.toString());
         formData.append("document", blob, fileName);
         formData.append(
           "caption",
-          `💾 <b>Bản sao lưu dữ liệu tự động Money+</b>\n\n` +
-            `• <b>Thời gian:</b> ${new Date().toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" })}\n` +
-            `• <b>Tần suất:</b> ${target.backup_interval === "daily" ? "Hằng ngày" : target.backup_interval === "weekly" ? "Hằng tuần" : "Hằng tháng"}\n` +
-            `• <b>Loại dữ liệu:</b> Cá nhân\n` +
-            `• <b>Tài khoản/Ví:</b> ${accounts?.length || 0}\n` +
-            `• <b>Giao dịch:</b> ${transactions?.length || 0}\n\n` +
-            `<i>⚠️ Đây là file chứa dữ liệu chi tiêu cá nhân của riêng bạn. Hãy lưu trữ an toàn và tuyệt đối không chia sẻ cho bất kỳ ai.</i>`
+          `🏦 <b>MONEY+ CLOUD BACKUP</b> 🏦\n` +
+            `▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬\n` +
+            `💾 <b>HỆ THỐNG SAO LƯU DỰ PHÒNG</b>\n\n` +
+            `⚙️ <b>Phương thức:</b> 🤖 <b>Tự động định kỳ</b>\n` +
+            `⏱️ <b>Tần suất:</b> 🔄 ${intervalText}\n` +
+            `📅 <b>Thời gian:</b> <code>${new Date().toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" })}</code>\n` +
+            `📂 <b>Dung lượng:</b> 💾 <code>${fileSizeKb} KB</code>\n` +
+            `🔒 <b>Bảo mật:</b> 🛡️ Mã hóa cá nhân\n\n` +
+            `📊 <b>THỐNG KÊ CHI TIẾT BẢN SAO LƯU:</b>\n` +
+            `┌─────────────────────────\n` +
+            `├─ 💳 <b>Tài khoản & Ví:</b> <code>${(accounts?.length || 0).toLocaleString("vi-VN")}</code> ví hoạt động\n` +
+            `├─ 📂 <b>Danh mục thu chi:</b> <code>${(categories?.length || 0).toLocaleString("vi-VN")}</code> nhóm phân loại\n` +
+            `└─ 📝 <b>Nhật ký giao dịch:</b> <code>${(transactions?.length || 0).toLocaleString("vi-VN")}</code> bản ghi phát sinh\n` +
+            `└─────────────────────────\n\n` +
+            `💡 <b>HƯỚNG DẪN KHÔI PHỤC DỮ LIỆU:</b>\n` +
+            `1️⃣ Tải file đính kèm này về thiết bị của bạn.\n` +
+            `2️⃣ Truy cập mục <b>Cài đặt > Sao lưu & Khôi phục</b>.\n` +
+            `3️⃣ Kéo thả hoặc chọn file để tiến hành khôi phục tức thì.\n\n` +
+            `⚠️ <i><b>Lưu ý quan trọng:</b> Bản sao lưu này chứa toàn bộ lịch sử thu chi cá nhân của bạn. Vui lòng lưu trữ an toàn và tuyệt đối KHÔNG chia sẻ tệp tin này cho bất kỳ ai.</i>\n` +
+            `▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬`
         );
         formData.append("parse_mode", "HTML");
 
