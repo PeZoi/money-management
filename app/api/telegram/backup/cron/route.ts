@@ -51,7 +51,7 @@ async function runBackupCron(req: Request) {
     // 2. Lấy danh sách cấu hình auto backup khớp với giờ hiện tại
     const { data: connections, error: queryError } = await supabaseAdmin
       .from("user_telegram_connections")
-      .select("user_id, telegram_chat_id, backup_interval, backup_day")
+      .select("user_id, telegram_chat_id, telegram_username, backup_interval, backup_day")
       .eq("is_auto_backup", true)
       .eq("backup_hour", currentHour)
       .not("telegram_chat_id", "is", null);
