@@ -1,5 +1,3 @@
-'use client';
-
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -28,9 +26,24 @@ import {
   CalendarIcon,
   CalendarDaysIcon,
   ClockIcon,
+  UploadCloudIcon,
+  FileJsonIcon,
+  XIcon,
+  CheckCircle2Icon,
+  WalletIcon,
+  TagIcon,
+  ReceiptIcon,
 } from 'lucide-react';
 import { useTelegram } from '../hooks/use-telegram';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
+
+const getInitials = (name: string | null) => {
+  if (!name) return 'U';
+  const parts = name.trim().split(' ');
+  if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+};
 
 export default function TelegramBackupSection() {
   const {
@@ -50,6 +63,125 @@ export default function TelegramBackupSection() {
   const [openConnectDialog, setOpenConnectDialog] = React.useState(false);
   const [connectLink, setConnectLink] = React.useState('');
   const [isCheckingConnection, setIsCheckingConnection] = React.useState(false);
+
+  // Trạng thái nhập dữ liệu khôi phục
+  const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
+  const [isDragging, setIsDragging] = React.useState(false);
+  const [isImporting, setIsImporting] = React.useState(false);
+  const [importProgress, setImportProgress] = React.useState(0);
+  const [importStep, setImportStep] = React.useState('');
+  const [importResult, setImportResult] = React.useState<{
+    accounts: number;
+    categories: number;
+    transactions: number;
+  } | null>(null);
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const file = e.dataTransfer.files[0];
+      handleFileSelect(file);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      handleFileSelect(e.target.files[0]);
+    }
+  };
+
+  const handleFileSelect = (file: File) => {
+    if (!file.name.endsWith('.json')) {
+      toast.error('Chỉ chấp nhận file sao lưu định dạng .json');
+      return;
+    }
+    setSelectedFile(file);
+  };
+
+  const handleRemoveFile = () => {
+    setSelectedFile(null);
+    const fileInput = document.getElementById("import-backup-file-drag") as HTMLInputElement;
+    if (fileInput) fileInput.value = "";
+  };
+
+  const handleImportData = async () => {
+    if (!selectedFile) return;
+    setIsImporting(true);
+    setImportProgress(0);
+    setImportStep('Đang chuẩn bị tệp tin sao lưu...');
+    setImportResult(null);
+
+    const progressInterval = setInterval(() => {
+      setImportProgress((prev) => {
+        let next = prev;
+        if (prev < 15) {
+          setImportStep('Đang giải nén và đọc file sao lưu...');
+          next = prev + Math.floor(Math.random() * 3) + 2;
+        } else if (prev < 45) {
+          setImportStep('Đang xác thực cấu trúc và dữ liệu...');
+          next = prev + Math.floor(Math.random() * 4) + 1;
+        } else if (prev < 75) {
+          setImportStep('Đang tiến hành khôi phục tài khoản và danh mục...');
+          next = prev + Math.floor(Math.random() * 3) + 1;
+        } else if (prev < 95) {
+          setImportStep('Đang khôi phục lịch sử giao dịch...');
+          next = prev + Math.floor(Math.random() * 2) + 1;
+        }
+        return Math.min(next, 95);
+      });
+    }, 120);
+
+    try {
+      const fileText = await selectedFile.text();
+      const backupData = JSON.parse(fileText);
+
+      if (!backupData || (!backupData.accounts && !backupData.categories && !backupData.transactions)) {
+        clearInterval(progressInterval);
+        toast.error("File sao lưu không đúng định dạng hoặc không có dữ liệu.");
+        setIsImporting(false);
+        return;
+      }
+
+      const res = await fetch("/api/telegram/backup/import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(backupData),
+      });
+
+      const result = await res.json();
+      if (!res.ok || !result.success) {
+        throw new Error(result.message || "Nhập dữ liệu thất bại");
+      }
+
+      clearInterval(progressInterval);
+      setImportProgress(100);
+      setImportStep('Khôi phục dữ liệu hoàn tất!');
+      setImportResult(result.details);
+      setSelectedFile(null);
+
+      // Tự động reload sau 5 giây để làm mới UI nếu người dùng không tự click
+      setTimeout(() => {
+        window.location.reload();
+      }, 5000);
+
+    } catch (err: unknown) {
+      clearInterval(progressInterval);
+      console.error(err);
+      const msg = err instanceof Error ? err.message : "Đã có lỗi xảy ra khi nhập dữ liệu.";
+      toast.error(msg);
+      setIsImporting(false);
+    }
+  };
 
   const [backupProgress, setBackupProgress] = React.useState(0);
   const [showBackupDialog, setShowBackupDialog] = React.useState(false);
@@ -159,7 +291,7 @@ export default function TelegramBackupSection() {
           <h2 className="text-base font-semibold">Sao lưu dữ liệu bảo mật</h2>
         </div>
         <p className="text-xs text-muted-foreground max-w-2xl leading-relaxed">
-          Xuất toàn bộ dữ liệu tài chính của bạn (Workspace, Tài khoản, Danh mục, Giao dịch) thành file định dạng JSON và gửi trực tiếp qua Telegram Bot. Dữ liệu được mã hóa truyền tải và chỉ duy nhất bạn có thể tải về từ phòng chat riêng tư của mình.
+          Xuất toàn bộ dữ liệu tài chính cá nhân của bạn (Tài khoản, Danh mục, Giao dịch) thành file định dạng JSON và gửi trực tiếp qua Telegram Bot. Dữ liệu được mã hóa truyền tải và chỉ duy nhất bạn có thể tải về từ phòng chat riêng tư của mình.
         </p>
       </section>
 
@@ -194,22 +326,42 @@ export default function TelegramBackupSection() {
             <div className="absolute top-0 right-0 w-48 h-48 bg-primary/2 rounded-full blur-3xl pointer-events-none" />
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div className="flex items-center gap-4">
-                <div className="flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary shadow-xs shrink-0">
-                  <SendIcon className="size-5 rotate-45 mr-0.5" />
+                <div className="relative shrink-0">
+                  {connection.telegram_avatar_path ? (
+                    <div className="size-12 rounded-full overflow-hidden border-2 border-background shadow-md select-none">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={`/api/telegram/avatar?path=${encodeURIComponent(connection.telegram_avatar_path)}`}
+                        alt={connection.telegram_display_name || connection.telegram_username || 'Telegram User'}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <div className="size-12 rounded-full flex items-center justify-center bg-linear-to-br from-pink-500 to-rose-500 text-white font-bold text-sm shadow-md select-none">
+                      {getInitials(connection.telegram_display_name || connection.telegram_username)}
+                    </div>
+                  )}
+                  <div className="absolute -bottom-1 -right-1 flex size-5 items-center justify-center rounded-full bg-[#26A5E4] text-white border-2 border-background shadow-xs select-none">
+                    <SendIcon className="size-2.5 translate-x-[-0.5px] translate-y-[0.5px]" />
+                  </div>
                 </div>
-                <div>
-                  <div className="flex items-center gap-1.5">
-                    <h3 className="text-sm font-bold text-foreground">Đã kết nối Telegram</h3>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <h3 className="text-sm font-bold text-foreground truncate max-w-[150px] sm:max-w-none">
+                      {connection.telegram_display_name || 'Telegram User'}
+                    </h3>
                     <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
                       Đang hoạt động
                     </span>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                    Tài khoản liên kết:
-                    <span className="font-semibold text-primary">
-                      @{connection.telegram_username || 'Telegram User'}
-                    </span>
-                  </p>
+                  {connection.telegram_username && (
+                    <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                      Username:
+                      <span className="font-medium text-primary">
+                        @{connection.telegram_username}
+                      </span>
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -526,6 +678,216 @@ export default function TelegramBackupSection() {
           <p className="text-[10px] text-muted-foreground/80 mt-3 italic animate-pulse">
             Vui lòng không đóng trang này lúc này...
           </p>
+        </DialogContent>
+      </Dialog>
+
+      {/* Khôi phục dữ liệu bằng File Drag & Drop Zone */}
+      <section className="rounded-xl border border-border bg-card p-6 shadow-sm flex flex-col relative overflow-hidden mt-2">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-primary/2 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="flex items-center gap-2 mb-2">
+          <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10">
+            <UploadCloudIcon className="size-4 text-primary" />
+          </div>
+          <h2 className="text-base font-semibold">Khôi phục dữ liệu từ bản sao lưu</h2>
+        </div>
+        <p className="text-xs text-muted-foreground leading-relaxed mb-4">
+          Nhập tệp tin sao lưu (.json) của bạn để khôi phục cấu trúc ví, danh mục chi tiêu và lịch sử giao dịch. Các dữ liệu trùng mã định danh (ID) sẽ được ghi đè tự động.
+        </p>
+
+        {/* Drag & Drop Box */}
+        <div
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          className={cn(
+            "border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 relative select-none",
+            isDragging
+              ? "border-primary bg-primary/5 scale-[1.01]"
+              : "border-border bg-muted/10 hover:bg-muted/20 hover:border-muted-foreground/30",
+            selectedFile && "border-primary/50 bg-primary/5"
+          )}
+          onClick={() => {
+            if (!selectedFile) {
+              document.getElementById("import-backup-file-drag")?.click();
+            }
+          }}
+        >
+          <input
+            type="file"
+            accept=".json"
+            onChange={handleFileChange}
+            className="hidden"
+            id="import-backup-file-drag"
+            disabled={isImporting}
+          />
+
+          {!selectedFile ? (
+            <div className="flex flex-col items-center">
+              <div className="flex size-12 items-center justify-center rounded-full bg-background border border-border text-muted-foreground shadow-xs mb-3 transition-transform duration-300">
+                <UploadCloudIcon className="size-6 text-primary" />
+              </div>
+              <p className="text-sm font-semibold text-foreground">
+                Kéo thả file sao lưu .json vào đây
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                hoặc click để chọn file từ máy tính
+              </p>
+              <span className="text-[10px] text-muted-foreground/60 mt-4 px-2 py-0.5 rounded-full bg-background/50 border border-border/50">
+                Định dạng tệp tin: JSON
+              </span>
+            </div>
+          ) : (
+            <div className="w-full max-w-sm flex items-center justify-between p-3.5 rounded-xl border border-primary/20 bg-background/80 shadow-xs relative z-10 animate-in fade-in zoom-in-95 duration-200">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="flex size-10 items-center justify-center rounded-lg bg-orange-500/10 text-orange-500 shrink-0">
+                  <FileJsonIcon className="size-5" />
+                </div>
+                <div className="text-left min-w-0">
+                  <p className="text-xs font-bold text-foreground truncate max-w-[200px]">
+                    {selectedFile.name}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5 font-medium">
+                    {(selectedFile.size / 1024).toFixed(1)} KB
+                  </p>
+                </div>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleRemoveFile();
+                }}
+                className="size-8 rounded-lg hover:bg-destructive/10 hover:text-destructive cursor-pointer shrink-0"
+              >
+                <XIcon className="size-4" />
+              </Button>
+            </div>
+          )}
+        </div>
+
+        {selectedFile && (
+          <div className="mt-4 flex justify-end animate-in fade-in slide-in-from-top-1.5 duration-200">
+            <Button
+              onClick={handleImportData}
+              disabled={isImporting}
+              className="px-6 h-10 text-xs font-bold gap-1.5 shadow-md shadow-primary/10"
+            >
+              {isImporting ? (
+                <>
+                  <Loader2Icon className="size-3.5 animate-spin" />
+                  Đang xử lý khôi phục...
+                </>
+              ) : (
+                <>
+                  <RefreshCwIcon className="size-3.5 mr-0.5" />
+                  Bắt đầu khôi phục dữ liệu
+                </>
+              )}
+            </Button>
+          </div>
+        )}
+      </section>
+
+      {/* dialog: Import Progress & Success Dialog */}
+      <Dialog open={isImporting} onOpenChange={() => { if (importResult) { setIsImporting(false); window.location.reload(); } }}>
+        <DialogContent className="sm:max-w-md rounded-3xl border border-border bg-card p-6 shadow-2xl flex flex-col items-center text-center focus:outline-none overflow-hidden">
+          {/* Background gradient nhẹ ở góc */}
+          <div className="absolute -top-24 -right-24 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+
+          {!importResult ? (
+            // Giao diện đang tải (Import Progress)
+            <>
+              <div className="flex size-14 items-center justify-center rounded-full bg-primary/10 text-primary shadow-xs mb-4 animate-pulse">
+                <Loader2Icon className="size-8 animate-spin" />
+              </div>
+              <DialogTitle className="text-base font-bold text-foreground">
+                Đang khôi phục dữ liệu ({importProgress}%)
+              </DialogTitle>
+              <DialogDescription className="text-xs text-muted-foreground mt-2 leading-relaxed max-w-xs">
+                {importStep}
+              </DialogDescription>
+              <div className="w-full bg-muted/40 rounded-full h-1.5 mt-6 overflow-hidden relative">
+                <div
+                  className="bg-primary h-1.5 rounded-full transition-all duration-300 ease-out"
+                  style={{ width: `${importProgress}%` }}
+                />
+              </div>
+              <p className="text-[10px] text-muted-foreground/80 mt-3 italic">
+                Vui lòng không đóng tab trình duyệt hoặc làm mới trang...
+              </p>
+            </>
+          ) : (
+            // Giao diện thành công (Success UI)
+            <div className="w-full flex flex-col items-center animate-in fade-in zoom-in-95 duration-300">
+              {/* Sóng nước sonar cho icon success */}
+              <div className="relative flex size-16 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-500 mb-4">
+                <div className="absolute inset-0 rounded-full bg-emerald-500/20 animate-ping opacity-75" />
+                <CheckCircle2Icon className="size-9 text-emerald-500 relative z-10" />
+              </div>
+
+              <DialogTitle className="text-lg font-extrabold text-foreground tracking-tight">
+                Khôi phục dữ liệu thành công!
+              </DialogTitle>
+              <DialogDescription className="text-xs text-muted-foreground mt-1.5 leading-relaxed max-w-xs">
+                Bản sao lưu đã được tích hợp hoàn tất vào Workspace của bạn.
+              </DialogDescription>
+
+              {/* Grid hiển thị số lượng chi tiết */}
+              <div className="w-full grid grid-cols-3 gap-3.5 my-6">
+                {/* 1. Tài khoản */}
+                <div className="flex flex-col items-center p-3 rounded-2xl border border-emerald-500/10 bg-emerald-500/5 hover:bg-emerald-500/8 transition-colors duration-200">
+                  <div className="flex size-8 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-600 mb-2">
+                    <WalletIcon className="size-4.5" />
+                  </div>
+                  <span className="text-[10px] text-muted-foreground font-semibold">Tài khoản</span>
+                  <span className="text-base font-extrabold text-foreground mt-0.5 animate-in fade-in slide-in-from-bottom-1 duration-300 delay-100">
+                    {importResult.accounts}
+                  </span>
+                </div>
+
+                {/* 2. Danh mục */}
+                <div className="flex flex-col items-center p-3 rounded-2xl border border-sky-500/10 bg-sky-500/5 hover:bg-sky-500/8 transition-colors duration-200">
+                  <div className="flex size-8 items-center justify-center rounded-xl bg-sky-500/15 text-sky-600 mb-2">
+                    <TagIcon className="size-4.5" />
+                  </div>
+                  <span className="text-[10px] text-muted-foreground font-semibold">Danh mục</span>
+                  <span className="text-base font-extrabold text-foreground mt-0.5 animate-in fade-in slide-in-from-bottom-1 duration-300 delay-200">
+                    {importResult.categories}
+                  </span>
+                </div>
+
+                {/* 3. Giao dịch */}
+                <div className="flex flex-col items-center p-3 rounded-2xl border border-amber-500/10 bg-amber-500/5 hover:bg-amber-500/8 transition-colors duration-200">
+                  <div className="flex size-8 items-center justify-center rounded-xl bg-amber-500/15 text-amber-600 mb-2">
+                    <ReceiptIcon className="size-4.5" />
+                  </div>
+                  <span className="text-[10px] text-muted-foreground font-semibold">Giao dịch</span>
+                  <span className="text-base font-extrabold text-foreground mt-0.5 animate-in fade-in slide-in-from-bottom-1 duration-300 delay-300">
+                    {importResult.transactions}
+                  </span>
+                </div>
+              </div>
+
+              {/* Nút bấm xác nhận & Tự động reload sau 5s */}
+              <div className="w-full space-y-2">
+                <Button
+                  onClick={() => {
+                    setIsImporting(false);
+                    window.location.reload();
+                  }}
+                  className="w-full h-11 font-bold rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-500/15 flex items-center justify-center gap-1.5 active:scale-[0.98] transition-transform duration-200 cursor-pointer text-xs"
+                >
+                  Hoàn tất & Làm mới
+                </Button>
+                <p className="text-[9px] text-muted-foreground/75 italic animate-pulse">
+                  Hệ thống sẽ tự động làm mới trang sau vài giây...
+                </p>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

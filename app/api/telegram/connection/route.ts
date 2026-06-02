@@ -11,7 +11,7 @@ export async function GET() {
 
   const { data, error } = await supabase
     .from("user_telegram_connections")
-    .select("telegram_chat_id, telegram_username, is_auto_backup, backup_interval, backup_day, backup_hour")
+    .select("telegram_chat_id, telegram_username, is_auto_backup, backup_interval, backup_day, backup_hour, telegram_display_name, telegram_avatar_path")
     .eq("user_id", userData.user.id)
     .maybeSingle();
 
@@ -22,6 +22,8 @@ export async function GET() {
   return NextResponse.json({
     connected: !!data?.telegram_chat_id,
     telegram_username: data?.telegram_username || null,
+    telegram_display_name: data?.telegram_display_name || null,
+    telegram_avatar_path: data?.telegram_avatar_path || null,
     is_auto_backup: data?.is_auto_backup ?? false,
     backup_interval: data?.backup_interval ?? "weekly",
     backup_day: data?.backup_day ?? 1,

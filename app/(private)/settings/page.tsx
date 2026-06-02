@@ -50,7 +50,6 @@ import { MonthPicker } from '@/components/month-picker';
 import { useSettings } from './hooks/use-settings';
 import { useAuth } from '@/hooks/use-auth';
 import { SETTINGS_KEY, getLocalStorageItem, setLocalStorageItem } from '@/functions/localstorage-fn';
-import { toast } from 'sonner';
 
 const PRESETS: Array<{ name: string; value: string }> = [
   { name: 'Xanh lá', value: '#16a34a' },
@@ -69,80 +68,7 @@ export default function SettingsPage() {
   const [hasMountedSmartTx, setHasMountedSmartTx] = React.useState(false);
   const [openCalendar, setOpenCalendar] = React.useState(false);
 
-  const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
-  const [isImporting, setIsImporting] = React.useState(false);
-  const [importProgress, setImportProgress] = React.useState(0);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      setSelectedFile(e.target.files[0]);
-    }
-  };
-
-  const handleImportData = async () => {
-    if (!selectedFile) return;
-    setIsImporting(true);
-    setImportProgress(0);
-
-    // Bắt đầu interval giả lập progress
-    const progressInterval = setInterval(() => {
-      setImportProgress((prev) => {
-        if (prev >= 90) {
-          clearInterval(progressInterval);
-          return 90;
-        }
-        const step = Math.floor(Math.random() * 5) + 3; // tăng từ 3-8% mỗi lần
-        return Math.min(prev + step, 90);
-      });
-    }, 100);
-
-    try {
-      const fileText = await selectedFile.text();
-      const backupData = JSON.parse(fileText);
-
-      if (!backupData || (!backupData.accounts && !backupData.categories && !backupData.transactions)) {
-        clearInterval(progressInterval);
-        toast.error("File sao lưu không đúng định dạng hoặc không có dữ liệu.");
-        setIsImporting(false);
-        return;
-      }
-
-      const res = await fetch("/api/telegram/backup/import", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(backupData),
-      });
-
-      const result = await res.json();
-      if (!res.ok || !result.success) {
-        throw new Error(result.message || "Nhập dữ liệu thất bại");
-      }
-
-      clearInterval(progressInterval);
-      setImportProgress(100);
-
-      // Đợi người dùng thấy progress đạt 100% rồi thông báo thành công và reload
-      setTimeout(() => {
-        toast.success(
-          `Nhập dữ liệu thành công! Đã khôi phục ${result.details.accounts} tài khoản, ${result.details.categories} danh mục, ${result.details.transactions} giao dịch.`
-        );
-        setSelectedFile(null);
-        const fileInput = document.getElementById("import-backup-file") as HTMLInputElement;
-        if (fileInput) fileInput.value = "";
-
-        setTimeout(() => {
-          window.location.reload();
-        }, 1500);
-      }, 500);
-
-    } catch (err: unknown) {
-      clearInterval(progressInterval);
-      console.error(err);
-      const msg = err instanceof Error ? err.message : "Đã có lỗi xảy ra khi nhập dữ liệu.";
-      toast.error(msg);
-      setIsImporting(false);
-    }
-  };
 
   React.useEffect(() => {
     const saved = getLocalStorageItem(SETTINGS_KEY.SMART_TX_PREVIEW);
@@ -304,7 +230,7 @@ export default function SettingsPage() {
             )}
           >
             <CloudIcon className="size-4" />
-            Sao lưu dữ liệu
+            Sao lưu & Khôi phục
           </button>
         </div>
       </div>
@@ -475,47 +401,7 @@ export default function SettingsPage() {
                   </div>
                 </section>
 
-                {/* 2. Nhập dữ liệu sao lưu */}
-                <section className="rounded-xl border border-border bg-card p-5 shadow-xs">
-                  <h2 className="text-base font-semibold">Nhập dữ liệu sao lưu</h2>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Nhập dữ liệu ví, danh mục và giao dịch từ file JSON sao lưu của bạn. Dữ liệu trùng lặp (trùng ID) sẽ được ghi đè.
-                  </p>
-                  <div className="mt-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                    <input
-                      type="file"
-                      accept=".json"
-                      onChange={handleFileChange}
-                      className="hidden"
-                      id="import-backup-file"
-                      disabled={isImporting}
-                    />
-                    <label
-                      htmlFor="import-backup-file"
-                      className={cn(
-                        "flex items-center justify-center gap-2 px-4 py-2 border border-border rounded-xl text-xs font-semibold bg-background hover:bg-muted cursor-pointer transition-all h-10",
-                        isImporting && "opacity-50 pointer-events-none"
-                      )}
-                    >
-                      <CloudIcon className="size-4 text-primary" />
-                      {selectedFile ? selectedFile.name : "Chọn file sao lưu (.json)"}
-                    </label>
-                    <Button
-                      onClick={handleImportData}
-                      disabled={!selectedFile || isImporting}
-                      className="h-10 px-5 text-xs font-semibold gap-1.5"
-                    >
-                      {isImporting ? (
-                        <>
-                          <Loader2Icon className="size-3.5 animate-spin" />
-                          Đang nhập...
-                        </>
-                      ) : (
-                        "Nhập dữ liệu"
-                      )}
-                    </Button>
-                  </div>
-                </section>
+
 
                 <section className="rounded-xl border border-red-500/20 bg-linear-to-br from-red-500/5 via-red-500/1 to-red-500/3 p-6 shadow-xs relative overflow-hidden dark:border-red-500/30 dark:from-red-950/20 dark:via-red-950/5 dark:to-red-950/10">
                   <div className="absolute -top-12 -right-12 w-32 h-32 bg-red-500/10 rounded-full blur-3xl pointer-events-none dark:bg-red-500/5" />
@@ -1430,29 +1316,6 @@ export default function SettingsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* dialog 8: Import Loading Dialog */}
-      <Dialog open={isImporting} onOpenChange={() => {}}>
-        <DialogContent className="sm:max-w-md rounded-2xl border border-border bg-card p-6 shadow-xl flex flex-col items-center text-center focus:outline-none">
-          <div className="flex size-14 items-center justify-center rounded-full bg-primary/10 text-primary shadow-xs mb-4">
-            <Loader2Icon className="size-8 animate-spin" />
-          </div>
-          <DialogTitle className="text-base font-bold text-foreground">
-            Đang nhập dữ liệu sao lưu ({importProgress}%)
-          </DialogTitle>
-          <DialogDescription className="text-xs text-muted-foreground mt-2 leading-relaxed max-w-xs">
-            Hệ thống đang phân tích tệp tin, cập nhật các tài khoản/ví, danh mục và giao dịch vào Workspace cá nhân của bạn.
-          </DialogDescription>
-          <div className="w-full bg-muted/40 rounded-full h-1.5 mt-6 overflow-hidden relative">
-            <div 
-              className="bg-primary h-1.5 rounded-full transition-all duration-300 ease-out" 
-              style={{ width: `${importProgress}%` }}
-            />
-          </div>
-          <p className="text-[10px] text-muted-foreground/80 mt-3 italic animate-pulse">
-            Vui lòng không đóng trình duyệt hoặc tải lại trang lúc này...
-          </p>
-        </DialogContent>
-      </Dialog>
     </PrivatePageShell>
   );
 }

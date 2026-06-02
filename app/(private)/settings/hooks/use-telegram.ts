@@ -4,6 +4,8 @@ import { toast } from "sonner";
 export interface TelegramConnectionInfo {
   connected: boolean;
   telegram_username: string | null;
+  telegram_display_name: string | null;
+  telegram_avatar_path: string | null;
   is_auto_backup: boolean;
   backup_interval: "daily" | "weekly" | "monthly";
   backup_day: number;
@@ -30,6 +32,8 @@ export function useTelegram() {
     data: connection = {
       connected: false,
       telegram_username: null,
+      telegram_display_name: null,
+      telegram_avatar_path: null,
       is_auto_backup: false,
       backup_interval: "weekly",
       backup_day: 1,
