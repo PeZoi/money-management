@@ -112,15 +112,14 @@ export type WorkspaceMemberUpdate = Partial<Pick<WorkspaceMemberRow, "role">>;
 
 export type CategoryUpdate = Partial<Pick<CategoryRow, "name" | "icon" | "type">>;
 
-/** Update partial — type không thể thay đổi sau khi tạo */
-export type TransactionUpdate = Partial<
-  Pick<TransactionRow, "amount" | "category_id" | "account_id" | "to_account_id" | "note">
->;
-
 export type AccountInsert = Pick<AccountRow, "workspace_id" | "name" | "type" | "icon" | "color" | "created_by"> &
   Partial<Pick<AccountRow, "balance" | "currency" | "is_active">>;
 
 export type AccountUpdate = Partial<Pick<AccountRow, "name" | "type" | "balance" | "icon" | "color" | "is_active" | "currency">>;
+
+export type TransactionUpdate = Partial<
+  Pick<TransactionRow, "amount" | "category_id" | "account_id" | "to_account_id" | "note">
+>;
 
 /** Relations phổ biến trong UI */
 export type TransactionWithCategory = TransactionRow & {
@@ -133,3 +132,60 @@ export type TransactionWithCategory = TransactionRow & {
     avatar_url: string | null;
   };
 };
+
+export interface LoveConnectionRow {
+  id: UuidString;
+  user_id_1: UuidString;
+  user_id_2: UuidString;
+  anniversary_date: string;
+  user_1_avatar_url: string | null;
+  user_2_avatar_url: string | null;
+  background_url: string | null;
+  theme: string;
+  created_at: IsoDateString;
+  updated_at: IsoDateString;
+}
+
+export interface LoveMilestoneRow {
+  id: UuidString;
+  connection_id: UuidString;
+  title: string;
+  description: string | null;
+  milestone_date: string;
+  icon: string;
+  image_url: string | null;
+  created_by: UuidString;
+  created_at: IsoDateString;
+  updated_at: IsoDateString;
+}
+
+export interface MyLoveConnection {
+  connection_id: UuidString;
+  partner_id: UuidString;
+  partner_name: string;
+  partner_avatar_url: string | null;
+  partner_email: string;
+  anniversary_date: string;
+  days_together: number;
+  background_url: string | null;
+  user_1_avatar_url: string | null;
+  user_2_avatar_url: string | null;
+  is_user_1?: boolean;
+  user_1_nickname: string | null;
+  user_2_nickname: string | null;
+  user_1_birthdate: string | null;
+  user_2_birthdate: string | null;
+  partner_birthdate: string | null;
+  theme: string | null;
+}
+
+export interface AdminLoveUser {
+  id: UuidString;
+  email: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  partner_id: UuidString | null;
+  partner_name: string | null;
+  anniversary_date: string | null;
+  connection_id: UuidString | null;
+}

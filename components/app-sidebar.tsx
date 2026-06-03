@@ -28,7 +28,8 @@ import {
   WalletIcon,
   ShieldAlertIcon,
   UsersIcon,
-  BriefcaseIcon
+  BriefcaseIcon,
+  HeartIcon
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -37,7 +38,7 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import CreateTransactionDialog from '@/app/(private)/transactions/components/create-transaction-dialog';
 import { useAuth } from '@/hooks/use-auth';
-
+import { useMyLoveConnection } from '@/hooks/use-love';
 
 type NavItem = {
   title: string;
@@ -84,9 +85,28 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { isMobile, setOpenMobile, state } = useSidebar();
   const [openTxDialog, setOpenTxDialog] = React.useState(false);
   const { user } = useAuth();
+  const { data: loveConn } = useMyLoveConnection();
 
   const displayGroups = React.useMemo(() => {
-    const groups = [...navGroups];
+    // Sao chép sâu navGroups để không ảnh hưởng đến hằng số ban đầu
+    const groups = navGroups.map((g) => ({
+      ...g,
+      items: [...g.items],
+    }));
+
+    // Nếu người dùng đã có cặp đôi, thêm menu Ngày bên nhau vào mục 'Tổng quan'
+    if (loveConn?.connection_id) {
+      const tongQuan = groups.find((g) => g.label === 'Tổng quan');
+      if (tongQuan) {
+        tongQuan.items.push({
+          title: 'Ngày bên nhau',
+          url: '/love',
+          icon: HeartIcon,
+          match: 'prefix',
+        });
+      }
+    }
+
     if (user?.roleLabel === 'admin') {
       groups.push({
         label: 'Quản trị',
@@ -94,11 +114,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           { title: 'Thống kê hệ thống', url: '/admin/dashboard', icon: ShieldAlertIcon, match: 'prefix' },
           { title: 'Quản lý người dùng', url: '/admin/users', icon: UsersIcon, match: 'prefix' },
           { title: 'Quản lý Workspace', url: '/admin/workspaces', icon: BriefcaseIcon, match: 'prefix' },
+          { title: 'Kết nối tình yêu', url: '/admin/love', icon: HeartIcon, match: 'prefix' },
         ],
       });
     }
     return groups;
-  }, [user]);
+  }, [user, loveConn]);
 
   return (
     <Sidebar {...props}>
@@ -172,6 +193,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                           aria-hidden
                         />
                         <span>{item.title}</span>
+                        {item.url === '/love' && isMobile && loveConn?.days_together !== undefined && (
+                          <span className="ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-black text-primary-foreground shadow-sm select-none">
+                            {loveConn.days_together}
+                          </span>
+                        )}
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>

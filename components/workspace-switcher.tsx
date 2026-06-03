@@ -125,7 +125,7 @@ export function WorkspaceSwitcher() {
             </DropdownMenuTrigger>
             
             <DropdownMenuContent
-              className="w-[calc(var(--sidebar-width)-24px)] sm:w-64 p-1.5 rounded-xl border-border/60 shadow-xl"
+              className="w-[var(--radix-dropdown-menu-trigger-width)] p-1.5 rounded-xl border-border/60 shadow-xl"
               align="start"
               sideOffset={6}
             >
