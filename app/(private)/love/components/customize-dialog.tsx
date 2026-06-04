@@ -11,7 +11,6 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog';
@@ -73,8 +72,8 @@ export function CustomizeDialog({
   } = useCustomizeDialog({ loveConn, isOpen, setIsOpen });
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="sm:max-w-lg rounded-2xl h-[85vh] md:h-auto max-h-[85vh] md:max-h-[90vh] flex flex-col p-0 overflow-hidden" disableScroll>
-        <DialogHeader className="p-6 pb-4 border-b shrink-0">
+      <DialogContent className="sm:max-w-lg rounded-3xl h-auto max-h-[90dvh] sm:max-h-[85vh] overflow-y-auto p-5 md:p-6 space-y-5" disableScroll>
+        <DialogHeader className="pb-3 border-b border-border/40 shrink-0">
           <DialogTitle className={cn("flex items-center gap-2.5 font-bold", theme.text)}>
             <Palette className={cn("size-5", theme.textRoseColor)} />
             Tùy chỉnh Giao diện Ngày bên nhau
@@ -84,7 +83,7 @@ export function CustomizeDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
+        <div className="space-y-6">
           {/* 0. Thông tin biệt danh và Ngày sinh */}
           <div className={cn("grid grid-cols-1 md:grid-cols-2 gap-4 p-4 rounded-2xl border", theme.bgLight, theme.border)}>
             {/* Bạn */}
@@ -348,12 +347,12 @@ export function CustomizeDialog({
           </div>
         </div>
 
-        <DialogFooter className="p-4 sm:p-6 border-t flex flex-row items-center justify-end gap-2.5 bg-zinc-50 dark:bg-zinc-950/20 shrink-0">
+        <div className="pt-4 border-t border-border/40 flex flex-row items-center justify-end gap-2.5">
           <Button
             type="button"
             variant="outline"
             onClick={() => setIsOpen(false)}
-            className="flex-1 sm:flex-none rounded-xl cursor-pointer hover:bg-muted/80 h-10"
+            className="flex-1 sm:flex-none rounded-xl cursor-pointer hover:bg-muted/80 h-10 px-4"
           >
             Hủy
           </Button>
@@ -362,14 +361,14 @@ export function CustomizeDialog({
             onClick={handleCustomizeSubmit}
             disabled={isSaving || uploadProgress !== null}
             className={cn(
-              "flex-1 sm:flex-none shadow-sm hover:shadow transition-all rounded-xl cursor-pointer h-10",
+              "flex-1 sm:flex-none shadow-sm hover:shadow transition-all rounded-xl cursor-pointer h-10 px-5",
               theme.bg,
               theme.bgHover
             )}
           >
             {isSaving ? 'Đang lưu...' : 'Lưu Thay đổi'}
           </Button>
-        </DialogFooter>
+        </div>
       </DialogContent>
 
       <UploadProgressDialog

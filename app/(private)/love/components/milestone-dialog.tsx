@@ -12,7 +12,6 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog';
@@ -70,8 +69,8 @@ export function MilestoneDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="sm:max-w-md rounded-2xl h-[85vh] md:h-auto max-h-[85vh] md:max-h-[90vh] flex flex-col p-0 overflow-hidden" disableScroll>
-        <DialogHeader className="p-6 pb-4 border-b shrink-0">
+      <DialogContent className="sm:max-w-md rounded-3xl h-auto max-h-[90dvh] sm:max-h-[85vh] overflow-y-auto p-5 md:p-6 space-y-5" disableScroll>
+        <DialogHeader className="pb-3 border-b border-border/40 shrink-0">
           <DialogTitle className={cn("flex items-center gap-2.5", theme.text)}>
             <Heart className={cn("size-5 animate-pulse", theme.textRoseColor, theme.fillColor)} />
             {editingMilestone ? 'Chỉnh sửa Cột mốc Kỷ niệm' : 'Thêm Cột mốc Kỷ niệm'}
@@ -80,7 +79,7 @@ export function MilestoneDialog({
             Ghi lại một thời khắc đẹp trên hành trình yêu thương.
           </DialogDescription>
         </DialogHeader>
-        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
+        <div className="space-y-4">
           {/* Title */}
           <div className="space-y-1.5">
             <label className="text-xs font-bold text-muted-foreground/80 tracking-wider uppercase block">Tên cột mốc / Tiêu đề</label>
@@ -432,7 +431,7 @@ export function MilestoneDialog({
             </div>
           </div>
         </div>
-        <DialogFooter className="p-4 sm:p-6 border-t flex flex-row items-center justify-end gap-2.5 bg-zinc-50 dark:bg-zinc-950/20 shrink-0">
+        <div className="pt-4 border-t border-border/40 flex flex-row items-center justify-end gap-2.5">
           <Button
             type="button"
             variant="outline"
@@ -458,7 +457,7 @@ export function MilestoneDialog({
                 ? 'Đang tải ảnh...'
                 : 'Lưu kỷ niệm'}
           </Button>
-        </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );
