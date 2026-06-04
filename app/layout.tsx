@@ -2,10 +2,12 @@ import { ThemeProvider } from '@/components/theme-provider';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Toaster } from '@/components/ui/sonner';
 import QueryProvider from '@/providers/query-provider';
+import { SmoothScrollProvider } from '@/providers/smooth-scroll-provider';
 import { cn } from '@/lib/utils';
 import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono, Inter } from 'next/font/google';
 import IosInstallPrompt from '@/components/ios-install-prompt';
+import 'lenis/dist/lenis.css';
 import './globals.css';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
@@ -65,13 +67,15 @@ export default function RootLayout({
         <link rel="manifest" href="/manifest.webmanifest" />
       </head>
       <body className="min-h-dvh flex flex-col">
-        <ThemeProvider>
-          <QueryProvider>
-            <TooltipProvider>{children}</TooltipProvider>
-          </QueryProvider>
-          <Toaster />
-          <IosInstallPrompt />
-        </ThemeProvider>
+        <SmoothScrollProvider>
+          <ThemeProvider>
+            <QueryProvider>
+              <TooltipProvider>{children}</TooltipProvider>
+            </QueryProvider>
+            <Toaster />
+            <IosInstallPrompt />
+          </ThemeProvider>
+        </SmoothScrollProvider>
       </body>
     </html>
   );

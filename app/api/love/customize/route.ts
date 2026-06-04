@@ -51,7 +51,7 @@ export async function PATCH(request: Request) {
     } = parsed.data;
 
     // Build payload cập nhật
-    const updatePayload: Record<string, any> = {};
+    const updatePayload: Record<string, string | null | undefined> = {};
     if (user1AvatarUrl !== undefined) updatePayload.user_1_avatar_url = user1AvatarUrl;
     if (user2AvatarUrl !== undefined) updatePayload.user_2_avatar_url = user2AvatarUrl;
     if (backgroundUrl !== undefined) updatePayload.background_url = backgroundUrl;
@@ -85,9 +85,10 @@ export async function PATCH(request: Request) {
       message: "Cập nhật giao diện thành công!",
       data,
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
     return NextResponse.json(
-      { error: `Lỗi hệ thống: ${err.message}` },
+      { error: `Lỗi hệ thống: ${errorMsg}` },
       { status: 500 }
     );
   }

@@ -123,9 +123,9 @@ export function WorkspaceSwitcher() {
                 <ChevronsUpDownIcon className="size-4 shrink-0 text-muted-foreground/60 group-hover:text-foreground transition-colors" />
               </SidebarMenuButton>
             </DropdownMenuTrigger>
-            
+
             <DropdownMenuContent
-              className="w-[var(--radix-dropdown-menu-trigger-width)] p-1.5 rounded-xl border-border/60 shadow-xl"
+              className="w-(--radix-dropdown-menu-trigger-width) p-1.5 rounded-xl border-border/60 shadow-xl"
               align="start"
               sideOffset={6}
             >
@@ -148,8 +148,8 @@ export function WorkspaceSwitcher() {
                       }}
                       className={cn(
                         "flex items-center gap-3 px-2.5 py-2 rounded-lg cursor-pointer transition-all duration-200",
-                        isActive 
-                          ? "bg-primary/5 text-primary font-semibold border border-primary/10" 
+                        isActive
+                          ? "bg-primary/5 text-primary font-semibold border border-primary/10"
                           : "hover:bg-muted border border-transparent hover:translate-x-0.5"
                       )}
                     >
@@ -168,14 +168,14 @@ export function WorkspaceSwitcher() {
                           <Users className="size-3.5 stroke-[2.5]" />
                         )}
                       </div>
-                      
+
                       <div className="flex flex-col min-w-0 flex-1 leading-none gap-0.5">
                         <span className="text-sm truncate">{workspace.name}</span>
                         <span className="text-[10px] text-muted-foreground font-normal">
                           {workspace.is_personal ? "Cá nhân" : "Nhóm chung"}
                         </span>
                       </div>
-                      
+
                       {isActive && (
                         <div className="flex size-5 items-center justify-center rounded-full bg-primary/10 text-primary">
                           <CheckIcon className="size-3 stroke-3" />
@@ -185,9 +185,9 @@ export function WorkspaceSwitcher() {
                   )
                 })}
               </div>
-              
+
               <DropdownMenuSeparator className="my-1.5 border-border/50" />
-              
+
               <DropdownMenuItem
                 onSelect={() => setOpenCreate(true)}
                 className={cn(

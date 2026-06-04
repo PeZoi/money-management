@@ -1,5 +1,7 @@
 'use client';
 
+import { ReactLenis } from 'lenis/react';
+
 import {
   CalendarIcon,
   GripVerticalIcon,
@@ -138,8 +140,15 @@ export function CategorySidebar({
           </button>
         </div>
 
-        {/* Content Area */}
-        <div className="flex-1 overflow-y-auto min-h-0 divide-y">
+        {/* Content Area — nested Lenis cho cuộn mượt nội bộ */}
+        <ReactLenis
+          className="flex-1 overflow-y-auto min-h-0 divide-y"
+          options={{
+            duration: 0.8,
+            easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+            smoothWheel: true,
+          }}
+        >
           {activeTab === 'categories' && (
             <>
               {/* Chi tiêu */}
@@ -273,7 +282,7 @@ export function CategorySidebar({
               </div>
             </div>
           )}
-        </div>
+        </ReactLenis>
       </div>
     </aside>
   );

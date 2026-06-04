@@ -13,6 +13,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuBadge,
   SidebarRail,
   useSidebar,
 } from '@/components/ui/sidebar';
@@ -94,8 +95,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       items: [...g.items],
     }));
 
-    // Nếu người dùng đã có cặp đôi, thêm menu Ngày bên nhau vào mục 'Tổng quan'
-    if (loveConn?.connection_id) {
+    // Nếu người dùng đã có cặp đôi và đang ở màn hình di động, thêm menu Ngày bên nhau vào mục 'Tổng quan'
+    if (loveConn?.connection_id && isMobile) {
       const tongQuan = groups.find((g) => g.label === 'Tổng quan');
       if (tongQuan) {
         tongQuan.items.push({
@@ -119,7 +120,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       });
     }
     return groups;
-  }, [user, loveConn]);
+  }, [user, loveConn, isMobile]);
 
   return (
     <Sidebar {...props}>
@@ -193,13 +194,20 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                           aria-hidden
                         />
                         <span>{item.title}</span>
-                        {item.url === '/love' && isMobile && loveConn?.days_together !== undefined && (
-                          <span className="ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-black text-primary-foreground shadow-sm select-none">
-                            {loveConn.days_together}
-                          </span>
-                        )}
                       </Link>
                     </SidebarMenuButton>
+
+                    {item.url === '/love' && loveConn?.days_together !== undefined && (
+                      <SidebarMenuBadge className={cn(
+                        "flex h-5 min-w-[20px] items-center justify-center rounded-full px-1.5 text-[10px] font-extrabold transition-all duration-300 select-none",
+                        "absolute! right-3.5! top-[10px]! translate-y-0!", // Cố định top-[10px] để căn giữa tuyệt đối trong menu h-10 (40px)
+                        active
+                          ? "bg-emerald-600! text-white! peer-data-active/menu-button:text-white! shadow-sm shadow-emerald-600/20 peer-hover/menu-button:bg-emerald-500! peer-hover/menu-button:text-white! peer-hover/menu-button:scale-105"
+                          : "bg-emerald-500/10! text-emerald-600! dark:bg-emerald-500/20! dark:text-emerald-400! border border-emerald-500/20 dark:border-emerald-500/30 peer-data-active/menu-button:text-emerald-600! dark:peer-data-active/menu-button:text-emerald-400! peer-hover/menu-button:bg-emerald-500/20! peer-hover/menu-button:text-emerald-600! dark:peer-hover/menu-button:text-emerald-400! peer-hover/menu-button:scale-105"
+                      )}>
+                        {loveConn.days_together}
+                      </SidebarMenuBadge>
+                    )}
                   </SidebarMenuItem>
                 );
               })}

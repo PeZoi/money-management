@@ -109,9 +109,10 @@ export async function POST(request: Request) {
       url: publicUrl,
       message: "Tải ảnh lên thành công!",
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
     return NextResponse.json(
-      { error: `Lỗi hệ thống: ${err.message}` },
+      { error: `Lỗi hệ thống: ${errorMsg}` },
       { status: 500 }
     );
   }

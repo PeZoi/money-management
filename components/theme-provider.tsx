@@ -46,6 +46,19 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [primary, setPrimaryState] = React.useState<string>("");
 
   React.useEffect(() => {
+    // Monkeypatch Element.prototype.releasePointerCapture để triệt tiêu lỗi DOMException không đáng có
+    // (như lỗi 'No active pointer with the given id is found' do các thư viện kéo thả gọi không an toàn)
+    if (typeof window !== "undefined" && typeof Element !== "undefined") {
+      const originalRelease = Element.prototype.releasePointerCapture;
+      Element.prototype.releasePointerCapture = function (pointerId: number) {
+        try {
+          originalRelease.call(this, pointerId);
+        } catch {
+          // Nuốt lỗi DOMException để tránh làm crash console và các bộ bắt lỗi
+        }
+      };
+    }
+
     const initial = getInitialPrimary();
     if (initial) applyPrimary(initial);
   }, []);

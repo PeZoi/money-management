@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { Dialog as DialogNS } from 'radix-ui';
+import { ReactLenis } from 'lenis/react';
 import * as DrawerNS from '@/components/ui/drawer';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -52,14 +53,18 @@ function DialogContent({
   children,
   showCloseButton = true,
   fullScreenOnMobile = false,
+  disableScroll = false,
+  disableMobileDrawer = false,
   onOpenAutoFocus,
   onCloseAutoFocus,
   ...props
 }: React.ComponentProps<typeof DialogNS.Content> & {
   showCloseButton?: boolean;
   fullScreenOnMobile?: boolean;
+  disableScroll?: boolean;
+  disableMobileDrawer?: boolean;
 }) {
-  const isMobile = useIsMobile();
+  const isMobile = useIsMobile() && !disableMobileDrawer;
 
   if (isMobile) {
     // Trên thiết bị di động: Tự động biến thành Bottom Sheet với khả năng vuốt kéo để đóng
@@ -107,7 +112,7 @@ function DialogContent({
     );
   }
 
-  // Trên desktop: Render Dialog truyền thống căn giữa
+  // Trên desktop hoặc khi disableMobileDrawer: Render Dialog truyền thống căn giữa
   return (
     <DialogPortal>
       <DialogOverlay />
@@ -115,24 +120,43 @@ function DialogContent({
         data-slot="dialog-content"
         className={cn(
           'fixed z-50 flex flex-col bg-popover text-popover-foreground shadow-lg outline-none duration-200 border-border bg-clip-padding p-0 transition-all',
-          fullScreenOnMobile
-            ? 'top-35 bottom-0 left-0 translate-x-0 w-full rounded-t-3xl rounded-b-none border-t border-x gap-0 overflow-y-auto'
-            : 'bottom-0 top-auto left-1/2 -translate-x-1/2 translate-y-0 w-full rounded-t-3xl rounded-b-none border-t border-x max-h-[92dvh] gap-0 overflow-hidden',
-          'sm:top-1/2 sm:bottom-auto sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:w-[calc(100%-2rem)] sm:max-w-xl sm:rounded-2xl sm:border sm:max-h-[85vh]',
-          fullScreenOnMobile
-            ? 'data-open:animate-in data-open:fade-in-0 data-open:slide-in-from-bottom-5 sm:data-open:zoom-in-95 sm:data-open:slide-in-from-bottom-0'
-            : 'data-open:animate-in data-open:fade-in-0 data-open:slide-in-from-bottom-10 sm:data-open:zoom-in-95 sm:data-open:slide-in-from-bottom-0',
-          'data-closed:animate-out data-closed:fade-out-0 data-closed:slide-out-to-bottom-10 sm:data-closed:zoom-out-95 sm:data-closed:slide-out-to-bottom-0',
+          disableMobileDrawer
+            ? 'top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100%-2rem)] rounded-2xl border max-h-[85vh]'
+            : fullScreenOnMobile
+              ? 'top-35 bottom-0 left-0 translate-x-0 w-full rounded-t-3xl rounded-b-none border-t border-x gap-0 overflow-hidden'
+              : 'bottom-0 top-auto left-1/2 -translate-x-1/2 translate-y-0 w-full rounded-t-3xl rounded-b-none border-t border-x max-h-[92dvh] gap-0 overflow-hidden',
+          !disableMobileDrawer && 'sm:top-1/2 sm:bottom-auto sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:w-[calc(100%-2rem)] sm:max-w-xl sm:rounded-2xl sm:border sm:max-h-[85vh]',
+          disableMobileDrawer
+            ? 'data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95'
+            : fullScreenOnMobile
+              ? 'data-open:animate-in data-open:fade-in-0 data-open:slide-in-from-bottom-5 sm:data-open:zoom-in-95 sm:data-open:slide-in-from-bottom-0'
+              : 'data-open:animate-in data-open:fade-in-0 data-open:slide-in-from-bottom-10 sm:data-open:zoom-in-95 sm:data-open:slide-in-from-bottom-0',
+          !disableMobileDrawer && 'data-closed:animate-out data-closed:fade-out-0 data-closed:slide-out-to-bottom-10 sm:data-closed:zoom-out-95 sm:data-closed:slide-out-to-bottom-0',
           className,
         )}
         onOpenAutoFocus={onOpenAutoFocus}
         onCloseAutoFocus={onCloseAutoFocus}
         {...props}
       >
-        {!fullScreenOnMobile && (
+        {!fullScreenOnMobile && !disableMobileDrawer && (
           <div className="mx-auto my-3 h-1.5 w-12 shrink-0 rounded-full bg-muted-foreground/20 sm:hidden" />
         )}
-        {children}
+        {disableScroll ? (
+          <div className="flex flex-1 flex-col overflow-hidden">
+            {children}
+          </div>
+        ) : (
+          <ReactLenis
+            className="flex flex-1 flex-col overflow-y-auto"
+            options={{
+              duration: 1.0,
+              easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+              smoothWheel: true,
+            }}
+          >
+            {children}
+          </ReactLenis>
+        )}
         {showCloseButton ? (
           <DialogNS.Close asChild>
             <Button
@@ -140,7 +164,7 @@ function DialogContent({
               variant="ghost"
               className={cn(
                 'absolute z-10 rounded-full hover:bg-muted',
-                fullScreenOnMobile ? 'top-4 right-4' : 'top-3 right-3',
+                disableMobileDrawer || !fullScreenOnMobile ? 'top-3 right-3' : 'top-4 right-4',
               )}
               size="icon-sm"
             >

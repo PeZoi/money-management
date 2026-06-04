@@ -156,3 +156,39 @@
   background-color: var(--primary) !important;
   color: var(--primary-foreground) !important;
 }
+
+/* ====================================================================
+   Lenis Smooth Scroll — Chống xung đột với Radix UI Overlay
+   ====================================================================
+   Khi Lenis active, nó sẽ chặn cuộn mặc định của browser.
+   Các overlay như Dialog/Sheet/Drawer cần cuộn nội bộ (inner scroll),
+   nên phải đánh dấu chúng bằng `data-lenis-prevent` hoặc dùng
+   `overscroll-behavior: contain` để cắt chuỗi cuộn.
+   ==================================================================== */
+
+/* Radix portal overlay — ngăn cuộn lan ra trang chính */
+[data-radix-popper-content-wrapper] {
+  overscroll-behavior: contain;
+}
+
+/* Dialog / Sheet content — cho phép cuộn nội bộ, cắt scroll chain */
+[data-slot="dialog-content"],
+[data-slot="sheet-content"] {
+  overscroll-behavior: contain;
+}
+
+/* Drawer content (Vaul) — cho phép vuốt kéo đóng mà không ảnh hưởng cuộn trang */
+[data-slot="drawer-content"] {
+  overscroll-behavior: contain;
+}
+
+/* Select dropdown viewport — cho phép cuộn danh sách chọn */
+[data-slot="select-content"] {
+  overscroll-behavior: contain;
+}
+
+/* DropdownMenu — ngăn cuộn trang khi thao tác trong menu */
+[data-slot="dropdown-menu-content"],
+[data-slot="dropdown-menu-sub-content"] {
+  overscroll-behavior: contain;
+}

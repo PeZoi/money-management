@@ -168,8 +168,8 @@ export default function IconPickerDialog({ value, onChange, disabled, className 
             <DialogTitle>Chọn emoji cho danh mục</DialogTitle>
           </DialogHeader>
 
-          {/* Vùng chứa emoji picker — chiếm toàn bộ không gian còn lại */}
-          <div className="min-h-0 min-w-0 flex-1 overflow-hidden">
+          {/* Vùng chứa emoji picker — data-lenis-prevent vì picker tự quản lý scroll riêng */}
+          <div className="min-h-0 min-w-0 flex-1 overflow-hidden" data-lenis-prevent>
             {hasOpened && (
               <div className={cn(!open && 'hidden')}>
                 <EmojiPicker
