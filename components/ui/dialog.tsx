@@ -85,13 +85,46 @@ function DialogContent({
 
       // Nếu bàn phím ảo mở (chiều cao visualViewport nhỏ hơn innerHeight > 150px)
       if (window.innerHeight - vv.height > 150) {
-        // Đợi native animation cuộn của iOS hoàn tất (khoảng 120ms), nếu layout viewport bị lệch (scrollY > 0) thì kéo về (0,0)
+        // Đợi native animation cuộn của iOS hoàn tất (khoảng 150ms), nếu layout viewport bị lệch (scrollY > 0) thì kéo về (0,0)
         setTimeout(() => {
           const currentScroll = window.scrollY || window.pageYOffset || document.documentElement.scrollTop;
           if (currentScroll > 0) {
             window.scrollTo(0, 0);
           }
-        }, 120);
+
+          // Tự động cuộn nội bộ để đưa input đang active vào vùng nhìn thấy
+          const activeEl = document.activeElement as HTMLElement | null;
+          if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA')) {
+            // Tìm container cuộn tổ tiên gần nhất
+            let parent = activeEl.parentElement;
+            while (parent) {
+              const style = window.getComputedStyle(parent);
+              const overflowY = style.getPropertyValue('overflow-y');
+              if (parent.tagName === 'DIV' && (overflowY === 'auto' || overflowY === 'scroll')) {
+                break;
+              }
+              parent = parent.parentElement;
+            }
+
+            if (parent) {
+              const parentRect = parent.getBoundingClientRect();
+              const childRect = activeEl.getBoundingClientRect();
+              
+              // Tính toán vị trí cuộn để đưa input vào giữa vùng hiển thị của container
+              const targetScrollTop = 
+                childRect.top - 
+                parentRect.top + 
+                parent.scrollTop - 
+                (parentRect.height / 2) + 
+                (childRect.height / 2);
+
+              parent.scrollTo({
+                top: Math.max(0, targetScrollTop),
+                behavior: 'smooth',
+              });
+            }
+          }
+        }, 150);
       }
     };
 
