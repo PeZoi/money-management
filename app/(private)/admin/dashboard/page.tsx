@@ -15,8 +15,6 @@ import {
   Layers,
   Activity,
   ArrowUpRight,
-  UserPlus,
-  FolderPlus,
   CircleDollarSign,
   Cpu,
   HardDrive,
@@ -296,14 +294,14 @@ export default function AdminDashboardPage() {
 
       {/* 3. Hoạt động gần đây & Giám sát hiệu năng */}
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
-        {/* Nhật ký hoạt động gần đây */}
+        {/* Nhật ký giao dịch gần đây */}
         <div className="rounded-2xl border bg-card p-6 flex flex-col justify-between">
           <div>
-            <h3 className="font-semibold text-foreground">Nhật ký hoạt động</h3>
-            <p className="text-xs text-muted-foreground mb-4">Các sự kiện hệ thống thực tế vừa diễn ra</p>
+            <h3 className="font-semibold text-foreground">Nhật ký giao dịch</h3>
+            <p className="text-xs text-muted-foreground mb-4">Các giao dịch phát sinh gần đây trên hệ thống</p>
           </div>
 
-          <div className="flex-1 space-y-4.5 mt-2">
+          <div className="flex-1 max-h-[380px] overflow-y-auto pr-2 space-y-4.5 mt-2" data-lenis-prevent>
             {isActivitiesLoading ? (
               Array.from({ length: 4 }).map((_, i) => (
                 <div key={i} className="flex gap-3">
@@ -316,31 +314,19 @@ export default function AdminDashboardPage() {
               ))
             ) : activities.length === 0 ? (
               <div className="flex size-full items-center justify-center text-sm text-muted-foreground py-16">
-                Chưa ghi nhận hoạt động nào gần đây
+                Chưa ghi nhận giao dịch nào gần đây
               </div>
             ) : (
               activities.map((act, index) => {
-                let Icon = UserPlus;
-                let colorClass = "bg-blue-100 text-blue-600 dark:bg-blue-500/15 dark:text-blue-400";
-                let text = "";
-
-                if (act.activity_type === "user_signup") {
-                  Icon = UserPlus;
-                  colorClass = "bg-blue-100 text-blue-600 dark:bg-blue-500/15 dark:text-blue-400";
-                  text = `Người dùng mới đăng ký: ${act.target_name}`;
-                } else if (act.activity_type === "workspace_create") {
-                  Icon = FolderPlus;
-                  colorClass = "bg-violet-100 text-violet-600 dark:bg-violet-500/15 dark:text-violet-400";
-                  text = `Workspace "${act.target_name}" được tạo bởi ${act.actor_name}`;
-                } else if (act.activity_type === "transaction_create") {
-                  Icon = CircleDollarSign;
-                  colorClass = "bg-amber-100 text-amber-600 dark:bg-amber-500/15 dark:text-amber-400";
-                  const amount = Number(act.target_name);
-                  const formattedAmount = isNaN(amount)
-                    ? act.target_name
-                    : amount.toLocaleString("vi-VN") + "đ";
-                  text = `Giao dịch phát sinh trị giá ${formattedAmount} từ ${act.actor_name}`;
-                }
+                const Icon = CircleDollarSign;
+                const colorClass = "bg-amber-100 text-amber-600 dark:bg-amber-500/15 dark:text-amber-400";
+                
+                // Chuẩn hóa và format số tiền giao dịch
+                const amount = Number(act.target_name);
+                const formattedAmount = isNaN(amount)
+                  ? act.target_name
+                  : amount.toLocaleString("vi-VN") + "đ";
+                const text = `Giao dịch phát sinh trị giá ${formattedAmount} từ ${act.actor_name}`;
 
                 return (
                   <div key={index} className="flex gap-3 text-sm items-start">

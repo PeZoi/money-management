@@ -253,7 +253,7 @@ BEGIN
 END;
 $$;
 
--- 6.3. Nhật ký hoạt động hệ thống thực tế gần đây (7 hoạt động mới nhất)
+-- 6.3. Nhật ký giao dịch phát sinh gần đây (20 giao dịch mới nhất)
 CREATE OR REPLACE FUNCTION public.get_admin_recent_activities()
 RETURNS TABLE (
   activity_type text,
@@ -275,57 +275,20 @@ BEGIN
   END IF;
 
   RETURN QUERY
-  (
-    -- Đăng ký tài khoản mới
-    SELECT 
-      'user_signup'::text AS activity_type,
-      u.email::text AS target_name,
-      COALESCE(
-        u.raw_user_meta_data->>'full_name',
-        u.raw_user_meta_data->>'name',
-        split_part(u.email, '@', 1)
-      )::text AS actor_name,
-      u.created_at
-    FROM auth.users u
-    ORDER BY u.created_at DESC
-    LIMIT 5
-  )
-  UNION ALL
-  (
-    -- Tạo workspace mới
-    SELECT
-      'workspace_create'::text AS activity_type,
-      w.name::text AS target_name,
-      COALESCE(
-        creator.raw_user_meta_data->>'full_name',
-        creator.raw_user_meta_data->>'name',
-        split_part(creator.email, '@', 1)
-      )::text AS actor_name,
-      w.created_at
-    FROM public.workspaces w
-    LEFT JOIN auth.users creator ON creator.id = w.created_by
-    ORDER BY w.created_at DESC
-    LIMIT 5
-  )
-  UNION ALL
-  (
-    -- Giao dịch mới phát sinh
-    SELECT
-      'transaction_create'::text AS activity_type,
-      t.amount::text AS target_name,
-      COALESCE(
-        creator.raw_user_meta_data->>'full_name',
-        creator.raw_user_meta_data->>'name',
-        split_part(creator.email, '@', 1)
-      )::text AS actor_name,
-      t.created_at
-    FROM public.transactions t
-    LEFT JOIN auth.users creator ON creator.id = t.created_by
-    ORDER BY t.created_at DESC
-    LIMIT 5
-  )
-  ORDER BY created_at DESC
-  LIMIT 7;
+  -- Giao dịch mới phát sinh gần đây
+  SELECT
+    'transaction_create'::text AS activity_type,
+    t.amount::text AS target_name,
+    COALESCE(
+      creator.raw_user_meta_data->>'full_name',
+      creator.raw_user_meta_data->>'name',
+      split_part(creator.email, '@', 1)
+    )::text AS actor_name,
+    t.created_at
+  FROM public.transactions t
+  LEFT JOIN auth.users creator ON creator.id = t.created_by
+  ORDER BY t.created_at DESC
+  LIMIT 20;
 END;
 $$;
 

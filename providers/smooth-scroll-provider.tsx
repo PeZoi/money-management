@@ -1,6 +1,7 @@
 'use client';
 
 import { ReactLenis } from 'lenis/react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 /**
  * Provider cuộn mượt toàn cục sử dụng Lenis.
@@ -17,6 +18,14 @@ import { ReactLenis } from 'lenis/react';
  *   thông qua selector `[data-radix-popper-content-wrapper]`, v.v.
  */
 export function SmoothScrollProvider({ children }: { children: React.ReactNode }) {
+  const isMobile = useIsMobile();
+
+  // Trên thiết bị di động, vô hiệu hóa Lenis root để sử dụng cuộn gốc của hệ điều hành,
+  // tránh lỗi kẹt scroll và lỗi giật/vỡ layout khi bàn phím ảo xuất hiện trên iOS.
+  if (isMobile) {
+    return <>{children}</>;
+  }
+
   return (
     <ReactLenis
       root

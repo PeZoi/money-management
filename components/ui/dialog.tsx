@@ -224,7 +224,7 @@ function DialogContent({
           </div>
         ) : (
           <ReactLenis
-            className="flex flex-1 flex-col overflow-y-auto"
+            className="flex flex-1 flex-col overflow-y-auto overflow-x-hidden"
             options={{
               duration: 1.0,
               easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),

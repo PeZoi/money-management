@@ -13,7 +13,6 @@ import {
   DialogContent, 
   DialogDescription, 
   DialogFooter, 
-  DialogHeader, 
   DialogTitle 
 } from '@/components/ui/dialog';
 import { 
@@ -351,36 +350,38 @@ export default function AdminLovePage() {
 
       {/* CONNECT DIALOG */}
       <Dialog open={isConnectOpen} onOpenChange={setIsConnectOpen}>
-        <DialogContent className="sm:max-w-md p-6 rounded-2xl overflow-hidden">
-          <DialogHeader className="pb-4 border-b">
-            <DialogTitle className="flex items-center gap-2.5 text-xl font-bold text-rose-600 dark:text-rose-400">
-              <Heart className="size-6 fill-rose-500 text-rose-500 animate-pulse" />
+        <DialogContent disableScroll className="sm:max-w-md p-6 rounded-3xl overflow-hidden shadow-2xl">
+          <div className="flex flex-col items-center text-center pt-2">
+            <div className="flex size-12 items-center justify-center rounded-full bg-rose-50 dark:bg-rose-950/30 text-rose-500 dark:text-rose-400 shrink-0">
+              <Heart className="size-6 fill-rose-500 animate-pulse" />
+            </div>
+            <DialogTitle className="text-xl font-extrabold tracking-tight mt-4 text-foreground">
               Tạo Kết nối Cặp đôi
             </DialogTitle>
-            <DialogDescription className="text-sm text-muted-foreground mt-1">
-              Kết nối hai người dùng với nhau để bắt đầu đếm số ngày yêu.
+            <DialogDescription className="text-sm text-muted-foreground mt-2 max-w-xs">
+              Kết nối hai tài khoản để kích hoạt nhật ký đếm ngày yêu nhau của họ.
             </DialogDescription>
-          </DialogHeader>
+          </div>
           
-          <div className="space-y-5 py-5">
+          <div className="space-y-4 py-5">
             {/* User 1 */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-muted-foreground/80 tracking-wider uppercase block">
+              <label className="text-[10px] font-bold text-muted-foreground/80 tracking-widest uppercase block">
                 Người dùng 1
               </label>
-              <div className="flex items-center gap-3.5 p-3.5 bg-rose-500/5 border border-rose-100 dark:border-rose-950/40 rounded-2xl">
+              <div className="flex items-center gap-3 p-3 bg-muted/40 dark:bg-muted/10 border border-border/40 rounded-2xl">
                 <Avatar 
                   src={selectedUser1?.avatar_url} 
                   name={selectedUser1?.display_name} 
-                  className="size-10 border border-rose-200 dark:border-rose-900" 
-                  width={40} 
-                  height={40} 
+                  className="size-9 border border-rose-200 dark:border-rose-900" 
+                  width={36} 
+                  height={36} 
                 />
-                <div className="space-y-0.5">
-                  <span className="font-bold text-foreground block text-sm">
+                <div className="space-y-0.5 min-w-0">
+                  <span className="font-bold text-foreground block text-sm truncate">
                     {selectedUser1?.display_name}
                   </span>
-                  <span className="text-xs text-muted-foreground block">
+                  <span className="text-xs text-muted-foreground block truncate">
                     {selectedUser1?.email}
                   </span>
                 </div>
@@ -389,7 +390,7 @@ export default function AdminLovePage() {
 
             {/* User 2 Selector */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-muted-foreground/80 tracking-wider uppercase block">
+              <label className="text-[10px] font-bold text-muted-foreground/80 tracking-widest uppercase block">
                 Người dùng 2 (Đối tác)
               </label>
               {singleUsers.length === 0 ? (
@@ -412,9 +413,9 @@ export default function AdminLovePage() {
               )}
             </div>
 
-            {/* Anniversary Date (Shadcn Date Picker) */}
+            {/* Anniversary Date */}
             <div className="space-y-1.5 flex flex-col">
-              <label className="text-xs font-bold text-muted-foreground/80 tracking-wider uppercase block">
+              <label className="text-[10px] font-bold text-muted-foreground/80 tracking-widest uppercase block">
                 Ngày bắt đầu yêu nhau
               </label>
               <Popover open={openCalendar} onOpenChange={setOpenCalendar}>
@@ -447,12 +448,12 @@ export default function AdminLovePage() {
             </div>
           </div>
           
-          <DialogFooter className="pt-4 border-t flex flex-row items-center justify-end gap-2.5 sm:gap-3 bg-muted/5 -mx-6 -mb-6 p-4 sm:p-6">
+          <DialogFooter className="grid grid-cols-2 gap-3 mt-4 pt-0">
             <Button 
               type="button" 
               variant="outline" 
               onClick={() => setIsConnectOpen(false)} 
-              className="flex-1 sm:flex-none rounded-xl cursor-pointer hover:bg-muted/80 h-10 px-4"
+              className="rounded-xl font-semibold cursor-pointer hover:bg-muted/80 h-11"
             >
               Hủy
             </Button>
@@ -460,9 +461,9 @@ export default function AdminLovePage() {
               type="button"
               onClick={handleConnectSubmit}
               disabled={isConnecting || !selectedUser2Id}
-              className="flex-1 sm:flex-none bg-rose-500 hover:bg-rose-600 text-white shadow-sm hover:shadow transition-all rounded-xl cursor-pointer h-10 px-5"
+              className="bg-rose-500 hover:bg-rose-600 text-white font-semibold shadow-sm hover:shadow transition-all rounded-xl cursor-pointer h-11"
             >
-              {isConnecting ? 'Đang kết nối...' : 'Xác nhận Kết nối'}
+              {isConnecting ? 'Đang kết nối...' : 'Xác nhận'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -470,32 +471,48 @@ export default function AdminLovePage() {
 
       {/* DISCONNECT DIALOG */}
       <Dialog open={isDisconnectOpen} onOpenChange={setIsDisconnectOpen}>
-        <DialogContent className="sm:max-w-md p-6 rounded-2xl overflow-hidden">
-          <DialogHeader className="pb-4 border-b">
-            <DialogTitle className="text-destructive flex items-center gap-2.5 text-xl font-bold">
-              <AlertTriangle className="size-6 text-destructive animate-pulse" />
+        <DialogContent disableScroll className="sm:max-w-md p-6 rounded-3xl overflow-hidden shadow-2xl">
+          <div className="flex flex-col items-center text-center pt-2">
+            <div className="flex size-12 items-center justify-center rounded-full bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 shrink-0">
+              <AlertTriangle className="size-6 animate-pulse" />
+            </div>
+            <DialogTitle className="text-xl font-extrabold tracking-tight mt-4 text-foreground">
               Hủy Kết nối Tình yêu
             </DialogTitle>
-            <DialogDescription className="text-sm text-muted-foreground mt-1">
-              Xóa hoàn toàn kết nối tình yêu. Các kỷ niệm liên quan cũng sẽ bị xóa vĩnh viễn.
+            <DialogDescription className="text-sm text-muted-foreground mt-2 max-w-xs">
+              Hành động này sẽ xóa hoàn toàn kết nối cặp đôi và toàn bộ kỷ niệm liên quan vĩnh viễn.
             </DialogDescription>
-          </DialogHeader>
+          </div>
           
           <div className="py-6 space-y-3">
-            <p className="text-sm font-medium text-muted-foreground">
-              Bạn có chắc chắn muốn hủy bắt cặp kết nối của cặp đôi:
+            <p className="text-[10px] font-bold text-muted-foreground/80 tracking-widest uppercase text-center">
+              Cặp đôi sẽ bị hủy kết nối
             </p>
-            <div className="text-lg font-black text-center py-4 text-rose-600 dark:text-rose-400 bg-rose-500/5 dark:bg-rose-950/20 rounded-2xl border border-rose-200/40 dark:border-rose-900/30">
-              {disconnectPartnerName}
+            
+            <div className="flex items-center justify-center gap-4 py-4 px-5 bg-muted/30 dark:bg-muted/10 rounded-2xl border border-border/40">
+              {(() => {
+                const names = disconnectPartnerName.split('&');
+                const p1 = names[0]?.trim() || '';
+                const p2 = names[1]?.trim() || '';
+                return (
+                  <>
+                    <span className="font-bold text-sm text-foreground/95 truncate max-w-[130px]">{p1}</span>
+                    <div className="flex items-center justify-center size-8 rounded-full bg-rose-500/10 text-rose-500 shrink-0">
+                      <Heart className="size-4 fill-rose-500/20" />
+                    </div>
+                    <span className="font-bold text-sm text-foreground/95 truncate max-w-[130px]">{p2}</span>
+                  </>
+                );
+              })()}
             </div>
           </div>
           
-          <DialogFooter className="pt-4 border-t flex flex-row items-center justify-end gap-2.5 sm:gap-3 bg-muted/5 -mx-6 -mb-6 p-4 sm:p-6">
+          <DialogFooter className="grid grid-cols-2 gap-3 mt-4 pt-0">
             <Button 
               type="button"
               variant="outline" 
               onClick={() => setIsDisconnectOpen(false)} 
-              className="flex-1 sm:flex-none rounded-xl cursor-pointer hover:bg-muted/80 h-10 px-4"
+              className="rounded-xl font-semibold cursor-pointer border-muted-foreground/20 hover:bg-muted/50 h-11"
             >
               Quay lại
             </Button>
@@ -504,7 +521,7 @@ export default function AdminLovePage() {
               variant="destructive"
               onClick={handleDisconnectSubmit}
               disabled={isDisconnecting}
-              className="flex-1 sm:flex-none cursor-pointer rounded-xl h-10 px-5 shadow-sm"
+              className="rounded-xl font-semibold cursor-pointer bg-red-600 hover:bg-red-700 text-white h-11 shadow-sm"
             >
               {isDisconnecting ? 'Đang hủy...' : 'Đồng ý Hủy'}
             </Button>
