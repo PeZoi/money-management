@@ -66,16 +66,46 @@ function DialogContent({
 }) {
   const isMobile = useIsMobile() && !disableMobileDrawer;
 
+  // Quản lý chiều cao visual viewport động trên mobile
+  const [visualHeight, setVisualHeight] = React.useState<number | null>(() => {
+    if (typeof window !== 'undefined' && window.visualViewport) {
+      return window.visualViewport.height;
+    }
+    return null;
+  });
+
+  React.useEffect(() => {
+    if (!isMobile || !window.visualViewport) return;
+
+    const handleResize = () => {
+      setVisualHeight(window.visualViewport?.height || null);
+    };
+
+    window.visualViewport.addEventListener('resize', handleResize);
+    window.visualViewport.addEventListener('scroll', handleResize);
+
+    return () => {
+      window.visualViewport?.removeEventListener('resize', handleResize);
+      window.visualViewport?.removeEventListener('scroll', handleResize);
+    };
+  }, [isMobile]);
+
   if (isMobile) {
     // Trên thiết bị di động: Tự động biến thành Bottom Sheet với khả năng vuốt kéo để đóng
+    // Giới hạn max-height của Drawer theo visual viewport để không bị đẩy vượt quá đỉnh màn hình
+    const dynamicStyle = visualHeight 
+      ? { maxHeight: `${visualHeight - 12}px` } 
+      : undefined;
+
     return (
       <DrawerNS.DrawerContent
         className={cn(
           // Loại bỏ định vị fixed/translate của modal desktop
-          'px-4 pb-8',
-          fullScreenOnMobile && 'h-[96dvh] max-h-[96dvh]', // Xử lý nếu form yêu cầu chế độ tràn màn hình
+          'px-4 pb-6',
+          fullScreenOnMobile ? 'h-full' : 'h-auto', // Sử dụng h-full để co giãn theo maxHeight thay vì set cứng vh
           className
         )}
+        style={dynamicStyle}
         onOpenAutoFocus={(e) => {
           if (onOpenAutoFocus) {
             onOpenAutoFocus(e);
