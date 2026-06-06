@@ -234,7 +234,10 @@ export function AnalysisTab({
             </div>
             
             {/* Danh sách chú thích chi tiết đơn giản, sạch sẽ */}
-            <div className="space-y-1.5 max-h-[220px] overflow-y-auto pr-1 w-full">
+            <div
+              data-lenis-prevent
+              className="space-y-1.5 max-h-[220px] overflow-y-auto pr-1 w-full"
+            >
               {categoryStats.data.map((item) => (
                 <div 
                   key={item.id} 

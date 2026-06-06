@@ -420,7 +420,7 @@ export function MilestoneDialog({
                     </span>
                   </button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 border-none shadow-2xl z-[99999]" align="center">
+                <PopoverContent className="w-auto p-0 border-none shadow-2xl z-99999" align="center">
                   <EmojiPicker
                     onEmojiClick={(emojiData) => {
                       setMilestoneIcon(emojiData.emoji);

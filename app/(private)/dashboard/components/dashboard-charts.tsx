@@ -393,7 +393,10 @@ export function DashboardCharts({
             </div>
 
             {/* Danh sách các danh mục chi tiêu */}
-            <div className="space-y-1 max-h-[170px] overflow-y-auto pr-1 flex-1">
+            <div
+              data-lenis-prevent
+              className="space-y-1 max-h-[170px] overflow-y-auto pr-1 flex-1"
+            >
               {categoryStats.data.map((item) => (
                 <div
                   key={item.id}
