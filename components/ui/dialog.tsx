@@ -78,7 +78,21 @@ function DialogContent({
     if (!isMobile || !window.visualViewport) return;
 
     const handleResize = () => {
-      setVisualHeight(window.visualViewport?.height || null);
+      const vv = window.visualViewport;
+      if (!vv) return;
+
+      setVisualHeight(vv.height);
+
+      // Nếu bàn phím ảo mở (chiều cao visualViewport nhỏ hơn innerHeight > 150px)
+      if (window.innerHeight - vv.height > 150) {
+        // Đợi native animation cuộn của iOS hoàn tất (khoảng 120ms), nếu layout viewport bị lệch (scrollY > 0) thì kéo về (0,0)
+        setTimeout(() => {
+          const currentScroll = window.scrollY || window.pageYOffset || document.documentElement.scrollTop;
+          if (currentScroll > 0) {
+            window.scrollTo(0, 0);
+          }
+        }, 120);
+      }
     };
 
     window.visualViewport.addEventListener('resize', handleResize);
