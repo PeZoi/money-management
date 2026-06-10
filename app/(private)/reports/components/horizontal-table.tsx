@@ -13,7 +13,7 @@ import {
   TrendingUpIcon,
   WalletIcon,
 } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -92,6 +92,20 @@ export function HorizontalTable({
   onDummyCellClick,
   readOnly = false,
 }: HorizontalTableProps) {
+  // Tính tổng thực thu/chi (tổng của các cột category với multiplier tương ứng)
+  const grandTotal = useMemo(() => {
+    return Array.from(columnTotals.entries())
+      .filter(([colId]) => {
+        const col = columns.find((c) => c.id === colId);
+        return col?.kind === 'category';
+      })
+      .reduce((sum, [colId, val]) => {
+        const col = columns.find((c) => c.id === colId);
+        const multiplier = col && col.kind === 'category' && col.categoryType === 'expense' ? -1 : 1;
+        return sum + val * multiplier;
+      }, 0);
+  }, [columnTotals, columns]);
+
   // ─── Đổi tên cột (inline edit) ────────────────────
   const [editingColumnId, setEditingColumnId] = useState<string | null>(null);
   const [editColumnName, setEditColumnName] = useState('');
@@ -180,7 +194,7 @@ export function HorizontalTable({
   };
 
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto" data-lenis-prevent>
       <table className="w-full min-w-max text-sm">
         {/* Header cột */}
         <thead>
@@ -404,8 +418,13 @@ export function HorizontalTable({
 
             {/* Cột tổng */}
             {table.showTotals !== false && (
-              <th className="px-4 py-3.5 text-right whitespace-nowrap bg-emerald-500/10 dark:bg-emerald-500/20 min-w-[120px] border-l border-emerald-500/20">
-                <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Tổng</span>
+              <th className={cn(
+                "px-4 py-3.5 text-right whitespace-nowrap min-w-[120px] border-l transition-colors duration-200",
+                grandTotal < 0
+                  ? "bg-rose-500/10 dark:bg-rose-500/20 border-rose-500/20 text-rose-600 dark:text-rose-400"
+                  : "bg-emerald-500/10 dark:bg-emerald-500/20 border-emerald-500/20 text-emerald-600 dark:text-emerald-400"
+              )}>
+                <span className="text-xs font-bold">Tổng</span>
               </th>
             )}
             {/* Cột Spacer */}
@@ -486,8 +505,10 @@ export function HorizontalTable({
                 })}
                 {table.showTotals !== false && (
                   <td className={cn(
-                    "px-4 py-3 text-right font-mono text-[13px] tracking-tight font-bold bg-emerald-500/10 dark:bg-emerald-500/20 border-l border-emerald-500/20",
-                    rowTotal < 0 ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400"
+                    "px-4 py-3 text-right font-mono text-[13px] tracking-tight font-bold border-l transition-colors duration-200",
+                    rowTotal < 0
+                      ? "bg-rose-500/10 dark:bg-rose-500/20 border-rose-500/20 text-rose-600 dark:text-rose-400"
+                      : "bg-emerald-500/10 dark:bg-emerald-500/20 border-emerald-500/20 text-emerald-600 dark:text-emerald-400"
                   )}>
                     {formatVnd(rowTotal)}
                   </td>
@@ -502,8 +523,18 @@ export function HorizontalTable({
         {/* Dòng tổng cộng */}
         {table.showTotals !== false && (
           <tfoot>
-            <tr className="border-y-2 border-emerald-500/30 bg-emerald-500/10 dark:bg-emerald-500/25">
-              <td className="px-3 py-3.5 text-center text-sm font-extrabold text-emerald-700 dark:text-emerald-300 border-r border-emerald-500/20">
+            <tr className={cn(
+              "border-y-2 transition-colors duration-200",
+              grandTotal < 0
+                ? "border-rose-500/30 bg-rose-500/10 dark:bg-rose-500/25"
+                : "border-emerald-500/30 bg-emerald-500/10 dark:bg-emerald-500/25"
+            )}>
+              <td className={cn(
+                "px-3 py-3.5 text-center text-sm font-extrabold border-r transition-colors duration-200",
+                grandTotal < 0
+                  ? "text-rose-700 dark:text-rose-300 border-rose-500/20"
+                  : "text-emerald-700 dark:text-emerald-300 border-emerald-500/20"
+              )}>
                 Σ
               </td>
               {columns.map((col) => {
@@ -515,11 +546,19 @@ export function HorizontalTable({
                     className={cn(
                       'px-4 py-3.5 text-right font-mono text-[13px] tracking-tight font-bold border-r last:border-r-0 border-border/60',
                       col.kind === 'formula'
-                        ? 'text-amber-700 dark:text-amber-400'
+                        ? total < 0
+                          ? 'text-rose-700 dark:text-rose-400'
+                          : 'text-amber-700 dark:text-amber-400'
                         : col.kind === 'system'
-                          ? 'text-blue-700 dark:text-blue-400'
+                          ? col.systemMetric === 'total_expense' || col.systemMetric === 'avg_daily_expense' || (col.systemMetric === 'month_balance' && total < 0)
+                            ? 'text-rose-700 dark:text-rose-400'
+                            : col.systemMetric === 'total_income' || (col.systemMetric === 'month_balance' && total >= 0)
+                              ? 'text-emerald-700 dark:text-emerald-300'
+                              : 'text-blue-700 dark:text-blue-400'
                           : col.kind === 'category'
-                            ? 'text-emerald-700 dark:text-emerald-300'
+                            ? col.categoryType === 'expense'
+                              ? 'text-rose-700 dark:text-rose-400' // Cột chi tiêu thì tổng có màu đỏ
+                              : 'text-emerald-700 dark:text-emerald-300' // Cột thu nhập thì tổng có màu xanh
                             : 'text-foreground',
                     )}
                   >
@@ -527,27 +566,14 @@ export function HorizontalTable({
                   </td>
                 );
               })}
-              {(() => {
-                const grandTotal = Array.from(columnTotals.entries())
-                  .filter(([colId]) => {
-                    const col = columns.find((c) => c.id === colId);
-                    return col?.kind === 'category';
-                  })
-                  .reduce((sum, [colId, val]) => {
-                    const col = columns.find((c) => c.id === colId);
-                    const multiplier = col && col.kind === 'category' && col.categoryType === 'expense' ? -1 : 1;
-                    return sum + val * multiplier;
-                  }, 0);
-
-                return (
-                  <td className={cn(
-                    "px-4 py-3.5 text-right font-mono text-sm font-extrabold border-l border-emerald-500/20",
-                    grandTotal < 0 ? "text-rose-700 dark:text-rose-400" : "text-emerald-700 dark:text-emerald-300"
-                  )}>
-                    {formatVnd(grandTotal)}
-                  </td>
-                );
-              })()}
+              <td className={cn(
+                "px-4 py-3.5 text-right font-mono text-sm font-extrabold border-l transition-colors duration-200",
+                grandTotal < 0
+                  ? "text-rose-700 dark:text-rose-400 border-rose-500/20"
+                  : "text-emerald-700 dark:text-emerald-300 border-emerald-500/20"
+              )}>
+                {formatVnd(grandTotal)}
+              </td>
               {/* Cột Spacer */}
               <td className="p-0 border-none bg-transparent"></td>
             </tr>

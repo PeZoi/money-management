@@ -5,49 +5,31 @@ import React from "react";
 import { THEME_PRIMARY_STORAGE_KEY } from "@/types/theme";
 
 const STORAGE_KEY = THEME_PRIMARY_STORAGE_KEY;
+const THEME_MODE_KEY = "moneyplus.theme_mode";
 
 export type ThemeState = {
-  primary: string; // any valid CSS color (we store hex)
+  primary: string;
 };
 
-function normalizeColor(input: string) {
-  const v = input.trim();
-  if (!v) return "";
-  return v;
-}
-
-function getInitialPrimary(): string {
-  if (typeof window === "undefined") return "";
-  const saved = window.localStorage.getItem(STORAGE_KEY);
-  if (saved) return normalizeColor(saved);
-
-  const computed = window
-    .getComputedStyle(document.documentElement)
-    .getPropertyValue("--primary")
-    .trim();
-  return normalizeColor(computed);
-}
-
-function applyPrimary(primary: string) {
-  document.documentElement.style.setProperty("--primary", primary);
-  document.documentElement.style.setProperty("--ring", primary);
-}
+export type ThemeMode = "light" | "dark";
 
 type ThemeContextValue = {
   theme: ThemeState;
   setPrimary: (primary: string) => void;
   resetPrimary: () => void;
+  themeMode: ThemeMode;
+  setThemeMode: (mode: ThemeMode) => void;
+  toggleThemeMode: () => void;
 };
 
 const ThemeContext = React.createContext<ThemeContextValue | null>(null);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  // Avoid hydration mismatch: do not read localStorage during the first render.
   const [primary, setPrimaryState] = React.useState<string>("");
+  const [themeMode, setThemeModeState] = React.useState<ThemeMode>("light");
 
   React.useEffect(() => {
     // Monkeypatch Element.prototype.releasePointerCapture để triệt tiêu lỗi DOMException không đáng có
-    // (như lỗi 'No active pointer with the given id is found' do các thư viện kéo thả gọi không an toàn)
     if (typeof window !== "undefined" && typeof Element !== "undefined") {
       const originalRelease = Element.prototype.releasePointerCapture;
       Element.prototype.releasePointerCapture = function (pointerId: number) {
@@ -59,24 +41,70 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       };
     }
 
-    const initial = getInitialPrimary();
-    if (initial) applyPrimary(initial);
-  }, []);
+    // Luôn dọn dẹp cấu hình màu chủ đạo cũ (nếu có) để quay về mặc định của CSS (màu xanh lá)
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem(STORAGE_KEY);
+      document.documentElement.style.removeProperty("--primary");
+      document.documentElement.style.removeProperty("--ring");
+    }
 
-  const setPrimary = React.useCallback((next: string) => {
-    const value = normalizeColor(next);
-    setPrimaryState(value);
-    if (value) {
-      applyPrimary(value);
-      window.localStorage.setItem(STORAGE_KEY, value);
+    // Đọc theme mode cũ đã lưu ở client side khi trang mount
+    if (typeof window !== "undefined") {
+      const savedMode = window.localStorage.getItem(THEME_MODE_KEY) as ThemeMode | null;
+      const initialMode = savedMode || "light";
+      
+      const timer = setTimeout(() => {
+        setThemeModeState(initialMode);
+      }, 0);
+
+      if (initialMode === "dark") {
+        document.documentElement.classList.add("dark");
+      } else {
+        document.documentElement.classList.remove("dark");
+      }
+
+      return () => clearTimeout(timer);
     }
   }, []);
 
+  const setPrimary = React.useCallback(() => {
+    // Vô hiệu hóa tính năng đổi màu chủ đạo dynamic
+  }, []);
+
   const resetPrimary = React.useCallback(() => {
-    window.localStorage.removeItem(STORAGE_KEY);
-    document.documentElement.style.removeProperty("--primary");
-    document.documentElement.style.removeProperty("--ring");
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem(STORAGE_KEY);
+      document.documentElement.style.removeProperty("--primary");
+      document.documentElement.style.removeProperty("--ring");
+    }
     setPrimaryState("");
+  }, []);
+
+  const setThemeMode = React.useCallback((mode: ThemeMode) => {
+    setThemeModeState(mode);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(THEME_MODE_KEY, mode);
+      if (mode === "dark") {
+        document.documentElement.classList.add("dark");
+      } else {
+        document.documentElement.classList.remove("dark");
+      }
+    }
+  }, []);
+
+  const toggleThemeMode = React.useCallback(() => {
+    setThemeModeState((prev) => {
+      const next = prev === "dark" ? "light" : "dark";
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(THEME_MODE_KEY, next);
+        if (next === "dark") {
+          document.documentElement.classList.add("dark");
+        } else {
+          document.documentElement.classList.remove("dark");
+        }
+      }
+      return next;
+    });
   }, []);
 
   const effectivePrimary = React.useMemo(() => {
@@ -89,8 +117,15 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, [primary]);
 
   const value = React.useMemo(
-    () => ({ theme: { primary: effectivePrimary }, setPrimary, resetPrimary }),
-    [effectivePrimary, resetPrimary, setPrimary],
+    () => ({ 
+      theme: { primary: effectivePrimary }, 
+      setPrimary, 
+      resetPrimary,
+      themeMode,
+      setThemeMode,
+      toggleThemeMode
+    }),
+    [effectivePrimary, resetPrimary, setPrimary, themeMode, setThemeMode, toggleThemeMode],
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
@@ -101,4 +136,3 @@ export function useTheme() {
   if (!ctx) throw new Error("useTheme must be used within ThemeProvider");
   return ctx;
 }
-

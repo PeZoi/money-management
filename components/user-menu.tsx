@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronDownIcon, LogOutIcon, SettingsIcon, UserIcon } from 'lucide-react';
+import { ChevronDownIcon, LogOutIcon, SettingsIcon, UserIcon, Sun, Moon } from 'lucide-react';
 
 import { Avatar } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -18,6 +18,7 @@ import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from '@/c
 import { useAuth } from '@/hooks/use-auth';
 import type { UserRole } from '@/types/database';
 import Link from 'next/link';
+import { useTheme } from '@/components/theme-provider';
 
 function roleMapToVietnamese(role: UserRole | undefined): string {
   switch (role) {
@@ -33,6 +34,7 @@ function roleMapToVietnamese(role: UserRole | undefined): string {
 export function UserMenu() {
   const { user, signOut } = useAuth();
   const { isMobile, setOpenMobile } = useSidebar();
+  const { themeMode, toggleThemeMode } = useTheme();
 
   if (isMobile) {
     return null;
@@ -119,6 +121,10 @@ export function UserMenu() {
                   Cài đặt
                 </DropdownMenuItem>
               </Link>
+              <DropdownMenuItem onClick={() => toggleThemeMode()} className="cursor-pointer">
+                {themeMode === 'dark' ? <Sun className="size-4" /> : <Moon className="size-4" />}
+                <span>{themeMode === 'dark' ? 'Giao diện sáng' : 'Giao diện tối'}</span>
+              </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>

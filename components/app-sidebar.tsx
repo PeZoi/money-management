@@ -136,14 +136,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   onClick={() => setOpenTxDialog(true)}
                   className={cn(
                     "w-full font-semibold",
-                    state === 'collapsed' ? "h-9 w-9 p-0 rounded-lg" : "h-10 px-3"
+                    (state === 'collapsed' && !isMobile) ? "h-9 w-9 p-0 rounded-lg" : "h-10 px-3"
                   )}
                 >
-                  <Plus className={cn("transition-transform duration-300 group-hover/btn:rotate-90", state === 'collapsed' ? "size-5" : "size-4.5")} />
-                  {state !== 'collapsed' && <span>Thêm giao dịch</span>}
+                  <Plus className={cn("transition-transform duration-300 group-hover/btn:rotate-90", (state === 'collapsed' && !isMobile) ? "size-5" : "size-4.5")} />
+                  {(state !== 'collapsed' || isMobile) && <span>Thêm giao dịch</span>}
                 </Button>
               </TooltipTrigger>
-              {state === 'collapsed' && (
+              {state === 'collapsed' && !isMobile && (
                 <TooltipContent side="right" align="center" sideOffset={12}>
                   Thêm giao dịch
                 </TooltipContent>

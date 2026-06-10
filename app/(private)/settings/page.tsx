@@ -37,11 +37,9 @@ import {
   LogOutIcon,
   MailIcon,
   SettingsIcon,
-  SparklesIcon,
   TrashIcon,
   UserPlusIcon,
   UsersIcon,
-  ZapIcon,
 } from 'lucide-react';
 import * as React from 'react';
 import ArchivedTransactionsList from './components/archived-transactions-list';
@@ -49,48 +47,29 @@ import TelegramBackupSection from './components/telegram-backup-section';
 import { MonthPicker } from '@/components/month-picker';
 import { useSettings } from './hooks/use-settings';
 import { useAuth } from '@/hooks/use-auth';
-import { SETTINGS_KEY, getLocalStorageItem, setLocalStorageItem } from '@/functions/localstorage-fn';
-
-const PRESETS: Array<{ name: string; value: string }> = [
-  { name: 'Xanh lá', value: '#16a34a' },
-  { name: 'Xanh dương', value: '#2563eb' },
-  { name: 'Tím', value: '#7c3aed' },
-  { name: 'Cam', value: '#ea580c' },
-  { name: 'Đỏ', value: '#dc2626' },
-  { name: 'Đen', value: '#171717' },
-];
+import { useBottomNavStore, ALL_NAV_ITEMS } from '@/hooks/use-bottom-nav-store';
+import { useMyLoveConnection } from '@/hooks/use-love';
+import { useTheme } from '@/components/theme-provider';
 
 export default function SettingsPage() {
   const { signOut } = useAuth();
+  const { themeMode, toggleThemeMode } = useTheme();
 
-  // Cài đặt giao dịch thông minh: bật/tắt preview trước khi lưu
-  const [smartTxPreview, setSmartTxPreview] = React.useState(true);
-  const [hasMountedSmartTx, setHasMountedSmartTx] = React.useState(false);
+  const { items: bottomNavItems, updateItemAt: updateBottomNavItemAt, resetToDefault: resetBottomNavToDefault } = useBottomNavStore();
+  const { data: loveConn } = useMyLoveConnection();
+
+  // Danh sách các mục có thể chọn trên bottom nav, chỉ hiển thị "Ngày bên nhau" khi đã kết nối
+  const availableItems = React.useMemo(() => {
+    const list = Object.values(ALL_NAV_ITEMS);
+    if (!loveConn?.connection_id) {
+      return list.filter(item => item.key !== 'love');
+    }
+    return list;
+  }, [loveConn]);
+
   const [openCalendar, setOpenCalendar] = React.useState(false);
-
-
-
-  React.useEffect(() => {
-    const saved = getLocalStorageItem(SETTINGS_KEY.SMART_TX_PREVIEW);
-    const isTrue = saved !== null ? saved === 'true' : true;
-
-    // Gom nhóm setState vào luồng bất đồng bộ để tránh linter warning
-    setTimeout(() => {
-      setSmartTxPreview(isTrue);
-      setHasMountedSmartTx(true);
-    }, 0);
-  }, []);
-
-  const handleToggleSmartTxPreview = (checked: boolean) => {
-    setSmartTxPreview(checked);
-    setLocalStorageItem(SETTINGS_KEY.SMART_TX_PREVIEW, String(checked));
-  };
   const {
-    theme,
-    color,
     user,
-    setPrimary,
-    resetPrimary,
     activeWorkspace,
     activeTab,
     setActiveTab,
@@ -240,104 +219,151 @@ export default function SettingsPage() {
         {/* Tab 1: Appearance */}
         {activeTab === 'appearance' && (
           <div className="grid gap-6">
-            <section className="rounded-xl border border-border bg-card p-5 shadow-xs">
-              <h2 className="text-base font-semibold">Màu chủ đạo</h2>
-              <p className="text-xs text-muted-foreground mt-1">Thay đổi tông màu chủ đạo cho toàn bộ giao diện.</p>
-
-              <div className="mt-4 flex flex-wrap gap-2">
-                {PRESETS.map((p) => (
-                  <button
-                    key={p.value}
-                    type="button"
-                    onClick={() => setPrimary(p.value)}
-                    className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5 text-sm hover:bg-muted transition-colors cursor-pointer"
-                  >
-                    <span className="h-3 w-3 rounded-full" style={{ backgroundColor: p.value }} />
-                    <span className={cn(color === p.value && 'font-semibold text-primary')}>{p.name}</span>
-                  </button>
-                ))}
-              </div>
-
-              <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-t border-border pt-4">
-                <label className="flex items-center gap-3 text-sm">
-                  <span className="text-muted-foreground">Tùy chọn màu</span>
-                  <input
-                    aria-label="Chọn màu chủ đạo"
-                    type="color"
-                    value={color}
-                    onChange={(e) => setPrimary(e.target.value)}
-                    className="h-9 w-14 cursor-pointer rounded-md border border-border bg-background p-1"
-                  />
-                  <code className="rounded-md bg-muted px-2 py-1 text-xs font-mono">{color}</code>
-                </label>
-
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground mr-2">Bản xem trước:</span>
-                  <Button type="button">Primary Button</Button>
-                  <Button type="button" variant="outline">
-                    Outline
-                  </Button>
-                </div>
-              </div>
-            </section>
-
+            {/* Section: Chế độ tối */}
             <section className="rounded-xl border border-border bg-card p-5 shadow-xs flex items-center justify-between">
               <div>
-                <h2 className="text-base font-semibold">Trạng thái theme</h2>
-                <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-                  <span>Màu chủ đạo hiện tại:</span>
-                  <code className="bg-muted px-1.5 py-0.5 rounded font-mono text-primary font-medium">
-                    {theme.primary || color}
-                  </code>
-                </div>
+                <h2 className="text-base font-semibold">Chế độ tối (Dark Mode)</h2>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Chuyển đổi giao diện sang tông màu xanh dương đậm (Dark Blue) dịu mắt khi sử dụng ban đêm.
+                </p>
               </div>
-              <Button variant="outline" onClick={resetPrimary} type="button">
-                Reset về mặc định
-              </Button>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={themeMode === 'dark'}
+                onClick={() => toggleThemeMode()}
+                className={cn(
+                  'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 outline-none',
+                  themeMode === 'dark' ? 'bg-primary' : 'bg-muted-foreground/30',
+                )}
+              >
+                <span
+                  className={cn(
+                    'pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-lg ring-0 transition-transform duration-200 ease-in-out',
+                    themeMode === 'dark' ? 'translate-x-5' : 'translate-x-0',
+                  )}
+                />
+              </button>
             </section>
 
-            {/* Section 3: Cài đặt giao dịch thông minh */}
+            {/* Section: Tùy chỉnh Bottom Nav */}
             <section className="rounded-xl border border-border bg-card p-5 shadow-xs">
-              <div className="flex items-center gap-2 mb-1">
-                <div className="flex size-8 items-center justify-center rounded-lg bg-amber-500/10">
-                  <SparklesIcon className="size-4 text-amber-500" />
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+                <div>
+                  <h2 className="text-base font-semibold">Thanh điều hướng dưới (Bottom Nav)</h2>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Cá nhân hóa 5 nút truy cập nhanh trên thiết bị di động. Nhấp vào từng nút để thay thế.
+                  </p>
                 </div>
-                <h2 className="text-base font-semibold">Giao dịch thông minh</h2>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => resetBottomNavToDefault()}
+                  className="self-start sm:self-auto text-xs gap-1.5 h-8 rounded-lg cursor-pointer"
+                  type="button"
+                >
+                  Đặt lại mặc định
+                </Button>
               </div>
-              <p className="text-xs text-muted-foreground mt-1 mb-4">
-                Tùy chỉnh hành vi khi thêm giao dịch bằng tab Tự động (AI + nhận dạng).
-              </p>
 
-              <div className="flex items-center justify-between rounded-lg border border-border bg-muted/20 px-4 py-3">
-                <div className="flex items-center gap-3">
-                  <ZapIcon className="size-4 text-primary shrink-0" />
-                  <div>
-                    <p className="text-sm font-medium">Xem lại trước khi lưu</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      Khi bật, dữ liệu nhận dạng tự động sẽ được chuyển sang tab Thủ công để bạn kiểm tra lại trước khi
-                      lưu.
-                    </p>
-                  </div>
+              {/* Mockup Bottom Nav Container */}
+              <div className="mt-6 flex justify-center py-8 rounded-xl border border-dashed border-border/80 bg-muted/10 relative overflow-hidden">
+                <div className="absolute top-2 left-4 text-[10px] font-semibold text-muted-foreground tracking-wider uppercase">
+                  Bản xem trước trên di động
                 </div>
-                {hasMountedSmartTx && (
-                  <button
-                    type="button"
-                    role="switch"
-                    aria-checked={smartTxPreview}
-                    onClick={() => handleToggleSmartTxPreview(!smartTxPreview)}
-                    className={cn(
-                      'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-                      smartTxPreview ? 'bg-primary' : 'bg-muted-foreground/30',
-                    )}
-                  >
-                    <span
-                      className={cn(
-                        'pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-lg ring-0 transition-transform duration-200 ease-in-out',
-                        smartTxPreview ? 'translate-x-5' : 'translate-x-0',
-                      )}
-                    />
-                  </button>
-                )}
+
+                {/* Simulated Bottom Nav Bar */}
+                <div className="flex w-full max-w-xs h-16 items-center justify-around rounded-2xl border border-border/60 bg-background/90 px-3 shadow-md relative backdrop-blur-md mt-5">
+                  {bottomNavItems.map((itemKey, index) => {
+                    const item = ALL_NAV_ITEMS[itemKey];
+                    if (!item) return null;
+                    const Icon = item.icon;
+                    const isCenter = index === 2;
+
+                    return (
+                      <Popover key={`mockup-${index}`}>
+                        <PopoverTrigger asChild>
+                          {isCenter ? (
+                            <button
+                              type="button"
+                              className="relative -top-4 flex flex-col items-center justify-center cursor-pointer group outline-none"
+                              title={`Bấm để đổi vị trí ${index + 1}`}
+                            >
+                              <div className="flex size-11 items-center justify-center rounded-full border-2 border-background bg-primary text-primary-foreground shadow-sm transition-transform duration-200 group-hover:scale-105 active:scale-95">
+                                <div className="relative">
+                                  <Icon className="size-5" />
+                                  {/* Badge ngày bên nhau cho nút chính giữa trong bản xem trước */}
+                                  {item.key === 'love' && loveConn?.days_together !== undefined && (
+                                    <span className="absolute -top-1.5 -right-2 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-emerald-500 px-0.5 text-[8px] font-extrabold text-white shadow-sm border border-background">
+                                      {loveConn.days_together}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              <span className="text-[9px] font-medium text-muted-foreground mt-0.5 max-w-[56px] truncate">
+                                {item.title}
+                              </span>
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              className="flex flex-col items-center justify-center py-1 px-2.5 rounded-lg transition-colors duration-200 hover:bg-muted/60 cursor-pointer active:scale-95 outline-none"
+                              title={`Bấm để đổi vị trí ${index + 1}`}
+                            >
+                              <div className="relative">
+                                <Icon className="size-4.5 text-muted-foreground/80" />
+                                {/* Badge ngày bên nhau cho nút thường trong bản xem trước */}
+                                {item.key === 'love' && loveConn?.days_together !== undefined && (
+                                  <span className="absolute -top-1 -right-1.5 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-emerald-500 px-0.5 text-[8px] font-extrabold text-white shadow-xs">
+                                    {loveConn.days_together}
+                                  </span>
+                                )}
+                              </div>
+                              <span className="text-[9px] font-medium text-muted-foreground mt-0.5 max-w-[56px] truncate">
+                                {item.title}
+                              </span>
+                            </button>
+                          )}
+                        </PopoverTrigger>
+                        <PopoverContent className="w-56 p-1 rounded-xl border shadow-xl" align="center" side="top" sideOffset={8}>
+                          <div className="px-2.5 py-1.5 border-b border-border/60 mb-1">
+                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                              Thay đổi vị trí {index + 1}
+                            </span>
+                          </div>
+                          <div className="grid gap-0.5">
+                            {availableItems.map((avail) => {
+                              const AvailIcon = avail.icon;
+                              const isSelected = bottomNavItems[index] === avail.key;
+                              return (
+                                <button
+                                  key={avail.key}
+                                  type="button"
+                                  onClick={() => updateBottomNavItemAt(index, avail.key)}
+                                  className={cn(
+                                    "flex items-center gap-2.5 w-full text-left px-2.5 py-2 rounded-lg text-xs font-medium transition-colors cursor-pointer",
+                                    isSelected
+                                      ? "bg-primary/10 text-primary font-bold"
+                                      : "hover:bg-muted text-muted-foreground hover:text-foreground"
+                                  )}
+                                >
+                                  <AvailIcon className={cn("size-4 shrink-0", isSelected ? "text-primary" : "text-muted-foreground/80")} />
+                                  <div className="flex-1 truncate">
+                                    <p className="truncate">{avail.title}</p>
+                                    <p className="text-[9px] text-muted-foreground font-normal truncate mt-0.5">{avail.label}</p>
+                                  </div>
+                                  {isSelected && (
+                                    <span className="size-1.5 rounded-full bg-primary shrink-0" />
+                                  )}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+                    );
+                  })}
+                </div>
               </div>
             </section>
 

@@ -13,7 +13,7 @@ import {
   TrendingUpIcon,
   WalletIcon,
 } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -78,6 +78,20 @@ export function VerticalTable({
   onCellClick,
   readOnly = false,
 }: VerticalTableProps) {
+  // Tính tổng thực thu/chi (tổng của các dòng category với multiplier tương ứng)
+  const grandTotal = useMemo(() => {
+    return Array.from(columnTotals.entries())
+      .filter(([colId]) => {
+        const col = columns.find((c) => c.id === colId);
+        return col?.kind === 'category';
+      })
+      .reduce((sum, [colId, val]) => {
+        const col = columns.find((c) => c.id === colId);
+        const multiplier = col && col.kind === 'category' && col.categoryType === 'expense' ? -1 : 1;
+        return sum + val * multiplier;
+      }, 0);
+  }, [columnTotals, columns]);
+
   // ─── Đổi tên cột (inline edit) ────────────────────
   const [editingColumnId, setEditingColumnId] = useState<string | null>(null);
   const [editColumnName, setEditColumnName] = useState('');
@@ -120,7 +134,7 @@ export function VerticalTable({
   };
 
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto" data-lenis-prevent>
       <table className="w-full min-w-max text-sm">
         <thead>
           <tr className="border-b bg-muted/40 text-muted-foreground">
@@ -351,34 +365,34 @@ export function VerticalTable({
         {/* Dòng tổng cộng cho bảng dọc */}
         {table.showTotals !== false && (
           <tfoot>
-            <tr className="border-y-2 border-emerald-500/30 bg-emerald-500/10 dark:bg-emerald-500/25">
-              <td className="px-3 py-4 text-center text-sm font-extrabold text-emerald-700 dark:text-emerald-300 border-r border-border/60">
+            <tr className={cn(
+              "border-y-2 transition-colors duration-200",
+              grandTotal < 0
+                ? "border-rose-500/30 bg-rose-500/10 dark:bg-rose-500/25"
+                : "border-emerald-500/30 bg-emerald-500/10 dark:bg-emerald-500/25"
+            )}>
+              <td className={cn(
+                "px-3 py-4 text-center text-sm font-extrabold border-r transition-colors duration-200",
+                grandTotal < 0
+                  ? "text-rose-700 dark:text-rose-300 border-rose-500/20"
+                  : "text-emerald-700 dark:text-emerald-300 border-emerald-500/20"
+              )}>
                 Σ
               </td>
-              <td className="px-4 py-4 text-left text-xs font-bold text-emerald-700 dark:text-emerald-300 border-r border-border/60">
+              <td className={cn(
+                "px-4 py-4 text-left text-xs font-bold border-r transition-colors duration-200",
+                grandTotal < 0
+                  ? "text-rose-700 dark:text-rose-300 border-rose-500/20"
+                  : "text-emerald-700 dark:text-emerald-300 border-emerald-500/20"
+              )}>
                 Tổng thực thu/chi (chỉ cộng các dòng danh mục)
               </td>
-              {(() => {
-                const grandTotal = Array.from(columnTotals.entries())
-                  .filter(([colId]) => {
-                    const col = columns.find((c) => c.id === colId);
-                    return col?.kind === 'category';
-                  })
-                  .reduce((sum, [colId, val]) => {
-                    const col = columns.find((c) => c.id === colId);
-                    const multiplier = col && col.kind === 'category' && col.categoryType === 'expense' ? -1 : 1;
-                    return sum + val * multiplier;
-                  }, 0);
-
-                return (
-                  <td className={cn(
-                    "px-4 py-4 text-right font-mono text-sm font-extrabold w-40",
-                    grandTotal < 0 ? "text-rose-700 dark:text-rose-400" : "text-emerald-700 dark:text-emerald-300"
-                  )}>
-                    {formatVnd(grandTotal)}
-                  </td>
-                );
-              })()}
+              <td className={cn(
+                "px-4 py-4 text-right font-mono text-sm font-extrabold w-40 transition-colors duration-200",
+                grandTotal < 0 ? "text-rose-700 dark:text-rose-400" : "text-emerald-700 dark:text-emerald-300"
+              )}>
+                {formatVnd(grandTotal)}
+              </td>
             </tr>
           </tfoot>
         )}

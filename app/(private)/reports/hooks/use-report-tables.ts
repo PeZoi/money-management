@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
+import { useCallback, useRef, useState, useMemo } from 'react';
 
 import type {
   ReportCategoryColumn,
@@ -11,6 +11,36 @@ import type { CategoryUi } from '@/types/category';
 import type { TransactionWithCategory } from '@/types/database';
 
 import { useReportConfig } from './use-report-config';
+
+// So sánh ngữ nghĩa sâu giữa hai cấu trúc bảng (bỏ qua thứ tự key và null/undefined)
+function isSemanticEqual(obj1: unknown, obj2: unknown): boolean {
+  if (obj1 === obj2) return true;
+  if ((obj1 === null || obj1 === undefined) && (obj2 === null || obj2 === undefined)) {
+    return true;
+  }
+  if (typeof obj1 !== typeof obj2) return false;
+  if (typeof obj1 !== 'object' || obj1 === null || obj2 === null) {
+    return obj1 === obj2;
+  }
+  if (Array.isArray(obj1)) {
+    if (!Array.isArray(obj2)) return false;
+    if (obj1.length !== obj2.length) return false;
+    for (let i = 0; i < obj1.length; i++) {
+      if (!isSemanticEqual(obj1[i], obj2[i])) return false;
+    }
+    return true;
+  }
+  const obj1Record = obj1 as Record<string, unknown>;
+  const obj2Record = obj2 as Record<string, unknown>;
+  const keys1 = Object.keys(obj1Record).filter(k => obj1Record[k] !== undefined && obj1Record[k] !== null);
+  const keys2 = Object.keys(obj2Record).filter(k => obj2Record[k] !== undefined && obj2Record[k] !== null);
+  if (keys1.length !== keys2.length) return false;
+  for (const key of keys1) {
+    if (!keys2.includes(key)) return false;
+    if (!isSemanticEqual(obj1Record[key], obj2Record[key])) return false;
+  }
+  return true;
+}
 
 // ─── Hook quản lý state và hành vi danh sách bảng ──────
 
@@ -25,20 +55,23 @@ export function useReportTables(month: string, transactions: TransactionWithCate
 
   // ─── Local state cho danh sách bảng ────────────────
   const [tables, setTables] = useState<ReportTable[]>([]);
-  const tablesInitialized = useRef(false);
+  const [prevSavedTables, setPrevSavedTables] = useState<ReportTable[] | null>(null);
+  const [prevMonth, setPrevMonth] = useState(month);
 
-  // Reset flag khi đổi tháng để cho phép đồng bộ cấu hình của tháng mới
-  useEffect(() => {
-    tablesInitialized.current = false;
-  }, [month]);
+  // Reset flag khi đổi tháng (đồng bộ trong render)
+  if (month !== prevMonth) {
+    setPrevMonth(month);
+    setPrevSavedTables(null);
+  }
 
-  // Sync từ server config khi load lần đầu hoặc khi đổi tháng
-  useEffect(() => {
-    if (configSuccess && savedTables && !tablesInitialized.current) {
+  // Sync từ server config sử dụng cơ chế render-time state adjustment (tránh useEffect gây cascading render)
+  if (configSuccess && savedTables && savedTables !== prevSavedTables) {
+    setPrevSavedTables(savedTables);
+    const isFirstInit = prevSavedTables === null;
+    if (isFirstInit || isSemanticEqual(tables, savedTables)) {
       setTables(savedTables);
-      tablesInitialized.current = true;
     }
-  }, [savedTables, configSuccess]);
+  }
 
   // ─── Delete table confirm dialog state ─────────────
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -59,7 +92,7 @@ export function useReportTables(month: string, transactions: TransactionWithCate
   );
 
   const hasUnsavedChanges = useMemo(() => {
-    return JSON.stringify(tables) !== JSON.stringify(savedTables);
+    return !isSemanticEqual(tables, savedTables);
   }, [tables, savedTables]);
 
   // ─── Tạo bảng mới ─────────────────────────────────

@@ -55,8 +55,13 @@ export function useReportConfig(month: string) {
       if (!res.ok) throw new Error(json.error || 'Lưu cấu hình thất bại');
       return json;
     },
-    onSuccess: () => {
-      // Invalidate query để refetch dữ liệu mới nhất
+    onSuccess: (json) => {
+      // Cập nhật cache React Query ngay lập tức với dữ liệu mới từ server
+      queryClient.setQueryData(['report-config', activeWorkspaceId, month], {
+        data: json.data,
+        cloned: false
+      });
+      // Invalidate query để đảm bảo đồng bộ ngầm
       queryClient.invalidateQueries({
         queryKey: ['report-config', activeWorkspaceId, month],
       });

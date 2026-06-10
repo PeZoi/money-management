@@ -14,8 +14,6 @@ import {
 } from '@/lib/validations/transaction-schema';
 import type { TransactionType } from '@/types/database';
 import { parseTransactionOnline } from '@/lib/utils/transaction-parser';
-import { getLocalStorageItem } from '@/functions/localstorage-fn';
-import { SETTINGS_KEY } from '@/functions/localstorage-fn';
 import { toast } from 'sonner';
 
 export type CreateDialogTab = 'auto' | 'manual';
@@ -170,10 +168,8 @@ export function useCreateTransactionForm({ onOpenChange, onSuccess }: UseCreateT
       // Phân tích giao dịch hoàn toàn bằng AI (Gemini)
       const parsed = await parseTransactionOnline(autoNote, categoryInfos);
 
-      // Đọc cài đặt preview từ localStorage
-      const previewSetting = getLocalStorageItem(SETTINGS_KEY.SMART_TX_PREVIEW);
-      // Mặc định bật preview (true) nếu chưa từng cấu hình
-      const previewEnabled = previewSetting === null ? true : previewSetting === 'true';
+      // Luôn luôn bật preview để người dùng xem lại trước khi lưu giao dịch tự động
+      const previewEnabled = true;
 
       if (previewEnabled) {
         // === PREVIEW MODE: Điền dữ liệu vào form thủ công rồi chuyển tab ===

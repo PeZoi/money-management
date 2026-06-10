@@ -191,7 +191,7 @@ export function FormulaColumnDialog({
                         Chọn nhanh
                       </span>
                     </div>
-                    <div className="rounded-xl border bg-muted/20 p-2 max-h-[130px] overflow-y-auto">
+                    <div className="rounded-xl border bg-muted/20 p-2 max-h-[130px] overflow-y-auto" data-lenis-prevent>
                       <div className="grid grid-cols-2 gap-2">
                         {referenceColumns.map((col, idx) => {
                           const label = indexToLabel(idx);
