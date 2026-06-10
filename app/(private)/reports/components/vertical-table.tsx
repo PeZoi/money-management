@@ -134,7 +134,7 @@ export function VerticalTable({
   };
 
   return (
-    <div className="overflow-x-auto" data-lenis-prevent>
+    <div className="overflow-x-auto">
       <table className="w-full min-w-max text-sm">
         <thead>
           <tr className="border-b bg-muted/40 text-muted-foreground">

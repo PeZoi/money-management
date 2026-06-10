@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { m } from 'framer-motion';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -80,7 +81,11 @@ export function BottomNav() {
                   {item.title}
                 </span>
                 {active && (
-                  <span className="absolute -bottom-1 size-1 rounded-full bg-primary" />
+                  <m.span
+                    layoutId="bottom-nav-active"
+                    className="absolute -bottom-1 size-1 rounded-full bg-primary"
+                    transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                  />
                 )}
               </Link>
             );
@@ -116,7 +121,11 @@ export function BottomNav() {
                 {item.title}
               </span>
               {active && (
-                <span className="absolute bottom-[-2px] size-1.5 rounded-full bg-primary" />
+                <m.span
+                  layoutId="bottom-nav-active"
+                  className="absolute bottom-[-2px] size-1.5 rounded-full bg-primary"
+                  transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                />
               )}
             </Link>
           );

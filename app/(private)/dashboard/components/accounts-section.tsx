@@ -1,10 +1,12 @@
 'use client';
 
 import * as React from 'react';
+import { m } from 'framer-motion';
 import { WalletIcon, RefreshCwIcon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { formatVnd } from '@/app/(private)/transactions/transaction-ui';
 import type { AccountRow } from '@/types/database';
+import { staggerContainer, fadeSlideUp } from '@/lib/motion-variants';
 
 interface AccountsSectionProps {
   accounts: AccountRow[];
@@ -22,8 +24,15 @@ export function AccountsSection({
   const router = useRouter();
 
   return (
-    <div id="my-accounts-section" className="mt-6 border bg-card/45 backdrop-blur-md rounded-3xl p-5 shadow-xs animate-in fade-in slide-in-from-bottom-2 duration-500 fill-mode-both">
-      <div className="flex items-center justify-between mb-4 select-none animate-in fade-in duration-300">
+    <m.div
+      id="my-accounts-section"
+      className="mt-6 border bg-card/45 backdrop-blur-md rounded-3xl p-5 shadow-xs"
+      variants={fadeSlideUp}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, margin: "-30px" }}
+    >
+      <div className="flex items-center justify-between mb-4 select-none">
         <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
           <WalletIcon className="size-3.5 text-blue-500" />
           Tài khoản &amp; Ví của bạn
@@ -33,23 +42,28 @@ export function AccountsSection({
         </span>
       </div>
 
-      <div className="flex flex-wrap gap-3">
-        {accounts.map((a, idx) => {
+      <m.div
+        className="flex flex-wrap gap-3"
+        variants={staggerContainer}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, margin: "-30px" }}
+      >
+        {accounts.map((a) => {
           const isActive = a.is_active;
           const isActivating = activatingId === a.id;
           return (
-            <div
+            <m.div
               key={a.id}
+              variants={fadeSlideUp}
               onClick={() => {
                 router.push(`/accounts/${a.id}`);
               }}
-              className="flex items-center justify-between gap-4 bg-card/75 border rounded-2xl p-3 sm:p-3.5 shadow-xs min-w-[210px] flex-1 sm:flex-none transition-all duration-300 relative group/acc cursor-pointer hover:-translate-y-1 hover:shadow-md hover:bg-card active:scale-98 animate-in fade-in slide-in-from-bottom-2 fill-mode-both"
+              className="flex items-center justify-between gap-4 bg-card/75 border rounded-2xl p-3 sm:p-3.5 shadow-xs min-w-[210px] flex-1 sm:flex-none transition-all duration-300 relative group/acc cursor-pointer hover:-translate-y-1 hover:shadow-md hover:bg-card active:scale-98"
               style={{
                 borderColor: isActive ? a.color : `${a.color}25`,
                 borderWidth: isActive ? '2px' : '1px',
                 backgroundColor: isActive ? `${a.color}05` : undefined,
-                animationDelay: `${idx * 50}ms`,
-                animationDuration: '400ms'
               }}
             >
               <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -122,10 +136,10 @@ export function AccountsSection({
                   </button>
                 )}
               </div>
-            </div>
+            </m.div>
           );
         })}
-      </div>
-    </div>
+      </m.div>
+    </m.div>
   );
 }

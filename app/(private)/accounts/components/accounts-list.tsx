@@ -1,5 +1,6 @@
 'use client';
 
+import { m } from 'framer-motion';
 import { useRef, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { AccountRow } from '@/types/database';
@@ -16,6 +17,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { staggerContainer, fadeSlideUp } from '@/lib/motion-variants';
 
 const ACCOUNT_TYPE_LABELS: Record<string, string> = {
   cash: 'Tiền mặt',
@@ -73,7 +75,13 @@ export default function AccountsList({
   }
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+    <m.div
+      className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3"
+      variants={staggerContainer}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, margin: "-30px" }}
+    >
       {accounts.map((account) => (
         <AccountCard
           key={account.id}
@@ -84,7 +92,7 @@ export default function AccountsList({
           onActivate={() => onRequestActivate(account.id)}
         />
       ))}
-    </div>
+    </m.div>
   );
 }
 
@@ -184,7 +192,8 @@ function AccountCard({ account, isSubmitting, onEdit, onDelete, onActivate }: Ac
   }, []);
 
   return (
-    <div
+    <m.div
+      variants={fadeSlideUp}
       className={cn(
         'group relative overflow-hidden rounded-2xl border bg-gray-200 dark:bg-muted/10 shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5',
         account.is_active && 'ring-2 ring-primary/50 border-primary/30',
@@ -387,6 +396,6 @@ function AccountCard({ account, isSubmitting, onEdit, onDelete, onActivate }: Ac
           </div>
         </div>
       </div>
-    </div>
+    </m.div>
   );
 }

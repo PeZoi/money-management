@@ -1,5 +1,6 @@
 'use client';
 
+import { m } from 'framer-motion';
 import { PrivatePageShell } from '@/components/private-page-shell';
 import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -50,6 +51,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useBottomNavStore, ALL_NAV_ITEMS } from '@/hooks/use-bottom-nav-store';
 import { useMyLoveConnection } from '@/hooks/use-love';
 import { useTheme } from '@/components/theme-provider';
+import { staggerContainer } from '@/lib/motion-variants';
 
 export default function SettingsPage() {
   const { signOut } = useAuth();
@@ -218,7 +220,7 @@ export default function SettingsPage() {
       <div className="mt-6">
         {/* Tab 1: Appearance */}
         {activeTab === 'appearance' && (
-          <div className="grid gap-6">
+          <m.div className="grid gap-6" key="tab-appearance" variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true }}>
             {/* Section: Chế độ tối */}
             <section className="rounded-xl border border-border bg-card p-5 shadow-xs flex items-center justify-between">
               <div>
@@ -397,7 +399,7 @@ export default function SettingsPage() {
                 Đăng xuất
               </Button>
             </section>
-          </div>
+          </m.div>
         )}
 
         {/* Tab 2: Group Settings */}

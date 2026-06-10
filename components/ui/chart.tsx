@@ -46,7 +46,8 @@ export const ChartContainer = React.forwardRef<
       <div
         ref={ref}
         className={cn(
-          "flex aspect-video justify-center text-xs [&_.recharts-cartesian-grid-horizontal_line]:stroke-border/50 [&_.recharts-cartesian-grid-vertical_line]:stroke-border/50 [&_.recharts-curve.recharts-tooltip-cursor]:stroke-border [&_.recharts-dot]:stroke-background [&_.recharts-layer]:outline-hidden [&_.recharts-polar-grid-angle_line]:stroke-border [&_.recharts-polar-grid-concentric-polygon]:stroke-border [&_.recharts-polar-grid-concentric-value_circle]:stroke-border [&_.recharts-radar-g_path]:fill-foreground/10 [&_.recharts-radar-g_path]:stroke-foreground [&_.recharts-radial-bar-background-sector]:fill-muted [&_.recharts-sector.recharts-tooltip-cursor]:fill-muted [&_.recharts-sector]:outline-hidden [&_.recharts-surface]:overflow-visible",
+          // Cấu hình màu sắc của chart và hover cursor ở chế độ dark mode giúp tối màu hơn, tăng tương phản dễ nhìn
+          "flex aspect-video justify-center text-xs [&_.recharts-cartesian-grid-horizontal_line]:stroke-border/50 [&_.recharts-cartesian-grid-vertical_line]:stroke-border/50 [&_.recharts-curve.recharts-tooltip-cursor]:stroke-border dark:[&_.recharts-curve.recharts-tooltip-cursor]:stroke-zinc-850/80 [&_.recharts-dot]:stroke-background [&_.recharts-layer]:outline-hidden [&_.recharts-polar-grid-angle_line]:stroke-border [&_.recharts-polar-grid-concentric-polygon]:stroke-border [&_.recharts-polar-grid-concentric-value_circle]:stroke-border [&_.recharts-radar-g_path]:fill-foreground/10 [&_.recharts-radar-g_path]:stroke-foreground [&_.recharts-radial-bar-background-sector]:fill-muted dark:[&_.recharts-radial-bar-background-sector]:fill-zinc-950/20 [&_.recharts-sector.recharts-tooltip-cursor]:fill-muted/70 dark:[&_.recharts-sector.recharts-tooltip-cursor]:fill-black/35 dark:[&_.recharts-tooltip-cursor]:stroke-zinc-850/80 dark:[&_.recharts-tooltip-cursor]:fill-black/35 [&_.recharts-sector]:outline-hidden [&_.recharts-surface]:overflow-visible",
           className
         )}
         {...props}
@@ -179,7 +180,8 @@ export const ChartTooltipContent = React.forwardRef<
       <div
         ref={ref}
         className={cn(
-          "rounded-2xl border border-border/50 bg-background/95 backdrop-blur-md p-3 shadow-xl text-xs space-y-1.5 min-w-[9rem] animate-in fade-in zoom-in-95 duration-100",
+          // Đổi màu tooltip background trong dark mode sang zinc-950/95 và viền mỏng hơn để tối hơn và có chiều sâu
+          "rounded-2xl border border-border/50 bg-background/95 backdrop-blur-md p-3 shadow-xl text-xs space-y-1.5 min-w-[9rem] animate-in fade-in zoom-in-95 duration-100 dark:bg-zinc-950/95 dark:border-zinc-800/80 dark:shadow-zinc-950/60",
           className
         )}
         {...divProps}

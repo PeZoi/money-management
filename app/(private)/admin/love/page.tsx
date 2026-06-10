@@ -1,6 +1,8 @@
 'use client';
 
 import * as React from 'react';
+import { m } from 'framer-motion';
+import { staggerContainer, fadeSlideUp, scaleIn } from '@/lib/motion-variants';
 import { format } from 'date-fns';
 import { 
   useAdminLoveUsers, 
@@ -129,7 +131,13 @@ export default function AdminLovePage() {
   }, [users]);
 
   return (
-    <div className="container max-w-7xl mx-auto p-4 md:p-8 space-y-6">
+    <m.div 
+      className="container max-w-7xl mx-auto p-4 md:p-8 space-y-6"
+      variants={staggerContainer}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, margin: "-30px" }}
+    >
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
@@ -154,8 +162,14 @@ export default function AdminLovePage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-card hover:bg-card/90 transition-all rounded-xl p-5 border shadow-sm flex items-center gap-4">
+      <m.div 
+        className="grid grid-cols-1 sm:grid-cols-3 gap-4"
+        variants={staggerContainer}
+      >
+        <m.div 
+          variants={scaleIn}
+          className="bg-card hover:bg-card/90 transition-all rounded-xl p-5 border shadow-sm flex items-center gap-4"
+        >
           <div className="p-3 rounded-lg bg-primary/10 text-primary">
             <Users className="size-6" />
           </div>
@@ -163,9 +177,12 @@ export default function AdminLovePage() {
             <p className="text-sm font-medium text-muted-foreground">Tổng người dùng</p>
             <h3 className="text-2xl font-bold">{isLoading ? <Skeleton className="h-8 w-12 mt-1" /> : stats.total}</h3>
           </div>
-        </div>
+        </m.div>
 
-        <div className="bg-card hover:bg-card/90 transition-all rounded-xl p-5 border shadow-sm flex items-center gap-4">
+        <m.div 
+          variants={scaleIn}
+          className="bg-card hover:bg-card/90 transition-all rounded-xl p-5 border shadow-sm flex items-center gap-4"
+        >
           <div className="p-3 rounded-lg bg-rose-50 dark:bg-rose-950/20 text-rose-500">
             <Heart className="size-6 fill-current animate-pulse" />
           </div>
@@ -173,9 +190,12 @@ export default function AdminLovePage() {
             <p className="text-sm font-medium text-muted-foreground">Số cặp đang yêu</p>
             <h3 className="text-2xl font-bold">{isLoading ? <Skeleton className="h-8 w-12 mt-1" /> : stats.couples}</h3>
           </div>
-        </div>
+        </m.div>
 
-        <div className="bg-card hover:bg-card/90 transition-all rounded-xl p-5 border shadow-sm flex items-center gap-4">
+        <m.div 
+          variants={scaleIn}
+          className="bg-card hover:bg-card/90 transition-all rounded-xl p-5 border shadow-sm flex items-center gap-4"
+        >
           <div className="p-3 rounded-lg bg-yellow-50 dark:bg-yellow-950/20 text-yellow-600 dark:text-yellow-400">
             <Heart className="size-6" />
           </div>
@@ -183,11 +203,14 @@ export default function AdminLovePage() {
             <p className="text-sm font-medium text-muted-foreground">Chờ bắt cặp</p>
             <h3 className="text-2xl font-bold">{isLoading ? <Skeleton className="h-8 w-12 mt-1" /> : stats.single}</h3>
           </div>
-        </div>
-      </div>
+        </m.div>
+      </m.div>
 
       {/* Filter and Search */}
-      <div className="flex flex-col sm:flex-row gap-4 justify-between items-center bg-card p-4 rounded-xl border">
+      <m.div 
+        className="flex flex-col sm:flex-row gap-4 justify-between items-center bg-card p-4 rounded-xl border"
+        variants={fadeSlideUp}
+      >
         <div className="relative w-full sm:max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground size-4.5" />
           <Input 
@@ -223,10 +246,13 @@ export default function AdminLovePage() {
             Chưa bắt cặp
           </Button>
         </div>
-      </div>
+      </m.div>
 
       {/* Users List */}
-      <div className="bg-card rounded-xl border overflow-hidden shadow-sm">
+      <m.div 
+        className="bg-card rounded-xl border overflow-hidden shadow-sm"
+        variants={fadeSlideUp}
+      >
         {isLoading ? (
           <div className="p-8 space-y-4">
             <Skeleton className="h-8 w-full" />
@@ -253,7 +279,7 @@ export default function AdminLovePage() {
               </thead>
               <tbody className="divide-y text-sm">
                 {filteredUsers.map((user) => (
-                  <tr key={user.id} className="hover:bg-muted/20 transition-colors">
+                  <tr key={user.id} className="hover:bg-muted/20 transition-colors border-b last:border-b-0">
                     {/* User Profile */}
                     <td className="p-4 pl-6 flex items-center gap-3">
                       <Avatar 
@@ -346,7 +372,7 @@ export default function AdminLovePage() {
             </table>
           </div>
         )}
-      </div>
+      </m.div>
 
       {/* CONNECT DIALOG */}
       <Dialog open={isConnectOpen} onOpenChange={setIsConnectOpen}>
@@ -528,6 +554,6 @@ export default function AdminLovePage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </m.div>
   );
 }

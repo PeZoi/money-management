@@ -194,7 +194,7 @@ export function HorizontalTable({
   };
 
   return (
-    <div className="overflow-x-auto" data-lenis-prevent>
+    <div className="overflow-x-auto">
       <table className="w-full min-w-max text-sm">
         {/* Header cột */}
         <thead>

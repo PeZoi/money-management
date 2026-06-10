@@ -3,6 +3,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { Toaster } from '@/components/ui/sonner';
 import QueryProvider from '@/providers/query-provider';
 import { SmoothScrollProvider } from '@/providers/smooth-scroll-provider';
+import { FramerMotionProvider } from '@/providers/framer-motion-provider';
 import { cn } from '@/lib/utils';
 import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono, Inter } from 'next/font/google';
@@ -70,7 +71,9 @@ export default function RootLayout({
         <SmoothScrollProvider>
           <ThemeProvider>
             <QueryProvider>
-              <TooltipProvider>{children}</TooltipProvider>
+              <FramerMotionProvider>
+                <TooltipProvider>{children}</TooltipProvider>
+              </FramerMotionProvider>
             </QueryProvider>
             <Toaster />
             <IosInstallPrompt />

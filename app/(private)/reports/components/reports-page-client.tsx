@@ -1,5 +1,8 @@
 'use client';
 
+import { m, AnimatePresence } from 'framer-motion';
+import { staggerContainer, fadeSlideUp, fadeIn } from '@/lib/motion-variants';
+
 import {
   BarChart3Icon,
   DownloadIcon,
@@ -204,7 +207,13 @@ export default function ReportsPageClient() {
           <p className="text-sm text-muted-foreground">Đang tải cấu hình...</p>
         </div>
       ) : (
-        <div className="mt-6">
+        <m.div 
+          className="mt-6"
+          variants={staggerContainer}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-30px" }}
+        >
           <div className="flex flex-col lg:flex-row gap-6">
             {/* Sidebar danh mục và giao dịch (Ẩn ở chế độ chỉ đọc) */}
             {!isReadOnly && (
@@ -218,9 +227,12 @@ export default function ReportsPageClient() {
             )}
 
             {/* Nội dung chính: danh sách bảng */}
-            <div className="flex-1 min-w-0 space-y-6">
+            <m.div className="flex-1 min-w-0 space-y-6" variants={staggerContainer}>
               {displayTables.length === 0 ? (
-                <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-muted-foreground/20 bg-card/30 p-12 text-center">
+                <m.div 
+                  variants={fadeIn}
+                  className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-muted-foreground/20 bg-card/30 p-12 text-center"
+                >
                   <div className="rounded-2xl bg-primary/10 p-4 mb-4">
                     <BarChart3Icon className="size-8 text-primary" />
                   </div>
@@ -236,65 +248,71 @@ export default function ReportsPageClient() {
                       Tạo bảng đầu tiên
                     </Button>
                   )}
-                </div>
+                </m.div>
               ) : (
                 <>
-                  {displayTables.map((table) => (
-                    <div
-                      key={table.id}
-                      draggable={!isReadOnly}
-                      onDragStart={!isReadOnly ? () => handleTableDragStart(table.id) : undefined}
-                      onDragOver={!isReadOnly ? (e) => handleTableDragOver(e, table.id) : undefined}
-                      onDragEnd={!isReadOnly ? handleTableDragEnd : undefined}
-                      className={cn('group/table-drag', !isReadOnly && 'cursor-grab active:cursor-grabbing')}
-                    >
-                      <ReportTableCard
-                        table={table}
-                        transactions={displayTransactions}
-                        month={month}
-                        onRenameTable={handleRenameTable}
-                        onDeleteTable={handleDeleteTable}
-                        onDropCategory={handleDropCategory}
-                        onDropSystemMetric={handleDropSystemMetric}
-                        onDeleteColumn={handleDeleteColumn}
-                        onRenameColumn={handleRenameColumn}
-                        onReorderColumns={handleReorderColumns}
-                        onOpenFormulaDialog={handleOpenFormulaDialog}
-                        onAssignTransaction={handleAssignTransaction}
-                        onUnassignTransaction={handleUnassignTransaction}
-                        onUpdateTableLayout={handleUpdateTableLayout}
-                        onUpdateTableShowTotals={handleUpdateTableShowTotals}
-                        onUpdateColumn={handleUpdateColumn}
-                        readOnly={isReadOnly}
-                        dragHandle={
-                          !isReadOnly ? (
-                            <button
-                              className="cursor-grab active:cursor-grabbing p-1 rounded-lg text-muted-foreground/50 hover:text-muted-foreground hover:bg-accent/60 transition-colors"
-                              title="Kéo để sắp xếp bảng"
-                            >
-                              <GripVerticalIcon className="size-4" />
-                            </button>
-                          ) : null
-                        }
-                      />
-                    </div>
-                  ))}
+                  <AnimatePresence mode="popLayout">
+                    {displayTables.map((table) => (
+                      <m.div
+                        key={table.id}
+                        layout
+                        variants={fadeSlideUp}
+                        draggable={!isReadOnly}
+                        onDragStart={!isReadOnly ? () => handleTableDragStart(table.id) : undefined}
+                        onDragOver={!isReadOnly ? (e) => handleTableDragOver(e, table.id) : undefined}
+                        onDragEnd={!isReadOnly ? handleTableDragEnd : undefined}
+                        className={cn('group/table-drag', !isReadOnly && 'cursor-grab active:cursor-grabbing')}
+                      >
+                        <ReportTableCard
+                          table={table}
+                          transactions={displayTransactions}
+                          month={month}
+                          onRenameTable={handleRenameTable}
+                          onDeleteTable={handleDeleteTable}
+                          onDropCategory={handleDropCategory}
+                          onDropSystemMetric={handleDropSystemMetric}
+                          onDeleteColumn={handleDeleteColumn}
+                          onRenameColumn={handleRenameColumn}
+                          onReorderColumns={handleReorderColumns}
+                          onOpenFormulaDialog={handleOpenFormulaDialog}
+                          onAssignTransaction={handleAssignTransaction}
+                          onUnassignTransaction={handleUnassignTransaction}
+                          onUpdateTableLayout={handleUpdateTableLayout}
+                          onUpdateTableShowTotals={handleUpdateTableShowTotals}
+                          onUpdateColumn={handleUpdateColumn}
+                          readOnly={isReadOnly}
+                          dragHandle={
+                            !isReadOnly ? (
+                              <button
+                                className="cursor-grab active:cursor-grabbing p-1 rounded-lg text-muted-foreground/50 hover:text-muted-foreground hover:bg-accent/60 transition-colors"
+                                title="Kéo để sắp xếp bảng"
+                              >
+                                <GripVerticalIcon className="size-4" />
+                              </button>
+                            ) : null
+                          }
+                        />
+                      </m.div>
+                    ))}
+                  </AnimatePresence>
 
                   {!isReadOnly && (
-                    <Button
-                      variant="outline"
-                      onClick={handleCreateTable}
-                      className="w-full rounded-xl border-dashed border-muted-foreground/30 hover:border-primary/50 hover:bg-primary/5 h-12 text-muted-foreground hover:text-primary transition-all"
-                    >
-                      <PlusIcon className="size-4 mr-1.5" />
-                      Thêm bảng mới
-                    </Button>
+                    <m.div variants={fadeSlideUp} layout>
+                      <Button
+                        variant="outline"
+                        onClick={handleCreateTable}
+                        className="w-full rounded-xl border-dashed border-muted-foreground/30 hover:border-primary/50 hover:bg-primary/5 h-12 text-muted-foreground hover:text-primary transition-all"
+                      >
+                        <PlusIcon className="size-4 mr-1.5" />
+                        Thêm bảng mới
+                      </Button>
+                    </m.div>
                   )}
                 </>
               )}
-            </div>
+            </m.div>
           </div>
-        </div>
+        </m.div>
       )}
 
       {/* Dialog cấu hình cột công thức */}

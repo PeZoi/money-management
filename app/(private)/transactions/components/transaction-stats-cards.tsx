@@ -1,5 +1,6 @@
 'use client';
 
+import { m } from 'framer-motion';
 import {
   ArrowRightLeftIcon,
   EyeIcon,
@@ -16,6 +17,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import type { TransactionWithCategory } from '@/types/database';
 import { formatVnd } from '../transaction-ui';
+import { scaleIn } from '@/lib/motion-variants';
 
 import type { FilterType } from '../hooks/use-transactions-page';
 
@@ -135,7 +137,13 @@ export default function TransactionStatsCards({ transactions, isLoading, activeF
   }
 
   return (
-    <div className="w-full rounded-3xl border bg-card/60 backdrop-blur-md shadow-lg p-5 sm:p-6 transition-all hover:shadow-xl duration-300">
+    <m.div
+      className="w-full rounded-3xl border bg-card/60 backdrop-blur-md shadow-lg p-5 sm:p-6 transition-all hover:shadow-xl duration-300"
+      variants={scaleIn}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, margin: "-30px" }}
+    >
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-stretch">
         {/* 📊 LEFT SECTION: Monthly Net Result Spotlight */}
         <div className="md:col-span-5 flex flex-col justify-between relative overflow-hidden rounded-2xl bg-linear-to-br from-indigo-50/50 via-slate-50 to-emerald-50/30 dark:from-indigo-950/30 dark:via-slate-900/40 dark:to-emerald-950/20 p-5 shadow-xs border border-muted/80 dark:border-white/5 min-h-[190px] group/spotlight">
@@ -308,6 +316,6 @@ export default function TransactionStatsCards({ transactions, isLoading, activeF
           </div>
         </div>
       </div>
-    </div>
+    </m.div>
   );
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { m } from 'framer-motion';
 import { useEffect, useState } from "react";
 import { PrivatePageShell } from "@/components/private-page-shell";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -40,6 +41,7 @@ import {
 } from "@/components/ui/chart";
 import { formatDistanceToNow, parseISO } from "date-fns";
 import { vi } from "date-fns/locale";
+import { staggerContainer, fadeSlideUp } from '@/lib/motion-variants';
 
 // Định dạng bytes sang dạng dễ đọc (KB, MB, GB)
 function formatBytes(bytes: number, decimals = 2) {
@@ -98,11 +100,18 @@ export default function AdminDashboardPage() {
       icon={ShieldAlert}
     >
       {/* 1. Các thẻ thống kê nhanh */}
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <m.div
+        className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+        variants={staggerContainer}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, margin: "-30px" }}
+      >
         {/* Card 1: Users */}
+        <m.div variants={fadeSlideUp}>
         <Link
           href="/admin/users"
-          className="group relative overflow-hidden rounded-2xl border bg-card p-6 shadow-xs transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
+          className="group relative overflow-hidden rounded-2xl border bg-card p-6 shadow-xs transition-all duration-300 hover:-translate-y-1 hover:shadow-md block"
         >
           <div className="absolute inset-x-0 top-0 h-1 bg-linear-to-r from-blue-500 to-cyan-500" />
           <div className="flex items-center justify-between">
@@ -121,11 +130,13 @@ export default function AdminDashboardPage() {
             </div>
           </div>
         </Link>
+        </m.div>
 
         {/* Card 2: Workspaces */}
+        <m.div variants={fadeSlideUp}>
         <Link
           href="/admin/workspaces"
-          className="group relative overflow-hidden rounded-2xl border bg-card p-6 shadow-xs transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
+          className="group relative overflow-hidden rounded-2xl border bg-card p-6 shadow-xs transition-all duration-300 hover:-translate-y-1 hover:shadow-md block"
         >
           <div className="absolute inset-x-0 top-0 h-1 bg-linear-to-r from-violet-500 to-fuchsia-500" />
           <div className="flex items-center justify-between">
@@ -144,9 +155,9 @@ export default function AdminDashboardPage() {
             </div>
           </div>
         </Link>
+        </m.div>
 
-        {/* Card 3: Transactions */}
-        <div className="relative overflow-hidden rounded-2xl border bg-card p-6 shadow-xs transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
+        <m.div variants={fadeSlideUp} className="relative overflow-hidden rounded-2xl border bg-card p-6 shadow-xs transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
           <div className="absolute inset-x-0 top-0 h-1 bg-linear-to-r from-amber-500 to-orange-500" />
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-muted-foreground">Tổng giao dịch</span>
@@ -162,8 +173,8 @@ export default function AdminDashboardPage() {
             )}
             <p className="text-xs text-muted-foreground mt-1.5">Trên toàn hệ thống</p>
           </div>
-        </div>
-      </div>
+        </m.div>
+      </m.div>
 
       {/* 2. Khu vực Biểu đồ phân tích (Recharts) */}
       <div className="mt-6 grid gap-6 lg:grid-cols-3">

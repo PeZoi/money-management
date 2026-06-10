@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { m } from 'framer-motion';
 import {
   AreaChart,
   Area,
@@ -34,6 +35,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import type { TransactionWithCategory } from '@/types/database';
 import IconPreview from '@/components/icons/icon-preview';
+import { staggerContainerSlow, fadeSlideUp } from '@/lib/motion-variants';
 
 // Format tiền tệ VND
 const formatVnd = (amount: number | string): string => {
@@ -89,7 +91,7 @@ const CustomPieTooltip = ({ active, payload }: CustomPieTooltipProps) => {
     const data = payload[0]?.payload;
     if (!data) return null;
     return (
-      <div className="bg-popover/95 backdrop-blur-md border border-border/50 rounded-2xl p-3 shadow-xl text-xs font-semibold flex flex-col gap-1 min-w-[120px] animate-in fade-in zoom-in-95 duration-100">
+      <div className="bg-popover/95 backdrop-blur-md border border-border/50 rounded-2xl p-3 shadow-xl text-xs font-semibold flex flex-col gap-1 min-w-[120px] animate-in fade-in zoom-in-95 duration-100 dark:bg-zinc-950/95 dark:border-zinc-800/80 dark:shadow-zinc-950/60">
         <div className="flex items-center gap-2">
           <div className="size-5 shrink-0 flex items-center justify-center rounded bg-muted overflow-hidden text-muted-foreground">
             {data.id !== 'other' ? (
@@ -225,10 +227,16 @@ export function DashboardCharts({
   const isPieEmpty = categoryStats.data.length === 0;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <m.div
+      className="grid grid-cols-1 lg:grid-cols-3 gap-6"
+      variants={staggerContainerSlow}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, margin: "-30px" }}
+    >
       
       {/* 1. Area Chart: Xu hướng dòng tiền */}
-      <div className="lg:col-span-2 border bg-card/60 backdrop-blur-md rounded-3xl p-5 sm:p-6 shadow-xs hover:border-primary/20 transition-all duration-300 flex flex-col">
+      <m.div variants={fadeSlideUp} className="lg:col-span-2 border bg-card/60 backdrop-blur-md rounded-3xl p-5 sm:p-6 shadow-xs hover:border-primary/20 transition-all duration-300 flex flex-col">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground/90 flex items-center gap-2 select-none">
             <TrendingUpIcon className="size-4 text-emerald-500" />
@@ -340,10 +348,10 @@ export function DashboardCharts({
             </ChartContainer>
           </div>
         )}
-      </div>
+      </m.div>
 
       {/* 2. Donut Chart: Cơ cấu chi tiêu */}
-      <div className="border bg-card/60 backdrop-blur-md rounded-3xl p-5 sm:p-6 shadow-xs hover:border-primary/20 transition-all duration-300 flex flex-col">
+      <m.div variants={fadeSlideUp} className="border bg-card/60 backdrop-blur-md rounded-3xl p-5 sm:p-6 shadow-xs hover:border-primary/20 transition-all duration-300 flex flex-col">
         <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground/90 mb-6 flex items-center gap-2 select-none">
           <PieChartIcon className="size-4 text-rose-500" />
           Cơ cấu chi tiêu
@@ -435,11 +443,11 @@ export function DashboardCharts({
             </div>
           </div>
         )}
-      </div>
+      </m.div>
 
       {/* 3. Bar Chart: So sánh thu chi chu kỳ này với chu kỳ trước */}
       {timeRange !== 'all' && (
-        <div className="lg:col-span-3 border bg-card/60 backdrop-blur-md rounded-3xl p-5 sm:p-6 shadow-xs hover:border-primary/20 transition-all duration-300">
+        <m.div variants={fadeSlideUp} className="lg:col-span-3 border bg-card/60 backdrop-blur-md rounded-3xl p-5 sm:p-6 shadow-xs hover:border-primary/20 transition-all duration-300">
           <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground/90 mb-5 flex items-center gap-2 select-none">
             <BarChart3Icon className="size-4 text-blue-500" />
             So sánh chu kỳ dòng tiền
@@ -585,8 +593,8 @@ export function DashboardCharts({
               </div>
             </div>
           </div>
-        </div>
+        </m.div>
       )}
-    </div>
+    </m.div>
   );
 }

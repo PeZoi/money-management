@@ -1,5 +1,6 @@
 'use client';
 
+import { m } from 'framer-motion';
 import {
   ArrowDownCircleIcon,
   ArrowRightLeftIcon,
@@ -24,6 +25,7 @@ import { cn } from '@/lib/utils';
 import type { TransactionWithCategory } from '@/types/database';
 
 import { formatVnd, typeAmountClass, typeAmountPrefix, typeBadgeClass, typeLabel } from '../transaction-ui';
+import { staggerContainer, fadeSlideUp } from '@/lib/motion-variants';
 
 type Props = {
   transactions: TransactionWithCategory[];
@@ -476,7 +478,13 @@ export default function TransactionsList({
   }, []);
 
   return (
-    <div className="space-y-6">
+    <m.div
+      className="space-y-6"
+      variants={staggerContainer}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, margin: "-30px" }}
+    >
       {groupedTransactions.map((group) => {
         const isCollapsed = collapsedGroups[group.title];
 
@@ -487,7 +495,7 @@ export default function TransactionsList({
         const hasOnlyTransfer = dayIncome === 0 && dayExpense === 0;
 
         return (
-          <div key={group.title} className="space-y-3">
+          <m.div key={group.title} className="space-y-3" variants={fadeSlideUp}>
             {/* Tiêu đề Section (Ngày giao dịch) được thiết kế thành nút bấm đóng/mở thông minh */}
             <button
               type="button"
@@ -524,7 +532,7 @@ export default function TransactionsList({
             </button>
 
             {!isCollapsed && (
-              <div className="flex flex-col gap-2 animate-in fade-in slide-in-from-top-1 duration-200">
+              <div className="flex flex-col gap-2">
                 {group.items.map((t) => (
                   <TransactionRow
                     key={t.id}
@@ -537,9 +545,9 @@ export default function TransactionsList({
                 ))}
               </div>
             )}
-          </div>
+          </m.div>
         );
       })}
-    </div>
+    </m.div>
   );
 }

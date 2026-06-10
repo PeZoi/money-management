@@ -1,6 +1,8 @@
 'use client';
 
 import * as React from 'react';
+import { m } from 'framer-motion';
+import { staggerContainer, scaleIn } from '@/lib/motion-variants';
 import { useLovePage } from './hooks/use-love-page';
 import { THEMES } from './constants';
 import { Heart, Plus } from 'lucide-react';
@@ -84,26 +86,36 @@ export default function LovePage() {
   const theme = THEMES[loveTheme] || THEMES.rose;
 
   return (
-    <div className="container max-w-4xl mx-auto p-4 md:p-8 space-y-8 animate-fade-in">
-      <HeartbeatCard
-        loveConn={loveConn}
-        user={user}
-        theme={theme}
-        handleOpenCustomize={handleOpenCustomize}
-        handleOpenEditAnniversary={handleOpenEditAnniversary}
-      />
+    <m.div 
+      className="container max-w-4xl mx-auto p-4 md:p-8 space-y-8"
+      variants={staggerContainer}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, margin: "-30px" }}
+    >
+      <m.div variants={scaleIn}>
+        <HeartbeatCard
+          loveConn={loveConn}
+          user={user}
+          theme={theme}
+          handleOpenCustomize={handleOpenCustomize}
+          handleOpenEditAnniversary={handleOpenEditAnniversary}
+        />
+      </m.div>
 
-      <MilestoneTimeline
-        milestones={milestones}
-        isMilestonesLoading={isMilestonesLoading}
-        theme={theme}
-        handleOpenAddMilestone={handleOpenAddMilestone}
-        handleOpenEditMilestone={handleOpenEditMilestone}
-        handleDeleteMilestone={handleDeleteMilestone}
-        setActivePreviewUrls={setActivePreviewUrls}
-        setActivePreviewIdx={setActivePreviewIdx}
-        setZoomActive={setZoomActive}
-      />
+      <m.div variants={scaleIn}>
+        <MilestoneTimeline
+          milestones={milestones}
+          isMilestonesLoading={isMilestonesLoading}
+          theme={theme}
+          handleOpenAddMilestone={handleOpenAddMilestone}
+          handleOpenEditMilestone={handleOpenEditMilestone}
+          handleDeleteMilestone={handleDeleteMilestone}
+          setActivePreviewUrls={setActivePreviewUrls}
+          setActivePreviewIdx={setActivePreviewIdx}
+          setZoomActive={setZoomActive}
+        />
+      </m.div>
 
       <EditAnniversaryDialog
         isOpen={isEditAnniversaryOpen}
@@ -154,6 +166,6 @@ export default function LovePage() {
         zoomActive={zoomActive}
         setZoomActive={setZoomActive}
       />
-    </div>
+    </m.div>
   );
 }

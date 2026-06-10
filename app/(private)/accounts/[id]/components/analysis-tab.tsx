@@ -32,7 +32,7 @@ const CustomPieTooltip = ({ active, payload }: CustomPieTooltipProps) => {
     const data = payload[0]?.payload;
     if (!data) return null;
     return (
-      <div className="bg-popover/95 backdrop-blur-md border rounded-xl p-2.5 shadow-lg text-[10px] sm:text-xs font-semibold border-muted/80 flex flex-col gap-1">
+      <div className="bg-popover/95 backdrop-blur-md border rounded-xl p-2.5 shadow-lg text-[10px] sm:text-xs font-semibold border-muted/80 flex flex-col gap-1 dark:bg-zinc-950/95 dark:border-zinc-800/80 dark:shadow-zinc-950/60">
         <div className="flex items-center gap-1.5">
           <div className="size-4.5 shrink-0 flex items-center justify-center overflow-hidden text-muted-foreground">
             {data.id !== 'other' ? (

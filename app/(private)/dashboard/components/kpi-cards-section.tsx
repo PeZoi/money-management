@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { m } from 'framer-motion';
 import { 
   WalletIcon, 
   TrendingUpIcon, 
@@ -11,6 +12,7 @@ import {
   SparklesIcon 
 } from 'lucide-react';
 import { formatVnd } from '@/app/(private)/transactions/transaction-ui';
+import { staggerContainer, fadeSlideUp } from '@/lib/motion-variants';
 
 interface KpiCardsSectionProps {
   stats: {
@@ -41,10 +43,17 @@ export function KpiCardsSection({
   }, [stats.currentNet, stats.currentIncome]);
 
   return (
-    <div className="mt-6 grid auto-rows-min gap-4 grid-cols-2 lg:grid-cols-4 animate-in fade-in slide-in-from-bottom-3 duration-500 fill-mode-both">
+    <m.div
+      className="mt-6 grid auto-rows-min gap-4 grid-cols-2 lg:grid-cols-4"
+      variants={staggerContainer}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, margin: "-30px" }}
+    >
       
       {/* Card 1: Available Balance */}
-      <div 
+      <m.div 
+        variants={fadeSlideUp}
         className="col-span-2 sm:col-span-1 rounded-3xl border bg-card/50 p-5 backdrop-blur-md shadow-xs hover:shadow-md hover:-translate-y-1 hover:border-blue-500/35 active:scale-98 transition-all duration-300 relative group overflow-hidden flex flex-col justify-between min-h-[135px] cursor-pointer"
         onClick={() => {
           const el = document.getElementById('my-accounts-section');
@@ -74,10 +83,10 @@ export function KpiCardsSection({
         <div className="mt-3 pt-2 border-t border-border/40 text-[10px] text-muted-foreground font-medium select-none group-hover:text-foreground/80 transition-colors">
           Đang quản lý <span className="font-bold text-foreground">{accountsCount}</span> ví tài chính
         </div>
-      </div>
+      </m.div>
 
       {/* Card 2: Income */}
-      <div className="rounded-3xl border bg-card/50 p-5 backdrop-blur-md shadow-xs hover:shadow-md hover:-translate-y-1 hover:border-emerald-500/35 transition-all duration-300 relative group overflow-hidden flex flex-col justify-between min-h-[135px]">
+      <m.div variants={fadeSlideUp} className="rounded-3xl border bg-card/50 p-5 backdrop-blur-md shadow-xs hover:shadow-md hover:-translate-y-1 hover:border-emerald-500/35 transition-all duration-300 relative group overflow-hidden flex flex-col justify-between min-h-[135px]">
         <div className="absolute -right-6 -bottom-6 opacity-[0.03] select-none pointer-events-none group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
           <TrendingUpIcon className="size-24 text-emerald-500" />
         </div>
@@ -119,10 +128,10 @@ export function KpiCardsSection({
             )}
           </div>
         )}
-      </div>
+      </m.div>
 
       {/* Card 3: Expense */}
-      <div className="rounded-3xl border bg-card/50 p-5 backdrop-blur-md shadow-xs hover:shadow-md hover:-translate-y-1 hover:border-rose-500/35 transition-all duration-300 relative group overflow-hidden flex flex-col justify-between min-h-[135px]">
+      <m.div variants={fadeSlideUp} className="rounded-3xl border bg-card/50 p-5 backdrop-blur-md shadow-xs hover:shadow-md hover:-translate-y-1 hover:border-rose-500/35 transition-all duration-300 relative group overflow-hidden flex flex-col justify-between min-h-[135px]">
         <div className="absolute -right-6 -bottom-6 opacity-[0.03] select-none pointer-events-none group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
           <TrendingDownIcon className="size-24 text-rose-500" />
         </div>
@@ -164,10 +173,10 @@ export function KpiCardsSection({
             )}
           </div>
         )}
-      </div>
+      </m.div>
 
       {/* Card 4: Net Flow */}
-      <div className={`col-span-2 sm:col-span-1 rounded-3xl border bg-card/50 p-5 backdrop-blur-md shadow-xs hover:shadow-md hover:-translate-y-1 transition-all duration-300 relative group overflow-hidden flex flex-col justify-between min-h-[135px] ${
+      <m.div variants={fadeSlideUp} className={`col-span-2 sm:col-span-1 rounded-3xl border bg-card/50 p-5 backdrop-blur-md shadow-xs hover:shadow-md hover:-translate-y-1 transition-all duration-300 relative group overflow-hidden flex flex-col justify-between min-h-[135px] ${
         stats.currentNet >= 0 ? 'hover:border-emerald-500/35' : 'hover:border-rose-500/35'
       }`}>
         <div className={`absolute -right-6 -bottom-6 opacity-[0.03] select-none pointer-events-none group-hover:scale-110 group-hover:rotate-6 transition-all duration-500 ${
@@ -212,7 +221,7 @@ export function KpiCardsSection({
             <span>Không có biến động tài chính</span>
           )}
         </div>
-      </div>
-    </div>
+      </m.div>
+    </m.div>
   );
 }

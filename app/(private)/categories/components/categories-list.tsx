@@ -1,5 +1,6 @@
 'use client';
 
+import { m } from 'framer-motion';
 import IconPreview from '@/components/icons/icon-preview';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -10,6 +11,7 @@ import { Loader2Icon, PlusIcon, SparklesIcon, Trash2Icon } from 'lucide-react';
 
 import { CategoryUi } from '@/types/category';
 import { typeBadgeClass, typeLabel } from '../category-ui';
+import { staggerContainer, fadeSlideUp } from '@/lib/motion-variants';
 
 type CategoriesListProps = {
   categories: CategoryUi[];
@@ -153,7 +155,8 @@ function CategoryCard({
   }, []);
 
   return (
-    <div
+    <m.div
+      variants={fadeSlideUp}
       className={cn(
         "group relative overflow-hidden rounded-2xl border border-border/50 bg-gray-200 dark:bg-muted/20 shadow-xs transition-all duration-300",
         c.type === 'income' 
@@ -248,7 +251,7 @@ function CategoryCard({
 
 
       </div>
-    </div>
+    </m.div>
   );
 }
 
@@ -335,7 +338,13 @@ export default function CategoriesList({
   }
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    <m.div
+      className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+      variants={staggerContainer}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, margin: "-30px" }}
+    >
       {categories.map((c) => (
         <CategoryCard
           key={c.id}
@@ -345,6 +354,6 @@ export default function CategoriesList({
           onRequestDelete={onRequestDelete}
         />
       ))}
-    </div>
+    </m.div>
   );
 }

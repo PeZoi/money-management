@@ -1,5 +1,7 @@
 "use client";
 
+import { m } from "framer-motion";
+import { fadeSlideUp } from "@/lib/motion-variants";
 import { useState } from "react";
 import { PrivatePageShell } from "@/components/private-page-shell";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -91,7 +93,13 @@ export default function AdminUsersPage() {
       )}
 
       {/* Table */}
-      <div className="mt-3 overflow-hidden rounded-2xl border bg-card">
+      <m.div 
+        className="mt-3 overflow-hidden rounded-2xl border bg-card"
+        variants={fadeSlideUp}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, margin: "-30px" }}
+      >
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-left">
             <thead>
@@ -122,7 +130,7 @@ export default function AdminUsersPage() {
                 ))
               ) : users.length === 0 ? (
                 // Empty state
-                <tr>
+                <tr className="border-b last:border-b-0">
                   <td className="p-4 text-sm font-medium" colSpan={5}>
                     <div className="flex flex-col items-center justify-center py-16 text-center">
                       <div className="rounded-full bg-primary/10 p-3.5 mb-3.5">
@@ -141,7 +149,10 @@ export default function AdminUsersPage() {
                   const isSelf = u.id === currentUser?.id;
 
                   return (
-                    <tr key={u.id} className="transition-colors hover:bg-muted/20">
+                    <tr 
+                      key={u.id} 
+                      className="transition-colors hover:bg-muted/20 border-b last:border-b-0"
+                    >
                       <td className="p-4">
                         <div className="flex items-center gap-3">
                           <Avatar
@@ -204,7 +215,7 @@ export default function AdminUsersPage() {
             </tbody>
           </table>
         </div>
-      </div>
+      </m.div>
     </PrivatePageShell>
   );
 }

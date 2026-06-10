@@ -1,6 +1,8 @@
 'use client';
 
 import { ReactLenis } from 'lenis/react';
+import { m } from 'framer-motion';
+import { slideFromLeft } from '@/lib/motion-variants';
 
 import {
   CalendarIcon,
@@ -74,7 +76,8 @@ export function CategorySidebar({
   };
 
   return (
-    <aside
+    <m.aside
+      variants={slideFromLeft}
       className="hidden lg:block w-64 shrink-0 sticky top-20 self-start"
       onDragOver={handleDragOverCol}
       onDragLeave={handleDragLeaveCol}
@@ -284,7 +287,7 @@ export function CategorySidebar({
           )}
         </ReactLenis>
       </div>
-    </aside>
+    </m.aside>
   );
 }
 
