@@ -482,8 +482,7 @@ export default function TransactionsList({
       className="space-y-6"
       variants={staggerContainer}
       initial="hidden"
-      whileInView="visible"
-      viewport={{ once: true, margin: "-30px" }}
+      animate="visible"
     >
       {groupedTransactions.map((group) => {
         const isCollapsed = collapsedGroups[group.title];

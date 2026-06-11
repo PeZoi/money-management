@@ -88,22 +88,59 @@ export function useCategoryMutation() {
 
       return result;
     },
+    onMutate: async (variables) => {
+      const { payload, options } = variables;
+      const isUpdate = options?.isUpdate;
+      const categoryId = options?.categoryId;
+      const finalWorkspaceId = options?.workspaceId || activeWorkspaceId;
+
+      // Hủy các query fetch categories đang chạy
+      await queryClient.cancelQueries({ queryKey: ['categories', finalWorkspaceId] });
+
+      // Chụp snapshot cache cũ
+      const previousCategories = queryClient.getQueryData<CategoryUi[]>(['categories', finalWorkspaceId]);
+
+      if (isUpdate && categoryId) {
+        // Cập nhật lạc quan phần tử cũ
+        queryClient.setQueryData<CategoryUi[]>(['categories', finalWorkspaceId], (old) => {
+          if (!old) return [];
+          return old.map((cat) => (cat.id === categoryId ? { ...cat, ...payload } : cat));
+        });
+      } else {
+        // Thêm lạc quan phần tử mới giả lập
+        const optimisticCategory: CategoryUi = {
+          id: `temp-cat-${Date.now()}`,
+          name: payload.name as string,
+          icon: payload.icon as string,
+          type: payload.type as CategoryType,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        queryClient.setQueryData<CategoryUi[]>(['categories', finalWorkspaceId], (old) => {
+          return old ? [...old, optimisticCategory] : [optimisticCategory];
+        });
+      }
+
+      return { previousCategories, finalWorkspaceId };
+    },
     onSuccess: (data, variables) => {
       const isUpdate = variables.options?.isUpdate;
       toast.success(isUpdate ? 'Đã cập nhật danh mục thành công' : 'Đã tạo danh mục thành công');
-
-      // Invalidate cache categories
-      const finalWorkspaceId = variables.options?.workspaceId || activeWorkspaceId;
-      queryClient.invalidateQueries({
-        queryKey: ['categories', finalWorkspaceId],
-      });
-
       variables.options?.onSuccess?.();
     },
-    onError: (error: Error, variables) => {
+    onError: (error: Error, variables, context) => {
+      if (context?.previousCategories) {
+        queryClient.setQueryData(['categories', context.finalWorkspaceId], context.previousCategories);
+      }
       const message = error.message || 'Không thể lưu danh mục';
       toast.error(message);
       variables.options?.onError?.(error);
+    },
+    onSettled: (data, error, variables, context) => {
+      const finalWorkspaceId = context?.finalWorkspaceId || variables.options?.workspaceId || activeWorkspaceId;
+      queryClient.invalidateQueries({
+        queryKey: ['categories', finalWorkspaceId],
+      });
     },
   });
 
@@ -116,14 +153,31 @@ export function useCategoryMutation() {
       }
       return true;
     },
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ['categories', activeWorkspaceId] });
+      const previousCategories = queryClient.getQueryData<CategoryUi[]>(['categories', activeWorkspaceId]);
+
+      // Xóa lạc quan danh mục khỏi cache
+      queryClient.setQueryData<CategoryUi[]>(['categories', activeWorkspaceId], (old) => {
+        if (!old) return [];
+        return old.filter((cat) => cat.id !== id);
+      });
+
+      return { previousCategories };
+    },
+    onError: (err: Error, id, context) => {
+      if (context?.previousCategories) {
+        queryClient.setQueryData(['categories', activeWorkspaceId], context.previousCategories);
+      }
+      toast.error(err.message || 'Không thể xóa danh mục');
+    },
     onSuccess: () => {
       toast.success('Đã xóa danh mục thành công');
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({
         queryKey: ['categories', activeWorkspaceId],
       });
-    },
-    onError: (err: Error) => {
-      toast.error(err.message || 'Không thể xóa danh mục');
     },
   });
 

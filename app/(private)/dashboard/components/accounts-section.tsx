@@ -46,8 +46,7 @@ export function AccountsSection({
         className="flex flex-wrap gap-3"
         variants={staggerContainer}
         initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, margin: "-30px" }}
+        animate="visible"
       >
         {accounts.map((a) => {
           const isActive = a.is_active;

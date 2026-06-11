@@ -342,8 +342,7 @@ export default function CategoriesList({
       className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
       variants={staggerContainer}
       initial="hidden"
-      whileInView="visible"
-      viewport={{ once: true, margin: "-30px" }}
+      animate="visible"
     >
       {categories.map((c) => (
         <CategoryCard
