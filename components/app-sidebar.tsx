@@ -19,13 +19,13 @@ import {
 } from '@/components/ui/sidebar';
 import { UserMenu } from '@/components/user-menu';
 import { WorkspaceSwitcher } from '@/components/workspace-switcher';
-import { 
-  ChartPieIcon, 
-  CreditCardIcon, 
-  LayoutDashboardIcon, 
-  Plus, 
-  SettingsIcon, 
-  TagsIcon, 
+import {
+  ChartPieIcon,
+  CreditCardIcon,
+  LayoutDashboardIcon,
+  Plus,
+  SettingsIcon,
+  TagsIcon,
   WalletIcon,
   ShieldAlertIcon,
   UsersIcon,
@@ -38,6 +38,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import CreateTransactionDialog from '@/app/(private)/transactions/components/create-transaction-dialog';
+import CreateDebtDialog from '@/app/(private)/debts/components/create-debt-dialog';
 import { useAuth } from '@/hooks/use-auth';
 import { useMyLoveConnection } from '@/hooks/use-love';
 
@@ -67,6 +68,7 @@ const navGroups: NavGroup[] = [
       { title: 'Giao dịch', url: '/transactions', icon: WalletIcon, match: 'prefix' },
       { title: 'Tài khoản', url: '/accounts', icon: CreditCardIcon, match: 'prefix' },
       { title: 'Danh mục', url: '/categories', icon: TagsIcon, match: 'prefix' },
+      { title: 'Nợ', url: '/debts', icon: UsersIcon, match: 'prefix' },
     ],
   },
   {
@@ -85,6 +87,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname();
   const { isMobile, setOpenMobile, state } = useSidebar();
   const [openTxDialog, setOpenTxDialog] = React.useState(false);
+  const [openDebtDialog, setOpenDebtDialog] = React.useState(false);
   const { user } = useAuth();
   const { data: loveConn } = useMyLoveConnection();
 
@@ -126,29 +129,61 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     <Sidebar {...props}>
       <SidebarHeader className="p-3 pt-[calc(env(safe-area-inset-top)+12px)] gap-2.5">
         <WorkspaceSwitcher />
-        
-        {/* Nút Thêm giao dịch nhanh */}
+
+        {/* Nút Thêm giao dịch và Ghi nợ nhanh */}
         <SidebarMenu>
-          <SidebarMenuItem className="flex justify-center">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  onClick={() => setOpenTxDialog(true)}
-                  className={cn(
-                    "w-full font-semibold",
-                    (state === 'collapsed' && !isMobile) ? "h-9 w-9 p-0 rounded-lg" : "h-10 px-3"
+          <SidebarMenuItem className="flex flex-col gap-2 w-full">
+            <div className={cn(
+              "flex gap-2 w-full",
+              (state === 'collapsed' && !isMobile) ? "flex-col items-center" : "flex-row"
+            )}>
+              {/* Thêm giao dịch */}
+              <div className={cn((state === 'collapsed' && !isMobile) ? "w-auto" : "flex-1")}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      onClick={() => setOpenTxDialog(true)}
+                      className={cn(
+                        "w-full font-semibold cursor-pointer",
+                        (state === 'collapsed' && !isMobile) ? "h-9 w-9 p-0 rounded-lg" : "h-10 px-2 text-xs md:text-sm"
+                      )}
+                    >
+                      <Plus className={cn("transition-transform duration-300 group-hover/btn:rotate-90 shrink-0", (state === 'collapsed' && !isMobile) ? "size-5" : "size-4 mr-1")} />
+                      {(state !== 'collapsed' || isMobile) && <span>Giao dịch</span>}
+                    </Button>
+                  </TooltipTrigger>
+                  {state === 'collapsed' && !isMobile && (
+                    <TooltipContent side="right" align="center" sideOffset={12}>
+                      Thêm giao dịch
+                    </TooltipContent>
                   )}
-                >
-                  <Plus className={cn("transition-transform duration-300 group-hover/btn:rotate-90", (state === 'collapsed' && !isMobile) ? "size-5" : "size-4.5")} />
-                  {(state !== 'collapsed' || isMobile) && <span>Thêm giao dịch</span>}
-                </Button>
-              </TooltipTrigger>
-              {state === 'collapsed' && !isMobile && (
-                <TooltipContent side="right" align="center" sideOffset={12}>
-                  Thêm giao dịch
-                </TooltipContent>
-              )}
-            </Tooltip>
+                </Tooltip>
+              </div>
+
+              {/* Ghi nợ */}
+              <div className={cn((state === 'collapsed' && !isMobile) ? "w-auto" : "flex-1")}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      onClick={() => setOpenDebtDialog(true)}
+                      variant="outline"
+                      className={cn(
+                        "w-full font-semibold cursor-pointer border-amber-500/30 bg-amber-500/10 dark:bg-amber-950/35 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 dark:hover:bg-amber-950/60 hover:text-amber-700 hover:border-amber-500/50",
+                        (state === 'collapsed' && !isMobile) ? "h-9 w-9 p-0 rounded-lg" : "h-10 px-2 text-xs md:text-sm"
+                      )}
+                    >
+                      <UsersIcon className={cn("shrink-0", (state === 'collapsed' && !isMobile) ? "size-5" : "size-4 mr-1")} />
+                      {(state !== 'collapsed' || isMobile) && <span>Ghi nợ</span>}
+                    </Button>
+                  </TooltipTrigger>
+                  {state === 'collapsed' && !isMobile && (
+                    <TooltipContent side="right" align="center" sideOffset={12}>
+                      Ghi nợ
+                    </TooltipContent>
+                  )}
+                </Tooltip>
+              </div>
+            </div>
           </SidebarMenuItem>
         </SidebarMenu>
 
@@ -223,6 +258,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       )}
       <SidebarRail />
       <CreateTransactionDialog open={openTxDialog} onOpenChange={setOpenTxDialog} />
+      <CreateDebtDialog open={openDebtDialog} onOpenChange={setOpenDebtDialog} />
     </Sidebar>
   );
 }

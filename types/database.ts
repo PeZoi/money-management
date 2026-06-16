@@ -189,3 +189,29 @@ export interface AdminLoveUser {
   anniversary_date: string | null;
   connection_id: UuidString | null;
 }
+
+export interface DebtRow {
+  id: UuidString;
+  workspace_id: UuidString;
+  debtor_name: string;
+  amount: VndAmount;
+  borrowed_at: IsoDateString;
+  due_at: IsoDateString;
+  status: "pending" | "paid";
+  note: string | null;
+  notified: boolean;
+  created_by: UuidString;
+  created_at: IsoDateString;
+  updated_at: IsoDateString;
+}
+
+export type DebtInsert = Pick<
+  DebtRow,
+  "workspace_id" | "debtor_name" | "amount" | "due_at" | "created_by"
+> &
+  Partial<Pick<DebtRow, "borrowed_at" | "status" | "note" | "notified">>;
+
+export type DebtUpdate = Partial<
+  Pick<DebtRow, "debtor_name" | "amount" | "borrowed_at" | "due_at" | "status" | "note" | "notified">
+>;
+

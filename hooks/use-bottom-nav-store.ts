@@ -1,24 +1,26 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { 
-  LayoutDashboardIcon, 
-  CreditCardIcon, 
-  WalletIcon, 
-  TagsIcon, 
-  SettingsIcon, 
-  ChartPieIcon, 
-  HeartIcon 
+import {
+  LayoutDashboardIcon,
+  CreditCardIcon,
+  WalletIcon,
+  TagsIcon,
+  SettingsIcon,
+  ChartPieIcon,
+  HeartIcon,
+  UsersIcon
 } from 'lucide-react';
 import * as React from 'react';
 
-export type NavItemKey = 
-  | 'dashboard' 
-  | 'accounts' 
-  | 'transactions' 
-  | 'categories' 
-  | 'settings' 
-  | 'reports' 
-  | 'love';
+export type NavItemKey =
+  | 'dashboard'
+  | 'accounts'
+  | 'transactions'
+  | 'categories'
+  | 'settings'
+  | 'reports'
+  | 'love'
+  | 'debts';
 
 export interface NavItemInfo {
   key: NavItemKey;
@@ -78,6 +80,13 @@ export const ALL_NAV_ITEMS: Record<NavItemKey, NavItemInfo> = {
     url: '/love',
     icon: HeartIcon,
   },
+  debts: {
+    key: 'debts',
+    title: 'Quản lý nợ',
+    label: 'Quản lý nợ',
+    url: '/debts',
+    icon: UsersIcon,
+  },
 };
 
 type BottomNavState = {
@@ -100,7 +109,7 @@ export const useBottomNavStore = create<BottomNavState>()(
     (set) => ({
       items: DEFAULT_ITEMS,
       setItems: (items) => set({ items }),
-      updateItemAt: (index, key) => 
+      updateItemAt: (index, key) =>
         set((state) => {
           const newItems = [...state.items];
           newItems[index] = key;
