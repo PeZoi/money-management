@@ -30,7 +30,8 @@ import {
   ShieldAlertIcon,
   UsersIcon,
   BriefcaseIcon,
-  HeartIcon
+  HeartIcon,
+  ClockIcon
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -119,6 +120,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           { title: 'Quản lý người dùng', url: '/admin/users', icon: UsersIcon, match: 'prefix' },
           { title: 'Quản lý Workspace', url: '/admin/workspaces', icon: BriefcaseIcon, match: 'prefix' },
           { title: 'Kết nối tình yêu', url: '/admin/love', icon: HeartIcon, match: 'prefix' },
+          { title: 'Quản lý Cronjob', url: '/admin/cronjobs', icon: ClockIcon, match: 'prefix' },
         ],
       });
     }

@@ -12,7 +12,8 @@ export async function GET(req: Request) {
   }
 
   // Đảm bảo path hợp lệ, không chứa các ký tự lùi thư mục hoặc chèn ép để bảo mật
-  if (path.includes("..") || path.startsWith("/") || !path.startsWith("photos/")) {
+  const isValidPath = path.startsWith("photos/") || path.startsWith("profile_photos/");
+  if (path.includes("..") || path.startsWith("/") || !isValidPath) {
     return new Response("Invalid path", { status: 400 });
   }
 
