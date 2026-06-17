@@ -8,6 +8,7 @@ import type {
 } from '@/types/report';
 import type { TransactionWithCategory } from '@/types/database';
 import { useAccounts } from '@/hooks/use-accounts';
+import { getTransactionSystemImpact } from '@/lib/utils';
 
 import { evaluateFormula } from '../lib/formula-engine';
 
@@ -93,16 +94,22 @@ export function useReportTableData({ table, transactions, month, overrideTotalAc
 
     // 2. Tính tổng cho cột thống kê hệ thống
     const realIncomeTotal = transactions
-      .filter((t) => t.type === 'income')
-      .reduce((sum, t) => sum + Number(t.amount), 0);
+      .reduce((sum, t) => {
+        const impact = getTransactionSystemImpact(t, accounts);
+        return sum + (impact.type === 'income' ? impact.amount : 0);
+      }, 0);
 
     const realExpenseTotal = transactions
-      .filter((t) => t.type === 'expense')
-      .reduce((sum, t) => sum + Number(t.amount), 0);
+      .reduce((sum, t) => {
+        const impact = getTransactionSystemImpact(t, accounts);
+        return sum + (impact.type === 'expense' ? impact.amount : 0);
+      }, 0);
 
     const totalAccountBalance = overrideTotalAccountBalance !== undefined
       ? overrideTotalAccountBalance
-      : accounts.reduce((sum, a) => sum + Number(a.balance), 0);
+      : accounts
+          .filter((a) => a.is_system)
+          .reduce((sum, a) => sum + Number(a.balance), 0);
 
     for (const col of columns) {
       if (col.kind === 'system') {

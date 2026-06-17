@@ -116,19 +116,56 @@ export default function ReportsPageClient() {
     }
   };
 
-  // ─── Cảnh báo người dùng khi reload hoặc tắt tab nếu chưa lưu ──
+  // ─── Cảnh báo người dùng khi reload, tắt tab hoặc chuyển trang nếu chưa lưu ──
   useEffect(() => {
     if (!hasUnsavedChanges) return;
 
+    // 1. Chặn reload hoặc tắt tab
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       e.preventDefault();
       e.returnValue = 'Bạn có những thay đổi chưa được lưu. Bạn có chắc chắn muốn rời đi?';
       return e.returnValue;
     };
 
+    // 2. Chặn chuyển trang trong ứng dụng (click các liên kết <a>)
+    const handleAnchorClick = (e: MouseEvent) => {
+      let target = e.target as HTMLElement | null;
+      // Tìm thẻ <a> gần nhất trong phân cấp DOM từ phần tử bị click
+      while (target && target.tagName !== 'A') {
+        target = target.parentElement;
+      }
+
+      if (target && target.tagName === 'A') {
+        const href = target.getAttribute('href');
+        const isDownload = target.hasAttribute('download');
+        const targetAttr = target.getAttribute('target');
+
+        // Chỉ chặn nếu liên kết dẫn đến trang khác (không phải hash link, link javascript, mở tab mới hoặc tải xuống)
+        if (
+          href &&
+          !href.startsWith('#') &&
+          !href.startsWith('javascript:') &&
+          targetAttr !== '_blank' &&
+          !isDownload
+        ) {
+          const confirmLeave = window.confirm(
+            'Bạn có những thay đổi chưa lưu trên trang này. Bạn có chắc chắn muốn chuyển sang trang khác?'
+          );
+          if (!confirmLeave) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        }
+      }
+    };
+
     window.addEventListener('beforeunload', handleBeforeUnload);
+    // Sử dụng capture: true để chạy trước Next.js router bắt sự kiện click
+    document.addEventListener('click', handleAnchorClick, { capture: true });
+
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
+      document.removeEventListener('click', handleAnchorClick, { capture: true });
     };
   }, [hasUnsavedChanges]);
 

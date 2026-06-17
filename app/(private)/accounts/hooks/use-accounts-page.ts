@@ -4,11 +4,13 @@ import { useState } from 'react';
 import { useAccounts, useAccountMutation } from '@/hooks/use-accounts';
 import type { AccountRow } from '@/types/database';
 import { useConfirm } from '@/hooks/use-confirm';
+import { useWorkspaceStore } from '@/hooks/use-workspace';
 
 export function useAccountsPage() {
   const { accounts, activeAccount, isLoading, fetchAccounts } = useAccounts();
   const { deleteAccount, activateAccount } = useAccountMutation();
   const confirm = useConfirm();
+  const { includeSavings, setIncludeSavings } = useWorkspaceStore();
 
   const [createOpen, setCreateOpen] = useState(false);
   const [editingAccount, setEditingAccount] = useState<AccountRow | null>(null);
@@ -31,8 +33,10 @@ export function useAccountsPage() {
     await activateAccount(id, { onSuccess: fetchAccounts });
   };
 
-  // Tính toán tổng số dư của toàn bộ tài khoản
-  const totalBalance = accounts.reduce((sum, a) => sum + Number(a.balance), 0);
+  // Tính toán tổng số dư của các tài khoản thuộc hệ thống
+  const totalBalance = accounts
+    .filter((a) => a.is_system && (includeSavings || a.type !== 'savings'))
+    .reduce((sum, a) => sum + Number(a.balance), 0);
 
   return {
     accounts,
@@ -46,5 +50,7 @@ export function useAccountsPage() {
     handleDelete,
     handleActivate,
     totalBalance,
+    includeSavings,
+    setIncludeSavings,
   };
 }

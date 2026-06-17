@@ -14,10 +14,11 @@ import {
 import { useEffect, useMemo, useState } from 'react';
 
 import { Skeleton } from '@/components/ui/skeleton';
-import { cn } from '@/lib/utils';
+import { cn, getTransactionSystemImpact } from '@/lib/utils';
 import type { TransactionWithCategory } from '@/types/database';
 import { formatVnd } from '../transaction-ui';
 import { scaleIn } from '@/lib/motion-variants';
+import { useAccounts } from '@/hooks/use-accounts';
 
 import type { FilterType } from '../hooks/use-transactions-page';
 
@@ -50,27 +51,46 @@ export default function TransactionStatsCards({ transactions, isLoading, activeF
     localStorage.setItem('money-management-show-balance', String(newVal));
   };
 
+  const { accounts } = useAccounts();
+
   // Memoize các phép toán lọc và tính toán dòng tiền để tránh chạy lại khi toggle showBalance
   const stats = useMemo(() => {
-    const income = transactions.filter((t) => t.type === 'income');
-    const expense = transactions.filter((t) => t.type === 'expense');
-    const transfer = transactions.filter((t) => t.type === 'transfer');
+    const safeAccounts = accounts || [];
+    
+    let totalIncome = 0;
+    let incomeCount = 0;
+    let totalExpense = 0;
+    let expenseCount = 0;
+    let totalTransfer = 0;
+    let transferCount = 0;
 
-    const totalIncome = income.reduce((s, t) => s + Number(t.amount), 0);
-    const totalExpense = expense.reduce((s, t) => s + Number(t.amount), 0);
-    const totalTransfer = transfer.reduce((s, t) => s + Number(t.amount), 0);
+    transactions.forEach((t) => {
+      const impact = getTransactionSystemImpact(t, safeAccounts);
+      if (impact.type === 'income') {
+        totalIncome += impact.amount;
+        incomeCount++;
+      } else if (impact.type === 'expense') {
+        totalExpense += impact.amount;
+        expenseCount++;
+      } else if (t.type === 'transfer') {
+        // Chỉ đếm là chuyển tiền nếu là chuyển tiền nội bộ cùng trong hoặc cùng ngoài hệ thống
+        totalTransfer += Number(t.amount || 0);
+        transferCount++;
+      }
+    });
+
     const balance = totalIncome - totalExpense;
 
     return {
-      incomeCount: income.length,
-      expenseCount: expense.length,
-      transferCount: transfer.length,
+      incomeCount,
+      expenseCount,
+      transferCount,
       totalIncome,
       totalExpense,
       totalTransfer,
       balance,
     };
-  }, [transactions]);
+  }, [transactions, accounts]);
 
   const { incomeCount, expenseCount, transferCount, totalIncome, totalExpense, totalTransfer, balance } = stats;
 

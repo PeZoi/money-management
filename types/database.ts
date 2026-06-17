@@ -15,7 +15,7 @@ export type WorkspaceRole = "owner" | "admin" | "member";
 export type TransactionType = "expense" | "income" | "transfer";
 
 /** Enum `public.account_type` */
-export type AccountType = "cash" | "bank" | "e_wallet" | "investment" | "other";
+export type AccountType = "cash" | "bank" | "e_wallet" | "investment" | "savings" | "other";
 
 export type UuidString = string;
 
@@ -67,6 +67,7 @@ export interface AccountRow {
   icon: string;
   color: string;
   is_active: boolean;
+  is_system: boolean;
   created_by: UuidString;
   created_at: IsoDateString;
   updated_at: IsoDateString;
@@ -113,9 +114,9 @@ export type WorkspaceMemberUpdate = Partial<Pick<WorkspaceMemberRow, "role">>;
 export type CategoryUpdate = Partial<Pick<CategoryRow, "name" | "icon" | "type">>;
 
 export type AccountInsert = Pick<AccountRow, "workspace_id" | "name" | "type" | "icon" | "color" | "created_by"> &
-  Partial<Pick<AccountRow, "balance" | "currency" | "is_active">>;
+  Partial<Pick<AccountRow, "balance" | "currency" | "is_active" | "is_system">>;
 
-export type AccountUpdate = Partial<Pick<AccountRow, "name" | "type" | "balance" | "icon" | "color" | "is_active" | "currency">>;
+export type AccountUpdate = Partial<Pick<AccountRow, "name" | "type" | "balance" | "icon" | "color" | "is_active" | "currency" | "is_system">>;
 
 export type TransactionUpdate = Partial<
   Pick<TransactionRow, "amount" | "category_id" | "account_id" | "to_account_id" | "note">

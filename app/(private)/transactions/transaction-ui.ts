@@ -26,6 +26,9 @@ export function typeBadgeClass(t: TransactionType) {
   return 'border-rose-500/20 bg-rose-500/10 text-rose-700 dark:text-rose-400';
 }
 
+import { getTransactionSystemImpact } from '@/lib/utils';
+import type { TransactionWithCategory } from '@/types/database';
+
 export function typeAmountClass(t: TransactionType) {
   if (t === 'income') return 'text-emerald-600 dark:text-emerald-400';
   if (t === 'transfer') return 'text-blue-600 dark:text-blue-400';
@@ -36,6 +39,20 @@ export function typeAmountPrefix(t: TransactionType) {
   if (t === 'income') return '+';
   if (t === 'transfer') return '';
   return '-';
+}
+
+export function getTransactionAmountClass(t: TransactionWithCategory) {
+  const impact = getTransactionSystemImpact(t);
+  if (impact.type === 'income') return 'text-emerald-600 dark:text-emerald-400';
+  if (impact.type === 'expense') return 'text-rose-600 dark:text-rose-400';
+  return 'text-blue-600 dark:text-blue-400'; // Chuyển khoản nội bộ
+}
+
+export function getTransactionAmountPrefix(t: TransactionWithCategory) {
+  const impact = getTransactionSystemImpact(t);
+  if (impact.type === 'income') return '+';
+  if (impact.type === 'expense') return '-';
+  return ''; // Chuyển khoản nội bộ
 }
 
 /**

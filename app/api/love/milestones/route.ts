@@ -89,7 +89,7 @@ export async function POST(request: Request) {
       message: "Tạo cột mốc kỷ niệm thành công!",
       data,
     });
-  } catch (err) {
+  } catch {
     return NextResponse.json(
       { error: "Định dạng JSON không hợp lệ hoặc lỗi hệ thống" },
       { status: 500 }

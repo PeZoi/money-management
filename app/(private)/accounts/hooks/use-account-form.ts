@@ -47,6 +47,7 @@ export function useAccountForm({ open, onOpenChange, account, onSuccess }: UseAc
           balance: formatAmountInput(account.balance),
           icon: account.icon,
           color: account.color,
+          is_system: account.is_system ?? true,
         }
       : accountDefaultValues,
     mode: 'onChange',
@@ -63,11 +64,21 @@ export function useAccountForm({ open, onOpenChange, account, onSuccess }: UseAc
               balance: formatAmountInput(account.balance),
               icon: account.icon,
               color: account.color,
+              is_system: account.is_system ?? true,
             }
           : accountDefaultValues,
       );
     }
   }, [open, account, form]);
+
+  // Khi chọn loại Tiết kiệm, bắt buộc is_system = true
+  // vì tài khoản tiết kiệm luôn thuộc hệ thống để tổng tài sản chính xác
+  const currentType = form.watch('type');
+  useEffect(() => {
+    if (currentType === 'savings') {
+      form.setValue('is_system', true);
+    }
+  }, [currentType, form]);
 
   const onSubmit = async (data: AccountFormValues) => {
     const payload = {
@@ -76,6 +87,7 @@ export function useAccountForm({ open, onOpenChange, account, onSuccess }: UseAc
       balance: Number(data.balance.replace(/[^0-9-]/g, '')) || 0,
       icon: data.icon,
       color: data.color,
+      is_system: data.is_system,
     };
 
     let ok = false;
@@ -98,6 +110,7 @@ export function useAccountForm({ open, onOpenChange, account, onSuccess }: UseAc
     form,
     isUpdate,
     isSubmitting,
+    isSavingsType: currentType === 'savings',
     onSubmit: form.handleSubmit(onSubmit),
     setFormattedBalance,
     formatAmountInput,

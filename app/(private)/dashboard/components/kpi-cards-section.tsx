@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { formatVnd } from '@/app/(private)/transactions/transaction-ui';
 import { staggerContainer, fadeSlideUp } from '@/lib/motion-variants';
+import { Switch } from '@/components/ui/switch';
 
 interface KpiCardsSectionProps {
   stats: {
@@ -25,12 +26,16 @@ interface KpiCardsSectionProps {
   };
   timeRange: 'week' | 'month' | 'year' | 'all';
   accountsCount: number;
+  includeSavings: boolean;
+  setIncludeSavings: (val: boolean) => void;
 }
 
 export function KpiCardsSection({
   stats,
   timeRange,
   accountsCount,
+  includeSavings,
+  setIncludeSavings,
 }: KpiCardsSectionProps) {
   // Tính toán trước phần trăm làm tròn ở đầu component để tuân thủ Rules of Hooks
   const roundedIncomePercent = React.useMemo(() => Math.round(stats.incomePercent), [stats.incomePercent]);
@@ -66,7 +71,20 @@ export function KpiCardsSection({
         
         {/* Hàng 1: Label & Icon */}
         <div className="flex items-center justify-between gap-2">
-          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest select-none">Số dư khả dụng</span>
+          <div className="flex flex-col gap-1 select-none">
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Số dư khả dụng</span>
+            <div 
+              onClick={(e) => e.stopPropagation()} 
+              className="flex items-center gap-1 bg-background/55 hover:bg-background/80 dark:bg-card/45 dark:hover:bg-card/65 backdrop-blur-xs py-0.5 px-1.5 rounded-md border border-border/30 transition-colors w-fit text-[9px] font-medium text-muted-foreground"
+            >
+              <span>Gồm tiết kiệm</span>
+              <Switch
+                checked={includeSavings}
+                onCheckedChange={setIncludeSavings}
+                className="scale-65 origin-right cursor-pointer"
+              />
+            </div>
+          </div>
           <div className="size-8.5 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-500 group-hover:scale-110 group-hover:bg-blue-500 group-hover:text-white transition-all duration-300 shrink-0">
             <WalletIcon className="size-4" />
           </div>

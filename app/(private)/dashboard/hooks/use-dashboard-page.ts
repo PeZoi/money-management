@@ -24,6 +24,7 @@ import { useWorkspaceStore } from '@/hooks/use-workspace';
 import { useWorkspaces } from '@/hooks/use-workspaces';
 import { useDraggable } from '@/hooks/use-draggable';
 import type { TransactionWithCategory } from '@/types/database';
+import { getTransactionSystemImpact } from '@/lib/utils';
 
 // Helper tính toán năm hiện hành, tháng hiện hành của chu kỳ trước đó
 const getPreviousPeriodDates = (
@@ -56,7 +57,7 @@ const getPreviousPeriodDates = (
 
 export function useDashboardPage() {
   const queryClient = useQueryClient();
-  const { activeWorkspaceId } = useWorkspaceStore();
+  const { activeWorkspaceId, includeSavings, setIncludeSavings } = useWorkspaceStore();
   const { data: workspaces = [] } = useWorkspaces();
   const currentWorkspace = workspaces.find((w) => w.id === activeWorkspaceId);
 
@@ -116,6 +117,7 @@ export function useDashboardPage() {
 
   // 6. Fetch dữ liệu tài khoản và mutation active
   const { accounts = [], isLoading: isAccountsLoading } = useAccounts();
+  const safeAccounts = accounts || [];
   const { activateAccount } = useAccountMutation();
 
   // 7. Query fetch giao dịch chu kỳ hiện tại
@@ -193,35 +195,44 @@ export function useDashboardPage() {
 
   // 9. Tính toán các chỉ số tài chính của chu kỳ hiện tại
   const stats = React.useMemo(() => {
-    const safeAccounts = accounts || [];
     const safeCurrentTx = currentTransactions || [];
     const safePrevTx = prevTransactions || [];
 
-    // Available Balance (tổng tiền mặt/ngân hàng khả dụng)
-    const availableBalance = safeAccounts.reduce((sum, a) => sum + (a ? Number(a.balance || 0) : 0), 0);
+    // Available Balance (tổng tiền mặt/ngân hàng khả dụng thuộc hệ thống)
+    const availableBalance = safeAccounts
+      .filter((a) => a && a.is_system && (includeSavings || a.type !== 'savings'))
+      .reduce((sum, a) => sum + (a ? Number(a.balance || 0) : 0), 0);
 
     // Thu nhập hiện tại
     const currentIncome = safeCurrentTx
-      .filter((t) => t && t.type === 'income')
-      .reduce((sum, t) => sum + Number(t.amount || 0), 0);
+      .reduce((sum, t) => {
+        const impact = getTransactionSystemImpact(t, safeAccounts);
+        return sum + (impact.type === 'income' ? impact.amount : 0);
+      }, 0);
 
     // Chi tiêu hiện tại
     const currentExpense = safeCurrentTx
-      .filter((t) => t && t.type === 'expense')
-      .reduce((sum, t) => sum + Number(t.amount || 0), 0);
+      .reduce((sum, t) => {
+        const impact = getTransactionSystemImpact(t, safeAccounts);
+        return sum + (impact.type === 'expense' ? impact.amount : 0);
+      }, 0);
 
     // Dòng tiền ròng
     const currentNet = currentIncome - currentExpense;
 
     // Thu nhập trước đó
     const prevIncome = safePrevTx
-      .filter((t) => t && t.type === 'income')
-      .reduce((sum, t) => sum + Number(t.amount || 0), 0);
+      .reduce((sum, t) => {
+        const impact = getTransactionSystemImpact(t, safeAccounts);
+        return sum + (impact.type === 'income' ? impact.amount : 0);
+      }, 0);
 
     // Chi tiêu trước đó
     const prevExpense = safePrevTx
-      .filter((t) => t && t.type === 'expense')
-      .reduce((sum, t) => sum + Number(t.amount || 0), 0);
+      .reduce((sum, t) => {
+        const impact = getTransactionSystemImpact(t, safeAccounts);
+        return sum + (impact.type === 'expense' ? impact.amount : 0);
+      }, 0);
 
     // Tính toán tỷ lệ % biến động
     const incomeDiff = currentIncome - prevIncome;
@@ -242,7 +253,7 @@ export function useDashboardPage() {
       incomePercent,
       expensePercent,
     };
-  }, [accounts, currentTransactions, prevTransactions]);
+  }, [accounts, currentTransactions, prevTransactions, includeSavings]);
 
   // 10. Gom nhóm dữ liệu biểu đồ Area
   const trendData = React.useMemo(() => {
@@ -258,8 +269,14 @@ export function useDashboardPage() {
           const tDate = new Date(t.created_at);
           return !isNaN(tDate.getTime()) && isSameDay(tDate, d);
         });
-        const income = dayTransactions.filter((t) => t.type === 'income').reduce((s, t) => s + Number(t.amount || 0), 0);
-        const expense = dayTransactions.filter((t) => t.type === 'expense').reduce((s, t) => s + Number(t.amount || 0), 0);
+        const income = dayTransactions.reduce((s, t) => {
+          const impact = getTransactionSystemImpact(t, safeAccounts);
+          return s + (impact.type === 'income' ? impact.amount : 0);
+        }, 0);
+        const expense = dayTransactions.reduce((s, t) => {
+          const impact = getTransactionSystemImpact(t, safeAccounts);
+          return s + (impact.type === 'expense' ? impact.amount : 0);
+        }, 0);
         days.push({
           time: dayNames[i],
           income,
@@ -280,8 +297,14 @@ export function useDashboardPage() {
           const tDate = new Date(t.created_at);
           return !isNaN(tDate.getTime()) && isSameDay(tDate, d);
         });
-        const income = dayTransactions.filter((t) => t.type === 'income').reduce((s, t) => s + Number(t.amount || 0), 0);
-        const expense = dayTransactions.filter((t) => t.type === 'expense').reduce((s, t) => s + Number(t.amount || 0), 0);
+        const income = dayTransactions.reduce((s, t) => {
+          const impact = getTransactionSystemImpact(t, safeAccounts);
+          return s + (impact.type === 'income' ? impact.amount : 0);
+        }, 0);
+        const expense = dayTransactions.reduce((s, t) => {
+          const impact = getTransactionSystemImpact(t, safeAccounts);
+          return s + (impact.type === 'expense' ? impact.amount : 0);
+        }, 0);
         days.push({
           time: String(i).padStart(2, '0'),
           income,
@@ -301,8 +324,14 @@ export function useDashboardPage() {
           const d = new Date(t.created_at);
           return !isNaN(d.getTime()) && d.getFullYear() === referenceDate.getFullYear() && d.getMonth() === i;
         });
-        const income = monthTransactions.filter((t) => t.type === 'income').reduce((s, t) => s + Number(t.amount || 0), 0);
-        const expense = monthTransactions.filter((t) => t.type === 'expense').reduce((s, t) => s + Number(t.amount || 0), 0);
+        const income = monthTransactions.reduce((s, t) => {
+          const impact = getTransactionSystemImpact(t, safeAccounts);
+          return s + (impact.type === 'income' ? impact.amount : 0);
+        }, 0);
+        const expense = monthTransactions.reduce((s, t) => {
+          const impact = getTransactionSystemImpact(t, safeAccounts);
+          return s + (impact.type === 'expense' ? impact.amount : 0);
+        }, 0);
         months.push({
           time: monthNames[i],
           income,
@@ -320,13 +349,18 @@ export function useDashboardPage() {
       const d = new Date(t.created_at);
       if (isNaN(d.getTime())) return;
       const key = `${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
-      const amount = Number(t.amount || 0);
-      if (!monthMap[key]) {
-        monthMap[key] = { income: 0, expense: 0, transactions: [] };
+      if (t.type === 'income' || t.type === 'expense' || t.type === 'transfer') {
+        const impact = getTransactionSystemImpact(t, safeAccounts);
+        if (impact.type !== 'none') {
+          const key = `${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+          if (!monthMap[key]) {
+            monthMap[key] = { income: 0, expense: 0, transactions: [] };
+          }
+          if (impact.type === 'income') monthMap[key].income += impact.amount;
+          if (impact.type === 'expense') monthMap[key].expense += impact.amount;
+          monthMap[key].transactions.push(t);
+        }
       }
-      if (t.type === 'income') monthMap[key].income += amount;
-      if (t.type === 'expense') monthMap[key].expense += amount;
-      monthMap[key].transactions.push(t);
     });
 
     const sortedMonths = Object.keys(monthMap)
@@ -366,12 +400,16 @@ export function useDashboardPage() {
 
     const safePrevTx = prevTransactions || [];
     const previousIncome = safePrevTx
-      .filter((t) => t && t.type === 'income')
-      .reduce((sum, t) => sum + Number(t.amount || 0), 0);
+      .reduce((sum, t) => {
+        const impact = getTransactionSystemImpact(t, safeAccounts);
+        return sum + (impact.type === 'income' ? impact.amount : 0);
+      }, 0);
 
     const previousExpense = safePrevTx
-      .filter((t) => t && t.type === 'expense')
-      .reduce((sum, t) => sum + Number(t.amount || 0), 0);
+      .reduce((sum, t) => {
+        const impact = getTransactionSystemImpact(t, safeAccounts);
+        return sum + (impact.type === 'expense' ? impact.amount : 0);
+      }, 0);
 
     return {
       current: { label: currentLabel, income: currentIncome, expense: currentExpense },
@@ -453,6 +491,8 @@ export function useDashboardPage() {
     currentTransactions,
     prevTransactions,
     activeTab,
-    setActiveTab
+    setActiveTab,
+    includeSavings,
+    setIncludeSavings
   };
 }

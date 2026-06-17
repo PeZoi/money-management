@@ -86,7 +86,9 @@ export default function DashboardPage() {
     currentTransactions,
     prevTransactions,
     activeTab,
-    setActiveTab
+    setActiveTab,
+    includeSavings,
+    setIncludeSavings
   } = useDashboardPage();
 
   // Nếu chưa mounted xong trên client thì hiển thị skeleton
@@ -172,6 +174,8 @@ export default function DashboardPage() {
               stats={stats}
               timeRange={timeRange}
               accountsCount={accounts.length}
+              includeSavings={includeSavings}
+              setIncludeSavings={setIncludeSavings}
             />
 
             {/* 3. CHARTS COMPONENT */}

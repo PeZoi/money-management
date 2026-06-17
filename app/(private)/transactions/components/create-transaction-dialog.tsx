@@ -114,7 +114,7 @@ function AccountSelector({
   label: string;
   accountId: string;
   onSelect: (id: string) => void;
-  accounts: { id: string; name: string; icon: string; balance?: number | string }[];
+  accounts: { id: string; name: string; icon: string; balance?: number | string; is_system?: boolean }[];
   activeAccount: { id: string } | null;
   disabled: boolean;
   placeholder?: string;
@@ -179,11 +179,16 @@ function AccountSelector({
                   >
                     <span className="text-base select-none">{acc.icon}</span>
                     <span className="flex-1 truncate">{acc.name}</span>
-                    {acc.id === activeAccount?.id && (
+                    {/* Badge ưu tiên: Mặc định > Ngoài hệ thống */}
+                    {acc.id === activeAccount?.id ? (
                       <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium shrink-0">
                         Mặc định
                       </span>
-                    )}
+                    ) : acc.is_system === false ? (
+                      <span className="text-[10px] bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 px-1.5 py-0.5 rounded-full font-medium shrink-0">
+                        Ngoài hệ thống
+                      </span>
+                    ) : null}
                   </button>
                 );
               })

@@ -36,7 +36,7 @@ export async function PUT(
 
     const { id } = await params;
     const body = await req.json() as Record<string, unknown>;
-    const { name, type, balance, currency, icon, color } = body;
+    const { name, type, balance, currency, icon, color, is_system } = body;
 
     let numBalance: number | undefined = undefined;
     if (balance !== undefined) {
@@ -57,7 +57,8 @@ export async function PUT(
         ...(balance !== undefined && { balance: numBalance }), 
         currency, 
         icon, 
-        color 
+        color,
+        ...(is_system !== undefined && { is_system: is_system === true })
       })
       .eq('id', id)
       .select()

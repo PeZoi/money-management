@@ -23,6 +23,7 @@ const ACCOUNT_TYPE_LABELS: Record<string, string> = {
   cash: 'Tiền mặt',
   bank: 'Ngân hàng',
   e_wallet: 'Ví điện tử',
+  savings: 'Tiết kiệm',
   investment: 'Đầu tư',
   other: 'Khác',
 };
@@ -343,8 +344,13 @@ function AccountCard({ account, isSubmitting, onEdit, onDelete, onActivate }: Ac
 
             <div className="min-w-0 flex-1 pt-1">
               <p className="truncate font-semibold text-base leading-tight">{account.name}</p>
-              <p className="mt-0.5 text-xs text-muted-foreground">
-                {ACCOUNT_TYPE_LABELS[account.type] ?? account.type} · {account.currency}
+              <p className="mt-0.5 text-xs text-muted-foreground flex flex-wrap items-center gap-1.5">
+                <span>{ACCOUNT_TYPE_LABELS[account.type] ?? account.type} · {account.currency}</span>
+                {!account.is_system && (
+                  <Badge variant="outline" className="rounded-md px-1.5 py-0 border-muted-foreground/30 bg-muted/30 text-muted-foreground text-[9px] font-medium leading-none h-4">
+                    Ngoài hệ thống
+                  </Badge>
+                )}
               </p>
             </div>
           </div>

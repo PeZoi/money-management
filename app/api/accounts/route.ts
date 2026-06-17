@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     if (!user) return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
 
     const body = await req.json();
-    const { workspace_id, name, type, balance, currency, icon, color, is_active } = body as Record<string, unknown>;
+    const { workspace_id, name, type, balance, currency, icon, color, is_active, is_system } = body as Record<string, unknown>;
 
     if (!workspace_id || !name || !type) {
       return NextResponse.json({ success: false, message: 'Thiếu thông tin bắt buộc' }, { status: 400 });
@@ -69,6 +69,7 @@ export async function POST(req: NextRequest) {
         icon: (icon as string) || '💰',
         color: (color as string) || '#6366f1',
         is_active: is_active === true,
+        is_system: is_system !== false,
         created_by: user.id,
       })
       .select()

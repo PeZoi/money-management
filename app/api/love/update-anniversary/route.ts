@@ -58,7 +58,7 @@ export async function PATCH(request: Request) {
       message: "Cập nhật ngày kỷ niệm thành công!",
       data,
     });
-  } catch (err) {
+  } catch {
     return NextResponse.json(
       { error: "Định dạng JSON không hợp lệ hoặc lỗi hệ thống" },
       { status: 500 }

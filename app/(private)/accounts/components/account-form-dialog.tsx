@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { Loader2Icon } from 'lucide-react';
 
@@ -15,12 +16,13 @@ const ACCOUNT_TYPES = [
   { value: 'cash', label: 'Tiền mặt', icon: '💵', color: '#10b981', description: 'Tiền trong ví, tay' },
   { value: 'bank', label: 'Ngân hàng', icon: '🏦', color: '#6366f1', description: 'Tài khoản ngân hàng' },
   { value: 'e_wallet', label: 'Ví điện tử', icon: '📱', color: '#f59e0b', description: 'MoMo, ZaloPay...' },
+  { value: 'savings', label: 'Tiết kiệm', icon: '🐷', color: '#06b6d4', description: 'Gửi tiết kiệm, trái phiếu' },
   {
     value: 'investment',
     label: 'Đầu tư',
     icon: '📈',
     color: '#ec4899',
-    description: 'Chứng khoán, tiết kiệm',
+    description: 'Chứng khoán, quỹ',
   },
   { value: 'other', label: 'Khác', icon: '🪙', color: '#64748b', description: 'Loại tài khoản khác' },
 ] as const;
@@ -55,7 +57,7 @@ function normalizeHexInput(raw: string): string {
 }
 
 export default function AccountFormDialog({ open, onOpenChange, account, onSuccess }: AccountFormDialogProps) {
-  const { form, isUpdate, isSubmitting, onSubmit, setFormattedBalance } = useAccountForm({
+  const { form, isUpdate, isSubmitting, isSavingsType, onSubmit, setFormattedBalance } = useAccountForm({
     open,
     onOpenChange,
     account,
@@ -132,6 +134,18 @@ export default function AccountFormDialog({ open, onOpenChange, account, onSucce
                   );
                 })}
               </div>
+
+              {/* Ghi chú cho loại Tiết kiệm */}
+              {type === 'savings' && (
+                <div className="flex items-start gap-2.5 rounded-xl border border-cyan-500/30 bg-cyan-500/5 p-3.5 text-xs text-cyan-700 dark:text-cyan-300">
+                  <span className="text-base leading-none mt-0.5 shrink-0">💡</span>
+                  <p>
+                    <span className="font-semibold">Tài khoản Tiết kiệm</span> luôn nằm trong hệ thống. Khi chuyển tiền vào đây,
+                    hệ thống sẽ <span className="font-semibold">không tính là Chi tiêu</span> — giúp báo cáo chi tiêu trung bình
+                    ngày phản ánh đúng thực tế.
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Số dư ban đầu */}
@@ -238,6 +252,29 @@ export default function AccountFormDialog({ open, onOpenChange, account, onSucce
                   ))}
                 </div>
               </div>
+            </div>
+
+            {/* Thuộc hệ thống (is_system) */}
+            <div className={cn(
+              "flex items-center justify-between rounded-xl border bg-muted/20 p-4",
+              isSavingsType ? "border-cyan-500/30 bg-cyan-500/5" : "border-border"
+            )}>
+              <div className="space-y-0.5">
+                <Label htmlFor="account-is-system" className="text-sm font-semibold">
+                  Tính toán trong hệ thống
+                </Label>
+                <p className="text-xs text-muted-foreground max-w-[320px] sm:max-w-[380px]">
+                  {isSavingsType
+                    ? 'Tài khoản Tiết kiệm luôn thuộc hệ thống. Chuyển tiền vào đây không bị tính là Chi tiêu.'
+                    : 'Bật để cộng số dư vào Tổng tài sản hệ thống. Nếu tắt, chuyển khoản đến ví này sẽ tính là Chi tiêu.'}
+                </p>
+              </div>
+              <Switch
+                id="account-is-system"
+                checked={form.watch('is_system')}
+                onCheckedChange={(checked) => form.setValue('is_system', checked)}
+                disabled={isSubmitting || isSavingsType}
+              />
             </div>
 
             {/* Preview */}

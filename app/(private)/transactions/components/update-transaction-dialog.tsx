@@ -229,11 +229,15 @@ export default function UpdateTransactionDialog({ transaction, open, onOpenChang
                           >
                             <span className="text-base select-none">{acc.icon}</span>
                             <span className="flex-1 truncate">{acc.name}</span>
-                            {acc.id === activeAccount?.id && (
+                            {acc.id === activeAccount?.id ? (
                               <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium shrink-0">
                                 Mặc định
                               </span>
-                            )}
+                            ) : !acc.is_system ? (
+                              <span className="text-[10px] bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 px-1.5 py-0.5 rounded-full font-medium shrink-0">
+                                Ngoài hệ thống
+                              </span>
+                            ) : null}
                           </button>
                         ))}
                       </div>
@@ -284,6 +288,16 @@ export default function UpdateTransactionDialog({ transaction, open, onOpenChang
                           >
                             <span className="text-base select-none">{acc.icon}</span>
                             <span className="flex-1 truncate">{acc.name}</span>
+                            {/* Badge Ngoài HT cho tài khoản đích */}
+                            {acc.id === activeAccount?.id ? (
+                              <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium shrink-0">
+                                Mặc định
+                              </span>
+                            ) : !acc.is_system ? (
+                              <span className="text-[10px] bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 px-1.5 py-0.5 rounded-full font-medium shrink-0">
+                                Ngoài hệ thống
+                              </span>
+                            ) : null}
                           </button>
                         ))}
                       </div>
@@ -352,11 +366,15 @@ export default function UpdateTransactionDialog({ transaction, open, onOpenChang
                           >
                             <span className="text-base select-none">{acc.icon}</span>
                             <span className="flex-1 truncate">{acc.name}</span>
-                            {acc.id === activeAccount?.id && (
+                            {acc.id === activeAccount?.id ? (
                               <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium shrink-0">
                                 Mặc định
                               </span>
-                            )}
+                            ) : !acc.is_system ? (
+                              <span className="text-[10px] bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 px-1.5 py-0.5 rounded-full font-medium shrink-0">
+                                Ngoài hệ thống
+                              </span>
+                            ) : null}
                           </button>
                         );
                       })

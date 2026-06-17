@@ -48,6 +48,7 @@ export function useAccountMutation() {
       currency?: string;
       icon?: string;
       color?: string;
+      is_system?: boolean;
     }) => {
       if (!activeWorkspaceId) throw new Error('Không xác định được workspace.');
       const res = await fetch('/api/accounts', {
@@ -77,6 +78,7 @@ export function useAccountMutation() {
         icon: newAccountPayload.icon ?? 'Wallet',
         color: newAccountPayload.color ?? '#94a3b8',
         is_active: false,
+        is_system: newAccountPayload.is_system ?? true,
         created_by: '',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -228,6 +230,7 @@ export function useAccountMutation() {
       currency?: string;
       icon?: string;
       color?: string;
+      is_system?: boolean;
     },
     options?: { onSuccess?: () => void }
   ) => {
@@ -249,6 +252,7 @@ export function useAccountMutation() {
       currency?: string;
       icon?: string;
       color?: string;
+      is_system?: boolean;
     },
     options?: { onSuccess?: () => void }
   ) => {

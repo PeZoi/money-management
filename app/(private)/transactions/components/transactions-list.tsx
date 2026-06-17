@@ -24,7 +24,8 @@ import { useWorkspaces } from '@/hooks/use-workspaces';
 import { cn } from '@/lib/utils';
 import type { TransactionWithCategory } from '@/types/database';
 
-import { formatVnd, typeAmountClass, typeAmountPrefix, typeBadgeClass, typeLabel } from '../transaction-ui';
+import { formatVnd, typeAmountClass, typeAmountPrefix, typeBadgeClass, typeLabel, getTransactionAmountClass, getTransactionAmountPrefix } from '../transaction-ui';
+import { getTransactionSystemImpact } from '@/lib/utils';
 import { staggerContainer, fadeSlideUp } from '@/lib/motion-variants';
 
 type Props = {
@@ -352,9 +353,9 @@ function TransactionRow({
         <div className="flex shrink-0 items-center gap-3">
           <div className="text-right">
             <p
-              className={cn('text-base font-bold tracking-tight transition-all duration-300', typeAmountClass(t.type))}
+              className={cn('text-base font-bold tracking-tight transition-all duration-300', getTransactionAmountClass(t))}
             >
-              {typeAmountPrefix(t.type)}
+              {getTransactionAmountPrefix(t)}
               {formatVnd(t.amount)}
             </p>
           </div>
@@ -487,9 +488,14 @@ export default function TransactionsList({
       {groupedTransactions.map((group) => {
         const isCollapsed = collapsedGroups[group.title];
 
-        // Tính tổng net của ngày: income - expense (bỏ transfer vì không ảnh hưởng số dư ròng)
-        const dayIncome = group.items.filter((t) => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0);
-        const dayExpense = group.items.filter((t) => t.type === 'expense').reduce((s, t) => s + Number(t.amount), 0);
+        // Tính tổng net của ngày: lấy từ impact dòng tiền thực tế đối với hệ thống ví nội bộ
+        let dayIncome = 0;
+        let dayExpense = 0;
+        group.items.forEach((t) => {
+          const impact = getTransactionSystemImpact(t);
+          if (impact.type === 'income') dayIncome += impact.amount;
+          else if (impact.type === 'expense') dayExpense += impact.amount;
+        });
         const dayNet = dayIncome - dayExpense;
         const hasOnlyTransfer = dayIncome === 0 && dayExpense === 0;
 

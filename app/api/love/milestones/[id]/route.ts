@@ -75,7 +75,7 @@ export async function PATCH(request: Request, context: RouteContext) {
       message: "Cập nhật cột mốc kỷ niệm thành công!",
       data,
     });
-  } catch (err) {
+  } catch {
     return NextResponse.json(
       { error: "Định dạng JSON không hợp lệ hoặc lỗi hệ thống" },
       { status: 500 }

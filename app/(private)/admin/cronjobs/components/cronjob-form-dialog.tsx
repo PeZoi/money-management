@@ -1065,7 +1065,7 @@ export default function CronJobFormDialog({
                           />
                           <div className="w-9 h-5 bg-muted rounded-full peer peer-checked:after:translate-x-3.5 after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary transition-colors duration-200"></div>
                         </label>
-                        <span className="text-xs font-semibold text-muted-foreground cursor-pointer" onClick={() => form.setValue("expiresAtEnabled", !form.watch("expiresAtEnabled"))}>
+                        <span className="text-xs font-semibold text-muted-foreground cursor-pointer" onClick={() => form.setValue("expiresAtEnabled", !form.getValues("expiresAtEnabled"))}>
                           Đặt ngày hết hạn chạy
                         </span>
                       </div>
@@ -1133,7 +1133,7 @@ export default function CronJobFormDialog({
                         />
                         <div className="w-9 h-5 bg-muted rounded-full peer peer-checked:after:translate-x-3.5 after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary transition-colors duration-200"></div>
                       </label>
-                      <span className="font-semibold text-foreground/95 select-none cursor-pointer" onClick={() => form.setValue("notifyFailure", !form.watch("notifyFailure"))}>
+                      <span className="font-semibold text-foreground/95 select-none cursor-pointer" onClick={() => form.setValue("notifyFailure", !form.getValues("notifyFailure"))}>
                         cuộc gọi cronjob bị thất bại
                       </span>
                     </div>
@@ -1163,7 +1163,7 @@ export default function CronJobFormDialog({
                       />
                       <div className="w-9 h-5 bg-muted rounded-full peer peer-checked:after:translate-x-3.5 after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary transition-colors duration-200"></div>
                     </label>
-                    <span className="font-semibold text-foreground/95 select-none cursor-pointer" onClick={() => form.setValue("notifySuccess", !form.watch("notifySuccess"))}>
+                    <span className="font-semibold text-foreground/95 select-none cursor-pointer" onClick={() => form.setValue("notifySuccess", !form.getValues("notifySuccess"))}>
                       cuộc gọi cronjob thành công trở lại (sau khi đã lỗi trước đó)
                     </span>
                   </div>
@@ -1179,7 +1179,7 @@ export default function CronJobFormDialog({
                       />
                       <div className="w-9 h-5 bg-muted rounded-full peer peer-checked:after:translate-x-3.5 after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary transition-colors duration-200"></div>
                     </label>
-                    <span className="font-semibold text-foreground/95 select-none cursor-pointer" onClick={() => form.setValue("notifyDisable", !form.watch("notifyDisable"))}>
+                    <span className="font-semibold text-foreground/95 select-none cursor-pointer" onClick={() => form.setValue("notifyDisable", !form.getValues("notifyDisable"))}>
                       cronjob bị tự động vô hiệu hóa (do lỗi quá nhiều lần)
                     </span>
                   </div>
@@ -1196,7 +1196,7 @@ export default function CronJobFormDialog({
                         />
                         <div className="w-9 h-5 bg-muted rounded-full peer peer-checked:after:translate-x-3.5 after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary transition-colors duration-200"></div>
                       </label>
-                      <span className="font-semibold text-foreground/95 select-none cursor-pointer" onClick={() => form.setValue("notifySslCert", !form.watch("notifySslCert"))}>
+                      <span className="font-semibold text-foreground/95 select-none cursor-pointer" onClick={() => form.setValue("notifySslCert", !form.getValues("notifySslCert"))}>
                         chứng chỉ bảo mật SSL/TLS của Server sắp hết hạn
                       </span>
                     </div>
@@ -1235,7 +1235,7 @@ export default function CronJobFormDialog({
                       />
                       <div className="w-10 h-6 bg-muted rounded-full peer peer-focus:ring-2 peer-focus:ring-primary/20 dark:peer-focus:ring-primary/30 peer-checked:after:translate-x-4 after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary transition-colors duration-200"></div>
                     </label>
-                    <div className="flex flex-col gap-0.5 select-none cursor-pointer" onClick={() => form.setValue("authEnable", !form.watch("authEnable"))}>
+                    <div className="flex flex-col gap-0.5 select-none cursor-pointer" onClick={() => form.setValue("authEnable", !form.getValues("authEnable"))}>
                       <span className="text-sm font-semibold text-foreground">Yêu cầu xác thực HTTP (Basic Auth)</span>
                       <span className="text-[10px] text-muted-foreground/80">Nhập thông tin đăng nhập khi gọi API</span>
                     </div>

@@ -9,6 +9,7 @@ import type {
 } from '@/types/report';
 import type { CategoryUi } from '@/types/category';
 import type { TransactionWithCategory } from '@/types/database';
+import { getTransactionSystemImpact } from '@/lib/utils';
 
 import { useReportConfig } from './use-report-config';
 
@@ -356,12 +357,17 @@ export function useReportTables(month: string, transactions: TransactionWithCate
     }),
   );
 
-  const unassignedTransactions = transactions.filter(
-    (tx) =>
-      tx.type !== 'transfer' &&
+  const unassignedTransactions = transactions.filter((tx) => {
+    const impact = getTransactionSystemImpact(tx);
+    // Nếu là transfer thông thường (chuyển tiền cùng trong/ngoài hệ thống), bỏ qua không hiển thị trên báo cáo
+    if (tx.type === 'transfer' && impact.type === 'none') {
+      return false;
+    }
+    return (
       (!tx.category_id || !usedCategoryIds.has(tx.category_id)) &&
       !assignedTransactionIds.has(tx.id)
-  );
+    );
+  });
 
   return {
     // State

@@ -13,6 +13,7 @@ import FundContributionDialog from './components/fund-contribution-dialog';
 import AccountsList from './components/accounts-list';
 import { useAccountsPage } from './hooks/use-accounts-page';
 import type { AccountRow } from '@/types/database';
+import { Switch } from '@/components/ui/switch';
 
 export default function AccountsPage() {
   const {
@@ -27,6 +28,8 @@ export default function AccountsPage() {
     handleDelete,
     handleActivate,
     totalBalance,
+    includeSavings,
+    setIncludeSavings,
   } = useAccountsPage();
 
   const { activeWorkspaceId } = useWorkspaceStore();
@@ -79,6 +82,8 @@ export default function AccountsPage() {
             icon="🏦"
             className="col-span-2 sm:col-span-1"
             isMain={true}
+            includeSavings={includeSavings}
+            setIncludeSavings={setIncludeSavings}
           />
           <SummaryCard
             label="Tài khoản active"
@@ -218,6 +223,8 @@ type SummaryCardProps = {
   className?: string;
   isMain?: boolean;
   account?: AccountRow | null;
+  includeSavings?: boolean;
+  setIncludeSavings?: (include: boolean) => void;
 };
 
 function SummaryCard({
@@ -230,6 +237,8 @@ function SummaryCard({
   className,
   isMain = false,
   account,
+  includeSavings,
+  setIncludeSavings,
 }: SummaryCardProps) {
   if (account) {
     const balance = Number(account.balance);
@@ -367,18 +376,36 @@ function SummaryCard({
         <div className="absolute -right-6 -top-6 size-24 rounded-full bg-primary/20 blur-xl pointer-events-none" />
 
         <div className="flex items-center gap-4 flex-1">
-          <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-primary/20 bg-background/80 text-2xl shadow-md text-primary">
+          <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-primary/20 bg-background/80 text-2xl shadow-md text-primary animate-in fade-in zoom-in duration-300">
             {icon}
           </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">{label}</p>
+          <div className="min-w-0 flex-1 space-y-1">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs font-semibold tracking-wider text-muted-foreground uppercase select-none">{label}</p>
+              
+              {/* Nút bật/tắt cộng tiết kiệm đặt ngay trên hàng nhãn để tránh đè lên số tiền */}
+              {setIncludeSavings !== undefined && (
+                <div 
+                  onClick={(e) => e.stopPropagation()}
+                  className="flex items-center gap-1 bg-background/55 hover:bg-background/80 dark:bg-card/45 dark:hover:bg-card/65 backdrop-blur-xs py-0.5 px-1.5 rounded-md border border-border/30 transition-colors select-none text-[9px] shrink-0"
+                >
+                  <span className="font-medium text-muted-foreground text-[9px]">Gồm tiết kiệm</span>
+                  <Switch
+                    checked={includeSavings}
+                    onCheckedChange={setIncludeSavings}
+                    className="scale-65 origin-right cursor-pointer"
+                  />
+                </div>
+              )}
+            </div>
+
             {value !== null && value !== undefined ? (
-              <p className="mt-1 text-2xl font-black tracking-tight tabular-nums text-foreground">
+              <p className="text-2xl font-black tracking-tight tabular-nums text-foreground truncate">
                 {value < 0 ? '-' : ''}
                 {Math.abs(value).toLocaleString('vi-VN')}₫
               </p>
             ) : (
-              <p className="mt-1 text-lg font-bold text-muted-foreground italic">—</p>
+              <p className="text-lg font-bold text-muted-foreground italic">—</p>
             )}
           </div>
         </div>

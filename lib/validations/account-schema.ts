@@ -7,12 +7,13 @@ import { z } from 'zod';
 export const accountSchema = z
   .object({
     name: z.string().min(1, 'Vui lòng nhập tên tài khoản'),
-    type: z.enum(['cash', 'bank', 'e_wallet', 'investment', 'other']),
+    type: z.enum(['cash', 'bank', 'e_wallet', 'investment', 'savings', 'other']),
     // Lưu dạng string hiển thị (ví dụ: "100,000" hoặc "-50,000")
     // Sẽ transform sang number khi submit
     balance: z.string(),
     icon: z.string().min(1),
     color: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Mã màu không hợp lệ'),
+    is_system: z.boolean(),
   })
   .superRefine((data, ctx) => {
     // Parse và kiểm tra số dư tối đa
@@ -43,4 +44,5 @@ export const accountDefaultValues: AccountFormValues = {
   balance: '0',
   icon: '💰',
   color: '#6366f1',
+  is_system: true,
 };

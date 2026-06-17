@@ -56,7 +56,7 @@ export async function POST(request: Request) {
       message: "Bắt cặp thành công!",
       data,
     });
-  } catch (err) {
+  } catch {
     return NextResponse.json(
       { error: "Định dạng JSON không hợp lệ hoặc lỗi hệ thống" },
       { status: 500 }

@@ -6,6 +6,8 @@ import { useTransactionMutation, useTransactions } from '@/hooks/use-transaction
 import type { TransactionType, TransactionWithCategory } from '@/types/database';
 import { useMemo, useState } from 'react';
 import { normalizeText, typeLabel } from '../transaction-ui';
+import { useAccounts } from '@/hooks/use-accounts';
+import { getTransactionSystemImpact } from '@/lib/utils';
 
 export type FilterType = 'all' | TransactionType;
 export type SortOption = 'newest' | 'oldest' | 'amount_desc' | 'amount_asc';
@@ -25,12 +27,26 @@ export function useTransactionsPage() {
   // Sử dụng hook kéo thả mượt mà cho nút FAB
   const { ref: fabRef, dragInfo, handleDragStart } = useDraggable();
 
+  const { accounts } = useAccounts();
+
   // Lọc và sắp xếp dữ liệu
   const filtered = useMemo(() => {
     const q = normalizeText(query);
+    const safeAccounts = accounts || [];
 
     let list = transactions.filter((t) => {
-      if (typeFilter !== 'all' && t.type !== typeFilter) return false;
+      const impact = getTransactionSystemImpact(t, safeAccounts);
+
+      if (typeFilter !== 'all') {
+        if (typeFilter === 'transfer') {
+          // Chỉ lấy chuyển khoản nội bộ (System -> System hoặc Non-system -> Non-system)
+          if (t.type !== 'transfer' || impact.type !== 'none') return false;
+        } else {
+          // Lấy theo impact thực tế (ví dụ: transfer ví ngoài được xem là expense)
+          if (impact.type !== typeFilter) return false;
+        }
+      }
+
       if (!q) return true;
       const hay = normalizeText(
         `${t.category?.name ?? ''} ${t.note ?? ''} ${typeLabel(t.type)}`
