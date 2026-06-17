@@ -120,9 +120,22 @@ function parseCron(cron: string) {
   return { minutes, hours, mdays, months, wdays };
 }
 
+interface ScheduleData {
+  scheduleMonth?: number;
+  scheduleDayOfMonth?: number;
+  scheduleTimeHour?: number;
+  scheduleTimeMinute?: number;
+  scheduleEveryValue?: number;
+  scheduleEveryUnit?: "minute" | "hour";
+  cronExpression?: string;
+}
+
 // Hàm phân tích ngược từ mảng schedule của API về UI
-function getScheduleTypeFromApi(schedule: CronJobSchedule | null | undefined) {
-  if (!schedule) return { type: "every_x" as const, data: {} as Record<string, unknown> };
+function getScheduleTypeFromApi(schedule: CronJobSchedule | null | undefined): {
+  type: "every_x" | "every_day" | "every_month" | "every_year" | "custom";
+  data: ScheduleData;
+} {
+  if (!schedule) return { type: "every_x" as const, data: {} };
   const { minutes = [], hours = [], mdays = [], months = [], wdays = [] } = schedule;
 
   // 1. Check every year
@@ -346,6 +359,7 @@ export default function CronJobFormDialog({
   const { data: historyData } = useQuery({
     queryKey: ["admin", "cronjobs", jobToEdit?.jobId, "history-preview"],
     queryFn: async () => {
+      if (!jobToEdit?.jobId) return null;
       const res = await fetch(`/api/admin/cronjobs/${jobToEdit.jobId}/history`);
       if (!res.ok) return null;
       return res.json();
@@ -359,6 +373,9 @@ export default function CronJobFormDialog({
   const { data: detailData, isLoading: isDetailLoading } = useQuery({
     queryKey: ["admin", "cronjobs", jobToEdit?.jobId, "detail"],
     queryFn: async () => {
+      if (!jobToEdit?.jobId) {
+        throw new Error("Không có thông tin cron job để lấy chi tiết");
+      }
       const res = await fetch(`/api/admin/cronjobs/${jobToEdit.jobId}`);
       if (!res.ok) {
         throw new Error("Không thể lấy thông tin chi tiết cron job");
