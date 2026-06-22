@@ -25,7 +25,7 @@ export async function GET(request: Request) {
   }
 
   const isTest = searchParams.get("test") === "true";
-  const expression = isTest ? "tags:love_temp" : "tags:love_temp AND uploaded_at < 1d";
+  const expression = isTest ? "tags:love_temp" : "tags:love_temp AND uploaded_at < 1h";
 
   try {
     // 1. Tìm các ảnh có tag "love_temp" (nếu là chạy test, dọn sạch ngay cả khi vừa upload)
