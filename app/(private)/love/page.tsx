@@ -197,7 +197,7 @@ export default function LovePage() {
       <button
         onClick={handleOpenAddMilestone}
         className={cn(
-          "fixed bottom-24 right-4 md:bottom-8 md:right-8 z-50",
+          "fixed bottom-24 right-4 md:bottom-8 md:right-8 z-45",
           "flex items-center justify-center gap-2 h-10 w-36 rounded-full cursor-pointer shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out group border border-white/10 px-4",
           theme.bg,
           theme.bgHover,

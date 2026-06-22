@@ -43,7 +43,7 @@ function DrawerOverlay({
     <DrawerPrimitive.Overlay
       data-slot="drawer-overlay"
       className={cn(
-        'fixed inset-0 z-50 bg-black/40 duration-100 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0',
+        'fixed inset-0 z-[999] bg-black/40 duration-100 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0',
         className,
       )}
       {...props}
@@ -64,7 +64,7 @@ function DrawerContent({
       <DrawerPrimitive.Content
         data-slot="drawer-content"
         className={cn(
-          'fixed inset-x-0 bottom-0 z-50 mt-24 flex h-auto flex-col rounded-t-3xl border border-border bg-popover bg-clip-padding text-popover-foreground shadow-lg outline-none focus:outline-none transition-transform duration-300 ease-out',
+          'fixed inset-x-0 bottom-0 z-[999] mt-24 flex h-auto flex-col rounded-t-3xl border border-border bg-popover bg-clip-padding text-popover-foreground shadow-lg outline-none focus:outline-none transition-transform duration-300 ease-out',
           className,
         )}
         onOpenAutoFocus={(e) => {

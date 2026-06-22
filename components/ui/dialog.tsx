@@ -40,7 +40,7 @@ function DialogOverlay({ className, ...props }: React.ComponentProps<typeof Dial
     <DialogNS.Overlay
       data-slot="dialog-overlay"
       className={cn(
-        'fixed inset-0 z-50 bg-black/40 duration-100 supports-backdrop-filter:backdrop-blur-xs data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0',
+        'fixed inset-0 z-[999] bg-black/40 duration-100 supports-backdrop-filter:backdrop-blur-xs data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0',
         className,
       )}
       {...props}
@@ -196,7 +196,7 @@ function DialogContent({
       <DialogNS.Content
         data-slot="dialog-content"
         className={cn(
-          'fixed z-50 flex flex-col bg-popover text-popover-foreground shadow-lg outline-none duration-200 border-border bg-clip-padding p-0 transition-all',
+          'fixed z-[999] flex flex-col bg-popover text-popover-foreground shadow-lg outline-none duration-200 border-border bg-clip-padding p-0 transition-all',
           disableMobileDrawer
             ? 'top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100%-2rem)] rounded-2xl border max-h-[85vh]'
             : fullScreenOnMobile
