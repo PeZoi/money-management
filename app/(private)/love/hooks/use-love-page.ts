@@ -7,6 +7,7 @@ import {
   useLoveMutation
 } from '@/hooks/use-love';
 import { useAuth } from '@/hooks/use-auth';
+import { useConfirm } from '@/hooks/use-confirm';
 import { toast } from 'sonner';
 import type { LoveMilestoneRow } from '@/types/database';
 export type LoveThemeType = 'rose' | 'primary' | 'ocean' | 'lavender' | 'sunset';
@@ -68,25 +69,28 @@ export function useLovePage() {
     setIsMilestoneDialogOpen(true);
   };
 
-  // State quản lý Confirm Dialog xóa cột mốc
-  const [deleteConfirmId, setDeleteConfirmId] = React.useState<string | null>(null);
+  const confirm = useConfirm();
 
-  // Xóa cột mốc (khi người dùng bấm xác nhận ở Dialog)
-  const handleConfirmDelete = async () => {
-    if (!deleteConfirmId || !loveConn) return;
-    try {
-      await deleteMilestone({ id: deleteConfirmId, connectionId: loveConn.connection_id });
-      toast.success('Xóa mốc kỷ niệm thành công!');
-    } catch (err) {
-      console.error(err);
-      toast.error('Xóa mốc kỷ niệm thất bại.');
-    } finally {
-      setDeleteConfirmId(null);
+  // Xóa cột mốc bằng Confirm Dialog toàn cục của hệ thống
+  const handleDeleteMilestone = async (id: string) => {
+    if (!loveConn) return;
+    const ok = await confirm({
+      title: 'Xác nhận xóa kỷ niệm',
+      message: 'Bạn có chắc chắn muốn xóa mốc kỷ niệm này? Hành động này sẽ không thể khôi phục và hình ảnh liên quan sẽ được tự động dọn dẹp sau 24 giờ.',
+      confirmText: 'Xác nhận xóa',
+      cancelText: 'Hủy bỏ',
+      variant: 'destructive',
+    });
+
+    if (ok) {
+      try {
+        await deleteMilestone({ id, connectionId: loveConn.connection_id });
+        toast.success('Xóa mốc kỷ niệm thành công!');
+      } catch (err) {
+        console.error(err);
+        toast.error('Xóa mốc kỷ niệm thất bại.');
+      }
     }
-  };
-
-  const handleDeleteMilestone = (id: string) => {
-    setDeleteConfirmId(id);
   };
 
   const handleOpenEditAnniversary = () => {
@@ -126,9 +130,6 @@ export function useLovePage() {
     handleDeleteMilestone,
     handleOpenEditAnniversary,
     isDeletingMilestone,
-    deleteConfirmId,
-    setDeleteConfirmId,
-    handleConfirmDelete,
     myName,
     partnerName
   };
