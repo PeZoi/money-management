@@ -9,6 +9,21 @@ cloudinary.config({
 });
 
 /**
+ * Chuyển chữ tiếng Việt có dấu thành dạng slug không dấu
+ */
+function slugify(text: string): string {
+  return text
+    .toString()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // Xóa dấu
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, "-") // Thay khoảng trắng bằng -
+    .replace(/[^\w-]+/g, "") // Xóa ký tự đặc biệt
+    .replace(/--+/g, "-"); // Xóa dấu gạch ngang liền nhau
+}
+
+/**
  * POST /api/love/upload
  * Tải ảnh lên và lưu vào Supabase Storage, sau đó cập nhật URL vào love_connections.
  * Hỗ trợ các loại: 'avatar1' (User 1), 'avatar2' (User 2), 'background' (Hình nền).
@@ -27,6 +42,7 @@ export async function POST(request: Request) {
     const file = formData.get("file") as File | null;
     const type = formData.get("type") as "avatar1" | "avatar2" | "background" | "milestone" | null;
     const connectionId = formData.get("connectionId") as string | null;
+    const milestoneTitle = formData.get("milestoneTitle") as string | null;
 
     if (!file || !type || !connectionId) {
       return NextResponse.json(
@@ -53,13 +69,24 @@ export async function POST(request: Request) {
 
     const buffer = Buffer.from(await file.arrayBuffer());
 
+    const slugTitle = type === "milestone" && milestoneTitle ? slugify(milestoneTitle) : "chua-dat-ten";
+    
+    const folderPath = type === "milestone"
+      ? `money-management/love-assets/${connectionId}/milestones/${slugTitle}`
+      : `money-management/love-assets/${connectionId}`;
+
+    const publicId = type === "milestone"
+      ? `${slugTitle}_${Date.now()}`
+      : `${type}_${Date.now()}`;
+
     // Upload lên Cloudinary
     const uploadResult = await new Promise<UploadApiResponse | undefined>((resolve, reject) => {
       cloudinary.uploader.upload_stream(
         {
-          folder: `money-management/love-assets/${connectionId}`,
-          public_id: `${type}_${Date.now()}`,
+          folder: folderPath,
+          public_id: publicId,
           resource_type: "image",
+          tags: type === "milestone" ? ["love_temp"] : undefined,
         },
         (error, result) => {
           if (error) {

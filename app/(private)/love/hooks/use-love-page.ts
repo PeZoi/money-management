@@ -68,18 +68,25 @@ export function useLovePage() {
     setIsMilestoneDialogOpen(true);
   };
 
-  // Xóa cột mốc
-  const handleDeleteMilestone = async (id: string) => {
-    if (!loveConn) return;
-    if (confirm('Bạn có chắc chắn muốn xóa mốc kỷ niệm này?')) {
-      try {
-        await deleteMilestone({ id, connectionId: loveConn.connection_id });
-        toast.success('Xóa mốc kỷ niệm thành công!');
-      } catch (err) {
-        console.error(err);
-        toast.error('Xóa mốc kỷ niệm thất bại.');
-      }
+  // State quản lý Confirm Dialog xóa cột mốc
+  const [deleteConfirmId, setDeleteConfirmId] = React.useState<string | null>(null);
+
+  // Xóa cột mốc (khi người dùng bấm xác nhận ở Dialog)
+  const handleConfirmDelete = async () => {
+    if (!deleteConfirmId || !loveConn) return;
+    try {
+      await deleteMilestone({ id: deleteConfirmId, connectionId: loveConn.connection_id });
+      toast.success('Xóa mốc kỷ niệm thành công!');
+    } catch (err) {
+      console.error(err);
+      toast.error('Xóa mốc kỷ niệm thất bại.');
+    } finally {
+      setDeleteConfirmId(null);
     }
+  };
+
+  const handleDeleteMilestone = (id: string) => {
+    setDeleteConfirmId(id);
   };
 
   const handleOpenEditAnniversary = () => {
@@ -119,6 +126,9 @@ export function useLovePage() {
     handleDeleteMilestone,
     handleOpenEditAnniversary,
     isDeletingMilestone,
+    deleteConfirmId,
+    setDeleteConfirmId,
+    handleConfirmDelete,
     myName,
     partnerName
   };

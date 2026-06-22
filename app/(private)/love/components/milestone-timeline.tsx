@@ -9,26 +9,7 @@ import { Heart, Sparkles, Plus, Edit3, Trash2 } from 'lucide-react';
 import type { LoveMilestoneRow } from '@/types/database';
 import { OLD_ICON_MAP, LoveTheme } from '../constants';
 
-// Keyframe CSS cho hiệu ứng tim bay lơ lửng được inject trực tiếp vào component
-const HEART_FLY_CSS = `
-@keyframes heartFly {
-  0% {
-    transform: translateY(0) scale(0.5);
-    opacity: 0;
-  }
-  15% {
-    opacity: 1;
-    transform: translateY(-20px) scale(1.1);
-  }
-  100% {
-    transform: translateY(-140px) scale(0.7) rotate(15deg);
-    opacity: 0;
-  }
-}
-.animate-heart-fly {
-  animation: heartFly 1.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
-}
-`;
+
 
 interface MilestoneTimelineProps {
   milestones: LoveMilestoneRow[];
@@ -59,38 +40,7 @@ function MilestoneCardItem({
   handleDeleteMilestone,
   handlePreview,
 }: MilestoneCardItemProps) {
-  const [liked, setLiked] = React.useState(false);
-  const [hearts, setHearts] = React.useState<{ id: number; left: number; delay: number; size: number }[]>([]);
-  const heartIdCounter = React.useRef(0);
 
-  React.useEffect(() => {
-    const saved = localStorage.getItem(`milestone_like_${m.id}`);
-    if (saved === 'true') {
-      const timer = setTimeout(() => setLiked(true), 0);
-      return () => clearTimeout(timer);
-    }
-  }, [m.id]);
-
-  const handleLike = () => {
-    const nextState = !liked;
-    setLiked(nextState);
-    localStorage.setItem(`milestone_like_${m.id}`, String(nextState));
-
-    if (nextState) {
-      // Kích hoạt bắn 6 quả tim bay lên lãng mạn
-      const newHearts = Array.from({ length: 6 }).map(() => ({
-        id: heartIdCounter.current++,
-        left: Math.random() * 80 - 40, // bay lệch sang trái hoặc phải
-        delay: Math.random() * 0.25,  // thời gian xuất hiện ngẫu nhiên
-        size: Math.random() * 10 + 14, // kích thước tim từ 14px - 24px
-      }));
-      setHearts((prev) => [...prev, ...newHearts]);
-    }
-  };
-
-  const removeHeart = (id: number) => {
-    setHearts((prev) => prev.filter((h) => h.id !== id));
-  };
 
   const displayIcon = OLD_ICON_MAP[m.icon] || m.icon || '❤️';
 
@@ -324,42 +274,7 @@ function MilestoneCardItem({
           );
         })()}
 
-        {/* Nút Thả tim - Tương tác lãng mạn lơ lửng */}
-        <div className="flex items-center justify-between pt-2.5 border-t border-border/30 mt-3 select-none">
-          <div className="relative">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleLike}
-              className={cn(
-                "h-8 px-3.5 rounded-full gap-1.5 text-xs font-bold cursor-pointer transition-all duration-300 border border-transparent",
-                liked
-                  ? "bg-rose-50 dark:bg-rose-950/25 text-rose-500 border-rose-200/25 dark:border-rose-900/20 hover:bg-rose-100/40"
-                  : "hover:bg-muted text-muted-foreground hover:text-foreground"
-              )}
-            >
-              <Heart className={cn("size-4 transition-transform duration-300", liked ? "fill-rose-500 text-rose-500 scale-110 animate-pulse" : "text-muted-foreground")} />
-              <span>{liked ? 'Đã yêu' : 'Yêu thích'}</span>
-            </Button>
 
-            {/* Các tim bay bay lơ lửng */}
-            {hearts.map((h) => (
-              <span
-                key={h.id}
-                onAnimationEnd={() => removeHeart(h.id)}
-                className="absolute bottom-6 left-1/2 -translate-x-1/2 text-rose-500 pointer-events-none animate-heart-fly inline-block z-30"
-                style={{
-                  marginLeft: `${h.left}px`,
-                  animationDelay: `${h.delay}s`,
-                  fontSize: `${h.size}px`,
-                  lineHeight: 1,
-                }}
-              >
-                ❤️
-              </span>
-            ))}
-          </div>
-        </div>
       </div>
     </div>
   );
@@ -384,8 +299,7 @@ export function MilestoneTimeline({
 
   return (
     <div className="space-y-6">
-      {/* Inject style CSS tim bay trực tiếp */}
-      <style dangerouslySetInnerHTML={{ __html: HEART_FLY_CSS }} />
+
 
       <div className="flex justify-between items-center">
         <div>

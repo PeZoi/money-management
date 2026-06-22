@@ -40,8 +40,10 @@ export default function AdminCronJobsPage() {
     handleShowHistory,
     handleCreateNew,
     handleCopyUrl,
+    handleRunJob,
     isTogglePending,
     isDeletePending,
+    isRunPending,
   } = useCronJobsPage();
 
   return (
@@ -148,8 +150,10 @@ export default function AdminCronJobsPage() {
                   onEdit={handleEdit}
                   onShowHistory={handleShowHistory}
                   onCopyUrl={handleCopyUrl}
+                  onRunJob={handleRunJob}
                   isTogglePending={isTogglePending}
                   isDeletePending={isDeletePending}
+                  isRunPending={isRunPending}
                 />
               ))}
             </div>

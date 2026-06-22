@@ -186,6 +186,7 @@ export function useLoveMutation() {
       file: File;
       type: "avatar1" | "avatar2" | "background" | "milestone";
       connectionId: string;
+      milestoneTitle?: string;
       onProgress?: (percent: number) => void;
     }) => {
       return new Promise<{ success: boolean; url: string; message: string }>((resolve, reject) => {
@@ -194,6 +195,9 @@ export function useLoveMutation() {
         formData.append("file", payload.file);
         formData.append("type", payload.type);
         formData.append("connectionId", payload.connectionId);
+        if (payload.milestoneTitle) {
+          formData.append("milestoneTitle", payload.milestoneTitle);
+        }
 
         xhr.open("POST", "/api/love/upload");
 

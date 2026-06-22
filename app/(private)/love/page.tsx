@@ -5,9 +5,18 @@ import { m } from 'framer-motion';
 import { staggerContainer, scaleIn } from '@/lib/motion-variants';
 import { useLovePage } from './hooks/use-love-page';
 import { THEMES } from './constants';
-import { Heart, Plus } from 'lucide-react';
+import { Heart, Plus, Trash2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
 
 // Import các subcomponents
 import { HeartbeatCard } from './components/heartbeat-card';
@@ -44,6 +53,10 @@ export default function LovePage() {
     handleOpenEditMilestone,
     handleDeleteMilestone,
     handleOpenEditAnniversary,
+    deleteConfirmId,
+    setDeleteConfirmId,
+    handleConfirmDelete,
+    isDeletingMilestone,
   } = useLovePage();
 
   // Render trạng thái loading
@@ -138,6 +151,46 @@ export default function LovePage() {
         loveConn={loveConn}
         theme={theme}
       />
+
+      {/* Confirm Dialog xóa cột mốc kỷ niệm */}
+      <Dialog open={!!deleteConfirmId} onOpenChange={(open) => !open && setDeleteConfirmId(null)}>
+        <DialogContent className="max-w-[360px] p-6 rounded-3xl" disableMobileDrawer showCloseButton={false}>
+          <div className="flex flex-col items-center text-center space-y-4">
+            {/* Icon cảnh báo nổi bật */}
+            <div className="size-14 rounded-full bg-rose-50 dark:bg-rose-950/30 flex items-center justify-center border border-rose-100 dark:border-rose-900/20 text-rose-500 animate-pulse">
+              <Trash2 className="size-7" />
+            </div>
+            
+            {/* Tiêu đề & Mô tả */}
+            <div className="space-y-1.5">
+              <DialogTitle className="text-lg font-bold tracking-tight text-foreground">
+                Xác nhận xóa kỷ niệm
+              </DialogTitle>
+              <DialogDescription className="text-muted-foreground text-xs leading-relaxed max-w-[280px] mx-auto">
+                Bạn có chắc chắn muốn xóa mốc kỷ niệm này? Hành động này sẽ không thể khôi phục và hình ảnh liên quan sẽ được tự động dọn dẹp sau 24 giờ.
+              </DialogDescription>
+            </div>
+
+            {/* Các nút hành động chia đôi cân xứng */}
+            <div className="grid grid-cols-2 gap-3 w-full pt-2">
+              <Button
+                variant="outline"
+                onClick={() => setDeleteConfirmId(null)}
+                className="rounded-2xl cursor-pointer py-4 text-xs font-semibold"
+              >
+                Hủy bỏ
+              </Button>
+              <Button
+                onClick={handleConfirmDelete}
+                disabled={isDeletingMilestone}
+                className="bg-rose-500 hover:bg-rose-600 active:bg-rose-700 text-white rounded-2xl cursor-pointer py-4 text-xs font-semibold border-none shadow-md shadow-rose-500/10"
+              >
+                {isDeletingMilestone ? "Đang xóa..." : "Xác nhận xóa"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* EXTENDED FLOATING ACTION BUTTON (FAB) - STICKY ADD MILESTONE BUTTON */}
       {/* Đặt bottom-24 và z-50 trên mobile để nút nổi lên trên thanh Bottom Navigation (z-40) */}

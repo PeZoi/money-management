@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { z } from "zod";
+import { removeTempTag, addTempTag } from "../../cloudinary-helper";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -70,6 +71,11 @@ export async function PATCH(request: Request, context: RouteContext) {
       );
     }
 
+    // Gỡ tag tạm cho các ảnh hiện tại
+    if (imageUrl) {
+      await removeTempTag(imageUrl);
+    }
+
     return NextResponse.json({
       success: true,
       message: "Cập nhật cột mốc kỷ niệm thành công!",
@@ -106,7 +112,7 @@ export async function DELETE(request: Request, context: RouteContext) {
     .from("love_milestones")
     .delete()
     .eq("id", id)
-    .select("id")
+    .select("id, image_url")
     .maybeSingle();
 
   if (error) {
@@ -118,6 +124,11 @@ export async function DELETE(request: Request, context: RouteContext) {
       { error: "Không tìm thấy cột mốc hoặc bạn không có quyền xóa" },
       { status: 403 }
     );
+  }
+
+  // Gắn tag tạm cho ảnh của cột mốc vừa bị xóa để cron job tự động dọn dẹp sau
+  if (data.image_url) {
+    await addTempTag(data.image_url);
   }
 
   return NextResponse.json({

@@ -92,6 +92,27 @@ export function useCronJobsPage() {
     },
   });
 
+  // Mutation để chạy thử job ngay lập tức
+  const runMutation = useMutation({
+    mutationFn: async (jobId: number) => {
+      const res = await fetch(`/api/admin/cronjobs/${jobId}`, {
+        method: "POST",
+      });
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || "Không thể kích hoạt chạy thử");
+      }
+      return res.json();
+    },
+    onSuccess: (data) => {
+      toast.success(data.message || "Đã gửi yêu cầu chạy thử cron job!");
+      queryClient.invalidateQueries({ queryKey: ["admin", "cronjobs"] });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Chạy thử thất bại");
+    },
+  });
+
   const handleToggle = (jobId: number, currentStatus: boolean) => {
     toggleMutation.mutate({ jobId, enabled: !currentStatus });
   };
@@ -100,6 +121,10 @@ export function useCronJobsPage() {
     if (window.confirm(`Bạn có chắc chắn muốn xóa cron job "${title}" không?`)) {
       deleteMutation.mutate(jobId);
     }
+  };
+
+  const handleRunJob = (jobId: number) => {
+    runMutation.mutate(jobId);
   };
 
   const handleEdit = (job: CronJob) => {
@@ -151,7 +176,9 @@ export function useCronJobsPage() {
     handleShowHistory,
     handleCreateNew,
     handleCopyUrl,
+    handleRunJob,
     isTogglePending: toggleMutation.isPending,
     isDeletePending: deleteMutation.isPending,
+    isRunPending: runMutation.isPending,
   };
 }

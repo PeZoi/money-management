@@ -16,6 +16,7 @@ import {
   DialogTitle
 } from '@/components/ui/dialog';
 import { Heart, Calendar as CalendarIcon, Upload, Camera } from 'lucide-react';
+import { toast } from 'sonner';
 import EmojiPicker from 'emoji-picker-react';
 import type { LoveMilestoneRow } from '@/types/database';
 import { MILESTONE_ICONS, LoveTheme, LoveConnection } from '../constants';
@@ -69,8 +70,8 @@ export function MilestoneDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="sm:max-w-md rounded-3xl h-auto max-h-[90dvh] sm:max-h-[85vh] overflow-y-auto p-5 md:p-6 space-y-5" disableScroll>
-        <DialogHeader className="pb-3 border-b border-border/40 shrink-0">
+      <DialogContent className="sm:max-w-md rounded-3xl h-[90dvh] sm:h-auto sm:max-h-[85vh] flex flex-col gap-0 p-0 overflow-hidden" disableScroll>
+        <DialogHeader className="px-5 py-4 border-b border-border/40 shrink-0">
           <DialogTitle className={cn("flex items-center gap-2.5", theme.text)}>
             <Heart className={cn("size-5 animate-pulse", theme.textRoseColor, theme.fillColor)} />
             {editingMilestone ? 'Chỉnh sửa Cột mốc Kỷ niệm' : 'Thêm Cột mốc Kỷ niệm'}
@@ -79,7 +80,8 @@ export function MilestoneDialog({
             Ghi lại một thời khắc đẹp trên hành trình yêu thương.
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4">
+        <div className="flex-1 overflow-y-auto px-5 py-5 sm:px-6 space-y-4">
+          <div className="space-y-4">
           {/* Title */}
           <div className="space-y-1.5">
             <label className="text-xs font-bold text-muted-foreground/80 tracking-wider uppercase block">Tên cột mốc / Tiêu đề</label>
@@ -147,6 +149,10 @@ export function MilestoneDialog({
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     e.preventDefault();
+                    if (!milestoneTitle.trim()) {
+                      toast.error("Vui lòng nhập tên cột mốc kỷ niệm trước.");
+                      return;
+                    }
                     if (tempImageUrl.trim()) {
                       setMilestoneImageUrls(prev => [...prev, tempImageUrl.trim()]);
                       setTempImageUrl('');
@@ -160,6 +166,10 @@ export function MilestoneDialog({
                   type="button"
                   variant="secondary"
                   onClick={() => {
+                    if (!milestoneTitle.trim()) {
+                      toast.error("Vui lòng nhập tên cột mốc kỷ niệm trước.");
+                      return;
+                    }
                     setMilestoneImageUrls(prev => [...prev, tempImageUrl.trim()]);
                     setTempImageUrl('');
                   }}
@@ -175,16 +185,34 @@ export function MilestoneDialog({
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => dialogMilestoneImageInputRef.current?.click()}
-                className="rounded-xl cursor-pointer hover:bg-muted h-11 w-full text-xs sm:text-sm font-semibold"
+                onClick={() => {
+                  if (!milestoneTitle.trim()) {
+                    toast.error("Vui lòng nhập tên cột mốc kỷ niệm trước khi chọn ảnh.");
+                    return;
+                  }
+                  dialogMilestoneImageInputRef.current?.click();
+                }}
+                className={cn(
+                  "rounded-xl cursor-pointer hover:bg-muted h-11 w-full text-xs sm:text-sm font-semibold",
+                  !milestoneTitle.trim() && "opacity-60 cursor-not-allowed"
+                )}
               >
                 <Upload className="size-4 mr-1.5 shrink-0" /> Thư viện ảnh
               </Button>
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => dialogMilestoneCameraInputRef.current?.click()}
-                className="rounded-xl cursor-pointer hover:bg-muted h-11 w-full text-xs sm:text-sm font-semibold"
+                onClick={() => {
+                  if (!milestoneTitle.trim()) {
+                    toast.error("Vui lòng nhập tên cột mốc kỷ niệm trước khi chụp ảnh.");
+                    return;
+                  }
+                  dialogMilestoneCameraInputRef.current?.click();
+                }}
+                className={cn(
+                  "rounded-xl cursor-pointer hover:bg-muted h-11 w-full text-xs sm:text-sm font-semibold",
+                  !milestoneTitle.trim() && "opacity-60 cursor-not-allowed"
+                )}
               >
                 <Camera className="size-4 mr-1.5 shrink-0" /> Chụp hình ngay
               </Button>
@@ -431,7 +459,8 @@ export function MilestoneDialog({
             </div>
           </div>
         </div>
-        <div className="pt-4 border-t border-border/40 flex flex-row items-center justify-end gap-2.5">
+        </div>
+        <div className="border-t border-border/40 px-5 py-4 bg-muted/10 shrink-0 flex flex-row items-center justify-end gap-2.5">
           <Button
             type="button"
             variant="outline"

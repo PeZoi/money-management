@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { z } from "zod";
+import { removeTempTag } from "../cloudinary-helper";
 
 const milestoneCreateSchema = z.object({
   connectionId: z.string().uuid(),
@@ -82,6 +83,11 @@ export async function POST(request: Request) {
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    // Gỡ tag tạm cho các ảnh đã lưu chính thức
+    if (imageUrl) {
+      await removeTempTag(imageUrl);
     }
 
     return NextResponse.json({

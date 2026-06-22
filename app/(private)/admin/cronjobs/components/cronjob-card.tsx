@@ -9,6 +9,8 @@ import {
   ExternalLink,
   Copy,
   Terminal,
+  Play,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -68,8 +70,10 @@ interface CronJobCardProps {
   onEdit: (job: CronJob) => void;
   onShowHistory: (job: CronJob) => void;
   onCopyUrl: (url: string) => void;
+  onRunJob: (jobId: number) => void;
   isTogglePending: boolean;
   isDeletePending: boolean;
+  isRunPending: boolean;
 }
 
 export default function CronJobCard({
@@ -79,8 +83,10 @@ export default function CronJobCard({
   onEdit,
   onShowHistory,
   onCopyUrl,
+  onRunJob,
   isTogglePending,
   isDeletePending,
+  isRunPending,
 }: CronJobCardProps) {
   const lastExecDate = job.lastExecution > 0 ? new Date(job.lastExecution * 1000) : null;
   const nextExecDate = job.nextExecution > 0 ? new Date(job.nextExecution * 1000) : null;
@@ -194,6 +200,21 @@ export default function CronJobCard({
         </div>
 
         <div className="flex items-center gap-1">
+          {/* Chạy thử ngay */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => onRunJob(job.jobId)}
+            disabled={isRunPending}
+            className="h-8.5 w-8.5 rounded-xl text-muted-foreground hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-500/10 cursor-pointer active:scale-95 transition-all"
+            title="Chạy thử ngay"
+          >
+            {isRunPending ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Play className="size-4 fill-current" />
+            )}
+          </Button>
           {/* Xem Lịch sử */}
           <Button
             variant="ghost"

@@ -87,6 +87,12 @@ export function useMilestoneDialog({
     const files = e.target.files;
     if (!files || files.length === 0 || !loveConn) return;
 
+    if (!milestoneTitle.trim()) {
+      toast.error('Vui lòng nhập tên cột mốc kỷ niệm trước khi tải ảnh lên.');
+      e.target.value = '';
+      return;
+    }
+
     const newItems: UploadQueueItem[] = [];
     const filesToUpload: { file: File; id: string }[] = [];
 
@@ -130,6 +136,7 @@ export function useMilestoneDialog({
           file,
           type: 'milestone',
           connectionId: loveConn.connection_id,
+          milestoneTitle: milestoneTitle.trim(),
           onProgress: (percent) => {
             const scaledPercent = Math.round(percent * 0.85);
 
