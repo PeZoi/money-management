@@ -71,3 +71,31 @@ export function getTransactionSystemImpact(
   return { type: 'none', amount: 0 };
 }
 
+/**
+ * Tối ưu hóa URL ảnh Cloudinary: tự động định dạng (f_auto), nén chất lượng (q_auto) và resize.
+ */
+export function getOptimizedCloudinaryUrl(
+  url: string | null | undefined,
+  options?: { width?: number; height?: number; crop?: string }
+): string {
+  if (!url) return '';
+  if (!url.includes('res.cloudinary.com')) return url;
+
+  // Tránh transform đè nếu URL đã chứa các cấu hình transform trước đó
+  if (url.includes('/image/upload/f_auto') || url.includes('/image/upload/q_auto')) {
+    return url;
+  }
+
+  const transforms: string[] = ['f_auto', 'q_auto'];
+  
+  if (options) {
+    if (options.width) transforms.push(`w_${options.width}`);
+    if (options.height) transforms.push(`h_${options.height}`);
+    if (options.crop) transforms.push(`c_${options.crop}`);
+  }
+
+  const transformString = transforms.join(',');
+  return url.replace('/image/upload/', `/image/upload/${transformString}/`);
+}
+
+

@@ -87,6 +87,11 @@ export async function POST(request: Request) {
           public_id: publicId,
           resource_type: "image",
           tags: type === "milestone" ? ["love_temp"] : undefined,
+          // Tối ưu hóa khi upload: Tự động xoay đúng chiều, resize nếu ảnh quá to (>2000px) và nén chất lượng thông minh
+          transformation: [
+            { width: 2000, height: 2000, crop: "limit" },
+            { quality: "auto:good" }
+          ]
         },
         (error, result) => {
           if (error) {

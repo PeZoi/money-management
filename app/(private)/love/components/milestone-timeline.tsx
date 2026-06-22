@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import Image from 'next/image';
-import { cn } from '@/lib/utils';
+import { cn, getOptimizedCloudinaryUrl } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Heart, Sparkles, Plus, Edit3, Trash2 } from 'lucide-react';
@@ -138,7 +138,7 @@ function MilestoneCardItem({
               <div className="mt-3 w-full rounded-2xl overflow-hidden border border-border/40 shadow-xs hover:shadow-md transition-shadow group/img-item">
                 <div className="relative aspect-[16/9] w-full overflow-hidden">
                   <Image
-                    src={urls[0]}
+                    src={getOptimizedCloudinaryUrl(urls[0], { width: 800 })}
                     alt={m.title}
                     fill
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
@@ -157,7 +157,7 @@ function MilestoneCardItem({
               <div className="grid grid-cols-5 gap-2 mt-3 w-full aspect-[16/10] sm:aspect-[16/9]">
                 <div className="col-span-3 relative rounded-2xl overflow-hidden border border-border/40 shadow-xs hover:shadow-md transition-all group/img-item h-full">
                   <Image
-                    src={urls[0]}
+                    src={getOptimizedCloudinaryUrl(urls[0], { width: 600 })}
                     alt={`${m.title} 1`}
                     fill
                     sizes="(max-width: 768px) 60vw, 40vw"
@@ -168,7 +168,7 @@ function MilestoneCardItem({
                 </div>
                 <div className="col-span-2 relative rounded-2xl overflow-hidden border border-border/40 shadow-xs hover:shadow-md transition-all group/img-item h-full">
                   <Image
-                    src={urls[1]}
+                    src={getOptimizedCloudinaryUrl(urls[1], { width: 450 })}
                     alt={`${m.title} 2`}
                     fill
                     sizes="(max-width: 768px) 40vw, 30vw"
@@ -188,7 +188,7 @@ function MilestoneCardItem({
                 {/* Ảnh lớn bên trái */}
                 <div className="col-span-2 relative rounded-2xl overflow-hidden border border-border/40 shadow-xs hover:shadow-md transition-all group/img-item h-full min-h-0">
                   <Image
-                    src={urls[0]}
+                    src={getOptimizedCloudinaryUrl(urls[0], { width: 600 })}
                     alt={`${m.title} 1`}
                     fill
                     sizes="(max-width: 768px) 66vw, 50vw"
@@ -202,7 +202,7 @@ function MilestoneCardItem({
                   {urls.slice(1, 3).map((url, tIdx) => (
                     <div key={tIdx} className="flex-1 relative rounded-2xl overflow-hidden border border-border/40 shadow-xs hover:shadow-md transition-all group/img-item min-h-0">
                       <Image
-                        src={url}
+                        src={getOptimizedCloudinaryUrl(url, { width: 300 })}
                         alt={`${m.title} ${tIdx + 2}`}
                         fill
                         sizes="(max-width: 768px) 33vw, 25vw"
@@ -228,7 +228,7 @@ function MilestoneCardItem({
               {/* Ảnh to Spotlight */}
               <div className="relative aspect-[21/9] w-full rounded-2xl overflow-hidden border border-border/40 shadow-xs hover:shadow-md transition-all group/img-item">
                 <Image
-                  src={spotlightUrl}
+                  src={getOptimizedCloudinaryUrl(spotlightUrl, { width: 800 })}
                   alt={`${m.title} spotlight`}
                   fill
                   sizes="(max-width: 768px) 100vw, 50vw"
@@ -248,7 +248,7 @@ function MilestoneCardItem({
                       className="relative aspect-square rounded-2xl overflow-hidden border border-border/40 shadow-xs hover:shadow-md transition-all group/img-item"
                     >
                       <Image
-                        src={url}
+                        src={getOptimizedCloudinaryUrl(url, { width: 300 })}
                         alt={`${m.title} ${realIdx + 1}`}
                         fill
                         sizes="(max-width: 768px) 33vw, 15vw"

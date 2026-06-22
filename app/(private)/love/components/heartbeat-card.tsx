@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { format } from 'date-fns';
-import { cn } from '@/lib/utils';
+import { cn, getOptimizedCloudinaryUrl } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Avatar } from '@/components/ui/avatar';
 import { Heart, Calendar as CalendarIcon, Edit3, Palette, Camera, Clock } from 'lucide-react';
@@ -61,7 +61,7 @@ export function HeartbeatCard({
           ? "border-white/10 text-white bg-cover bg-center"
           : `bg-gradient-to-br ${theme.cardBg} text-foreground`
       )}
-      style={loveConn.background_url ? { backgroundImage: `url(${loveConn.background_url})` } : undefined}
+      style={loveConn.background_url ? { backgroundImage: `url(${getOptimizedCloudinaryUrl(loveConn.background_url, { width: 1200 })})` } : undefined}
     >
       {/* Overlay làm mờ/tối khi có background tùy chỉnh */}
       {loveConn.background_url && (
@@ -118,7 +118,10 @@ export function HeartbeatCard({
               title="Click để đổi nhanh ảnh của bạn"
             >
               <Avatar
-                src={loveConn.is_user_1 ? (loveConn.user_1_avatar_url || user?.avatarUrl) : (loveConn.user_2_avatar_url || user?.avatarUrl)}
+                src={getOptimizedCloudinaryUrl(
+                  loveConn.is_user_1 ? (loveConn.user_1_avatar_url || user?.avatarUrl) : (loveConn.user_2_avatar_url || user?.avatarUrl),
+                  { width: 200, height: 200, crop: 'fill' }
+                )}
                 name={myName}
                 className="size-16 md:size-24 border bg-background"
                 width={96}
@@ -203,7 +206,7 @@ export function HeartbeatCard({
               title="Click để đổi nhanh ảnh của người ấy"
             >
               <Avatar
-                src={loveConn.partner_avatar_url ?? undefined}
+                src={getOptimizedCloudinaryUrl(loveConn.partner_avatar_url, { width: 200, height: 200, crop: 'fill' })}
                 name={partnerName}
                 className="size-16 md:size-24 border bg-background"
                 width={96}
