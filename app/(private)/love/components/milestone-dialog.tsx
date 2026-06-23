@@ -96,7 +96,7 @@ export function MilestoneDialog({
           {/* Date (Shadcn Date Picker) */}
           <div className="space-y-1.5 flex flex-col">
             <label className="text-xs font-bold text-muted-foreground/80 tracking-wider uppercase block">Ngày diễn ra</label>
-            <Popover open={openMilestoneCalendar} onOpenChange={setOpenMilestoneCalendar}>
+            <Popover open={openMilestoneCalendar} onOpenChange={setOpenMilestoneCalendar} modal={true}>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
@@ -429,7 +429,7 @@ export function MilestoneDialog({
               })}
 
               {/* Emoji Picker Button */}
-              <Popover>
+              <Popover modal={true}>
                 <PopoverTrigger asChild>
                   <button
                     type="button"

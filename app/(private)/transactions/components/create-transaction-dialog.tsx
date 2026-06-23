@@ -128,7 +128,7 @@ function AccountSelector({
   return (
     <div className="grid gap-2">
       <Label htmlFor={id}>{label}</Label>
-      <Popover open={open} onOpenChange={setOpen}>
+      <Popover open={open} onOpenChange={setOpen} modal={true}>
         <PopoverTrigger asChild>
           <Button
             id={id}
@@ -379,7 +379,7 @@ export default function CreateTransactionDialog({ open, onOpenChange, onSuccess 
               {/* Chọn ngày */}
               <div className="grid gap-2">
                 <Label htmlFor="auto-date">Ngày giao dịch</Label>
-                <Popover open={openAutoCalendar} onOpenChange={setOpenAutoCalendar}>
+                <Popover open={openAutoCalendar} onOpenChange={setOpenAutoCalendar} modal={true}>
                   <PopoverTrigger asChild>
                     <Button
                       id="auto-date"
@@ -720,7 +720,7 @@ export default function CreateTransactionDialog({ open, onOpenChange, onSuccess 
               {/* Date */}
               <div className="grid gap-2">
                 <Label htmlFor="tx-date">Ngày giao dịch</Label>
-                <Popover open={openCalendar} onOpenChange={setOpenCalendar}>
+                <Popover open={openCalendar} onOpenChange={setOpenCalendar} modal={true}>
                   <PopoverTrigger asChild>
                     <Button
                       id="tx-date"

@@ -188,7 +188,7 @@ export default function UpdateTransactionDialog({ transaction, open, onOpenChang
               <div className="space-y-4">
                 <div className="grid gap-2">
                   <Label htmlFor="tx-from-account">Từ tài khoản</Label>
-                  <Popover open={openFrom} onOpenChange={setOpenFrom}>
+                  <Popover open={openFrom} onOpenChange={setOpenFrom} modal={true}>
                     <PopoverTrigger asChild>
                       <Button
                         id="tx-from-account"
@@ -247,7 +247,7 @@ export default function UpdateTransactionDialog({ transaction, open, onOpenChang
 
                 <div className="grid gap-2">
                   <Label htmlFor="tx-to-account">Đến tài khoản</Label>
-                  <Popover open={openTo} onOpenChange={setOpenTo}>
+                  <Popover open={openTo} onOpenChange={setOpenTo} modal={true}>
                     <PopoverTrigger asChild>
                       <Button
                         id="tx-to-account"
@@ -315,7 +315,7 @@ export default function UpdateTransactionDialog({ transaction, open, onOpenChang
             /* Expense / Income: 1 selector tài khoản */
             <div className="grid gap-2">
               <Label htmlFor="tx-account">Tài khoản</Label>
-              <Popover open={openAccount} onOpenChange={setOpenAccount}>
+              <Popover open={openAccount} onOpenChange={setOpenAccount} modal={true}>
                 <PopoverTrigger asChild>
                   <Button
                     id="tx-account"
@@ -491,7 +491,7 @@ export default function UpdateTransactionDialog({ transaction, open, onOpenChang
           {/* Date */}
           <div className="grid gap-2">
             <Label htmlFor="tx-date">Ngày giao dịch</Label>
-            <Popover open={openCalendar} onOpenChange={setOpenCalendar}>
+            <Popover open={openCalendar} onOpenChange={setOpenCalendar} modal={true}>
               <PopoverTrigger asChild>
                 <Button
                   id="tx-date"

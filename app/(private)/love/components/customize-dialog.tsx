@@ -97,7 +97,7 @@ export function CustomizeDialog({
               />
 
               <label className={cn("text-xs font-bold tracking-wider uppercase block pt-1", theme.text)}>Ngày sinh của bạn</label>
-              <Popover open={openMyBirthdateCalendar} onOpenChange={setOpenMyBirthdateCalendar}>
+              <Popover open={openMyBirthdateCalendar} onOpenChange={setOpenMyBirthdateCalendar} modal={true}>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
@@ -141,7 +141,7 @@ export function CustomizeDialog({
               />
 
               <label className={cn("text-xs font-bold tracking-wider uppercase block pt-1", theme.text)}>Ngày sinh người ấy</label>
-              <Popover open={openPartnerBirthdateCalendar} onOpenChange={setOpenPartnerBirthdateCalendar}>
+              <Popover open={openPartnerBirthdateCalendar} onOpenChange={setOpenPartnerBirthdateCalendar} modal={true}>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"

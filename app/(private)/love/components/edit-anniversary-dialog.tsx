@@ -53,7 +53,7 @@ export function EditAnniversaryDialog({
         </DialogHeader>
         <div className="py-6 space-y-2 flex flex-col">
           <label className="text-[10px] font-bold text-muted-foreground/60 tracking-wider uppercase block">Ngày bắt đầu</label>
-          <Popover open={openAnnivCalendar} onOpenChange={setOpenAnnivCalendar}>
+          <Popover open={openAnnivCalendar} onOpenChange={setOpenAnnivCalendar} modal={true}>
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
