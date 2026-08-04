@@ -24,11 +24,12 @@ export function Lightbox({
   setZoomActive,
 }: LightboxProps) {
   const {
+    wrapperRef,
     handleTouchStart,
     handleTouchMove,
     handleTouchEnd,
-    getTransformStyle,
     handleImageClick,
+    zoomScale,
   } = useLightbox({
     activePreviewUrls,
     setActivePreviewUrls,
@@ -41,10 +42,11 @@ export function Lightbox({
 
   const currentUrl = activePreviewUrls[activePreviewIdx];
   const isVid = isMediaVideo(currentUrl);
+  const isZoomed = zoomScale > 1.05;
 
   return (
     <div className="fixed inset-0 bg-black/95 backdrop-blur-md z-[99999] flex flex-col items-center justify-center select-none animate-fade-in touch-none">
-      {/* Nút đóng ở góc trên bên phải */}
+      {/* Nút đóng */}
       <button
         onClick={() => setActivePreviewUrls(null)}
         className="absolute top-4 right-4 z-50 p-2.5 bg-zinc-900/60 hover:bg-zinc-800/80 text-white rounded-full transition-colors cursor-pointer border border-white/5 active:scale-95 flex items-center justify-center"
@@ -53,22 +55,32 @@ export function Lightbox({
         <X className="size-5" />
       </button>
 
-      {/* Chỉ số tệp hiện tại */}
+      {/* Chỉ số tệp */}
       {activePreviewUrls.length > 1 && (
         <div className="absolute top-5 left-1/2 -translate-x-1/2 z-50 px-3.5 py-1.5 bg-zinc-900/60 text-white text-xs font-extrabold tracking-wider rounded-full border border-white/5 shadow-inner">
           {activePreviewIdx + 1} / {activePreviewUrls.length}
         </div>
       )}
 
-      {/* Vùng xem media ở trung tâm */}
+      {/* Gợi ý zoom cho mobile */}
+      {!isZoomed && !isVid && (
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-50 px-3 py-1.5 bg-zinc-900/50 text-white/60 text-[10px] font-medium tracking-wide rounded-full border border-white/5 animate-pulse pointer-events-none md:hidden">
+          Chụm 2 ngón để phóng to · Nhấn đúp để zoom
+        </div>
+      )}
+
+      {/* Vùng xem media */}
       <div
-        className="relative w-full flex-1 flex items-center justify-center p-4 overflow-hidden"
+        className={cn(
+          "relative w-full flex-1 flex items-center justify-center p-4",
+          isZoomed ? "overflow-auto" : "overflow-hidden"
+        )}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
-        {/* Nút Previous */}
-        {activePreviewUrls.length > 1 && activePreviewIdx > 0 && (
+        {/* Nút Previous (ẩn khi zoom) */}
+        {activePreviewUrls.length > 1 && activePreviewIdx > 0 && !isZoomed && (
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -81,10 +93,11 @@ export function Lightbox({
           </button>
         )}
 
-        {/* Media chính (Ảnh hoặc Video) */}
+        {/* Media wrapper - transform thao tác trực tiếp qua ref */}
         <div
-          style={getTransformStyle()}
+          ref={wrapperRef}
           className="flex items-center justify-center max-w-full max-h-[85vh] transform-gpu will-change-transform"
+          style={{ transform: 'translate3d(0,0,0) scale(1)' }}
           onClick={isVid ? undefined : handleImageClick}
         >
           {isVid ? (
@@ -99,18 +112,14 @@ export function Lightbox({
             <img
               src={currentUrl}
               alt="Kỷ niệm preview"
-              className={cn(
-                "max-w-full max-h-[85vh] select-none pointer-events-none rounded-sm transition-transform ease-out duration-300 transform-gpu",
-                zoomActive
-                  ? "scale-175 cursor-zoom-out object-contain overflow-auto"
-                  : "scale-100 object-contain"
-              )}
+              draggable={false}
+              className="max-w-full max-h-[85vh] select-none pointer-events-none rounded-sm object-contain transform-gpu"
             />
           )}
         </div>
 
-        {/* Nút Next */}
-        {activePreviewUrls.length > 1 && activePreviewIdx < activePreviewUrls.length - 1 && (
+        {/* Nút Next (ẩn khi zoom) */}
+        {activePreviewUrls.length > 1 && activePreviewIdx < activePreviewUrls.length - 1 && !isZoomed && (
           <button
             onClick={(e) => {
               e.stopPropagation();
