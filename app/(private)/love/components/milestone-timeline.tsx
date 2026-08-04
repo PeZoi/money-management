@@ -2,10 +2,10 @@
 
 import * as React from 'react';
 import Image from 'next/image';
-import { cn, getOptimizedCloudinaryUrl } from '@/lib/utils';
+import { cn, getOptimizedCloudinaryUrl, isMediaVideo } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Heart, Sparkles, Plus, Edit3, Trash2 } from 'lucide-react';
+import { Heart, Sparkles, Plus, Edit3, Trash2, ArrowUp, ArrowDown, Play } from 'lucide-react';
 import type { LoveMilestoneRow } from '@/types/database';
 import { OLD_ICON_MAP, LoveTheme } from '../constants';
 
@@ -32,6 +32,48 @@ interface MilestoneCardItemProps {
   handlePreview: (urls: string[], idx: number) => void;
 }
 
+interface MediaItemProps {
+  url: string;
+  alt: string;
+  className?: string;
+  onClick?: () => void;
+  sizes?: string;
+}
+
+function MediaItem({ url, alt, className, onClick, sizes = "(max-width: 768px) 100vw, 50vw" }: MediaItemProps) {
+  const isVid = isMediaVideo(url);
+
+  if (isVid) {
+    return (
+      <div className={cn("relative size-full group/video cursor-pointer overflow-hidden", className)} onClick={onClick}>
+        <video
+          src={url}
+          muted
+          playsInline
+          preload="metadata"
+          className="size-full object-cover group-hover/video:scale-103 transition-transform duration-500 ease-out"
+        />
+        <div className="absolute inset-0 bg-black/25 group-hover/video:bg-black/35 transition-colors flex items-center justify-center">
+          <div className="size-10 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white border border-white/30 shadow-lg group-hover/video:scale-110 transition-transform">
+            <Play className="size-4 fill-white ml-0.5" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <Image
+      src={getOptimizedCloudinaryUrl(url, { width: 800 })}
+      alt={alt}
+      fill
+      sizes={sizes}
+      className={cn("object-cover group-hover/img-item:scale-103 transition-transform duration-500 ease-out cursor-pointer", className)}
+      onClick={onClick}
+    />
+  );
+}
+
 function MilestoneCardItem({
   m,
   idx,
@@ -40,11 +82,9 @@ function MilestoneCardItem({
   handleDeleteMilestone,
   handlePreview,
 }: MilestoneCardItemProps) {
-
-
   const displayIcon = OLD_ICON_MAP[m.icon] || m.icon || '❤️';
 
-  // Phân tích danh sách hình ảnh
+  // Phân tích danh sách hình ảnh/video
   let urls: string[] = [];
   if (m.image_url) {
     if (m.image_url.startsWith('[') && m.image_url.endsWith(']')) {
@@ -132,84 +172,84 @@ function MilestoneCardItem({
         {(() => {
           if (urls.length === 0) return null;
 
-          // 1 ảnh: Tràn toàn bộ chiều rộng Card (w-full), bo tròn rounded-2xl
+          // 1 ảnh/video: Tràn toàn bộ chiều rộng Card (w-full), bo tròn rounded-2xl
           if (urls.length === 1) {
             return (
               <div className="mt-3 w-full rounded-2xl overflow-hidden border border-border/40 shadow-xs hover:shadow-md transition-shadow group/img-item">
                 <div className="relative aspect-[16/9] w-full overflow-hidden">
-                  <Image
-                    src={getOptimizedCloudinaryUrl(urls[0], { width: 800 })}
+                  <MediaItem
+                    url={urls[0]}
                     alt={m.title}
-                    fill
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                    className="object-cover group-hover/img-item:scale-103 transition-transform duration-500 ease-out cursor-pointer"
                     onClick={() => handlePreview(urls, 0)}
                   />
-                  <div className="absolute inset-0 bg-black/0 group-hover/img-item:bg-black/5 transition-colors pointer-events-none" />
+                  {!isMediaVideo(urls[0]) && (
+                    <div className="absolute inset-0 bg-black/0 group-hover/img-item:bg-black/5 transition-colors pointer-events-none" />
+                  )}
                 </div>
               </div>
             );
           }
 
-          // 2 ảnh: Lưới bất đối xứng tỷ lệ vàng (60% - 40%) rất độc đáo và thu hút
+          // 2 ảnh/video: Lưới bất đối xứng tỷ lệ vàng (60% - 40%)
           if (urls.length === 2) {
             return (
               <div className="grid grid-cols-5 gap-2 mt-3 w-full aspect-[16/10] sm:aspect-[16/9]">
                 <div className="col-span-3 relative rounded-2xl overflow-hidden border border-border/40 shadow-xs hover:shadow-md transition-all group/img-item h-full">
-                  <Image
-                    src={getOptimizedCloudinaryUrl(urls[0], { width: 600 })}
+                  <MediaItem
+                    url={urls[0]}
                     alt={`${m.title} 1`}
-                    fill
                     sizes="(max-width: 768px) 60vw, 40vw"
-                    className="object-cover group-hover/img-item:scale-103 transition-transform duration-500 ease-out cursor-pointer"
                     onClick={() => handlePreview(urls, 0)}
                   />
-                  <div className="absolute inset-0 bg-black/0 group-hover/img-item:bg-black/5 transition-colors pointer-events-none" />
+                  {!isMediaVideo(urls[0]) && (
+                    <div className="absolute inset-0 bg-black/0 group-hover/img-item:bg-black/5 transition-colors pointer-events-none" />
+                  )}
                 </div>
                 <div className="col-span-2 relative rounded-2xl overflow-hidden border border-border/40 shadow-xs hover:shadow-md transition-all group/img-item h-full">
-                  <Image
-                    src={getOptimizedCloudinaryUrl(urls[1], { width: 450 })}
+                  <MediaItem
+                    url={urls[1]}
                     alt={`${m.title} 2`}
-                    fill
                     sizes="(max-width: 768px) 40vw, 30vw"
-                    className="object-cover group-hover/img-item:scale-103 transition-transform duration-500 ease-out cursor-pointer"
                     onClick={() => handlePreview(urls, 1)}
                   />
-                  <div className="absolute inset-0 bg-black/0 group-hover/img-item:bg-black/5 transition-colors pointer-events-none" />
+                  {!isMediaVideo(urls[1]) && (
+                    <div className="absolute inset-0 bg-black/0 group-hover/img-item:bg-black/5 transition-colors pointer-events-none" />
+                  )}
                 </div>
               </div>
             );
           }
 
-          // 3 ảnh: 1 ảnh lớn bên trái, 2 ảnh nhỏ bên phải xếp dọc
+          // 3 ảnh/video: 1 lớn bên trái, 2 nhỏ bên phải xếp dọc
           if (urls.length === 3) {
             return (
               <div className="grid grid-cols-3 gap-2 mt-3 w-full aspect-[16/10] sm:aspect-[16/9]">
-                {/* Ảnh lớn bên trái */}
+                {/* Lớn bên trái */}
                 <div className="col-span-2 relative rounded-2xl overflow-hidden border border-border/40 shadow-xs hover:shadow-md transition-all group/img-item h-full min-h-0">
-                  <Image
-                    src={getOptimizedCloudinaryUrl(urls[0], { width: 600 })}
+                  <MediaItem
+                    url={urls[0]}
                     alt={`${m.title} 1`}
-                    fill
                     sizes="(max-width: 768px) 66vw, 50vw"
-                    className="object-cover group-hover/img-item:scale-103 transition-transform duration-500 ease-out cursor-pointer"
                     onClick={() => handlePreview(urls, 0)}
                   />
-                  <div className="absolute inset-0 bg-black/0 group-hover/img-item:bg-black/5 transition-colors pointer-events-none" />
+                  {!isMediaVideo(urls[0]) && (
+                    <div className="absolute inset-0 bg-black/0 group-hover/img-item:bg-black/5 transition-colors pointer-events-none" />
+                  )}
                 </div>
-                {/* 2 ảnh nhỏ bên phải */}
+                {/* 2 nhỏ bên phải */}
                 <div className="flex flex-col gap-2 h-full min-h-0">
                   {urls.slice(1, 3).map((url, tIdx) => (
                     <div key={tIdx} className="flex-1 relative rounded-2xl overflow-hidden border border-border/40 shadow-xs hover:shadow-md transition-all group/img-item min-h-0">
-                      <Image
-                        src={getOptimizedCloudinaryUrl(url, { width: 300 })}
+                      <MediaItem
+                        url={url}
                         alt={`${m.title} ${tIdx + 2}`}
-                        fill
                         sizes="(max-width: 768px) 33vw, 25vw"
-                        className="object-cover group-hover/img-item:scale-103 transition-transform duration-500 ease-out cursor-pointer"
                         onClick={() => handlePreview(urls, tIdx + 1)}
                       />
-                      <div className="absolute inset-0 bg-black/0 group-hover/img-item:bg-black/5 transition-colors pointer-events-none" />
+                      {!isMediaVideo(url) && (
+                        <div className="absolute inset-0 bg-black/0 group-hover/img-item:bg-black/5 transition-colors pointer-events-none" />
+                      )}
                     </div>
                   ))}
                 </div>
@@ -217,7 +257,7 @@ function MilestoneCardItem({
             );
           }
 
-          // 4 ảnh trở lên: Layout Spotlight (1 ảnh rộng ở trên, 3 ảnh nhỏ xếp đều bên dưới)
+          // 4 ảnh/video trở lên: Spotlight
           const spotlightUrl = urls[0];
           const thumbsUrls = urls.slice(1, 4);
           const hasMore = urls.length > 4;
@@ -225,19 +265,19 @@ function MilestoneCardItem({
 
           return (
             <div className="flex flex-col gap-2 mt-3 w-full">
-              {/* Ảnh to Spotlight */}
+              {/* Spotlight */}
               <div className="relative aspect-[21/9] w-full rounded-2xl overflow-hidden border border-border/40 shadow-xs hover:shadow-md transition-all group/img-item">
-                <Image
-                  src={getOptimizedCloudinaryUrl(spotlightUrl, { width: 800 })}
+                <MediaItem
+                  url={spotlightUrl}
                   alt={`${m.title} spotlight`}
-                  fill
                   sizes="(max-width: 768px) 100vw, 50vw"
-                  className="object-cover group-hover/img-item:scale-103 transition-transform duration-500 ease-out cursor-pointer"
                   onClick={() => handlePreview(urls, 0)}
                 />
-                <div className="absolute inset-0 bg-black/0 group-hover/img-item:bg-black/5 transition-colors pointer-events-none" />
+                {!isMediaVideo(spotlightUrl) && (
+                  <div className="absolute inset-0 bg-black/0 group-hover/img-item:bg-black/5 transition-colors pointer-events-none" />
+                )}
               </div>
-              {/* 3 Ảnh nhỏ bên dưới */}
+              {/* 3 Thumbs bên dưới */}
               <div className="grid grid-cols-3 gap-2">
                 {thumbsUrls.map((url, tIdx) => {
                   const isLast = tIdx === 2 && hasMore;
@@ -247,12 +287,10 @@ function MilestoneCardItem({
                       key={tIdx}
                       className="relative aspect-square rounded-2xl overflow-hidden border border-border/40 shadow-xs hover:shadow-md transition-all group/img-item"
                     >
-                      <Image
-                        src={getOptimizedCloudinaryUrl(url, { width: 300 })}
+                      <MediaItem
+                        url={url}
                         alt={`${m.title} ${realIdx + 1}`}
-                        fill
                         sizes="(max-width: 768px) 33vw, 15vw"
-                        className="object-cover group-hover/img-item:scale-103 transition-transform duration-500 ease-out cursor-pointer"
                         onClick={() => handlePreview(urls, realIdx)}
                       />
                       {isLast ? (
@@ -261,10 +299,12 @@ function MilestoneCardItem({
                           className="absolute inset-0 bg-black/60 backdrop-blur-[1px] flex flex-col items-center justify-center text-white cursor-pointer hover:bg-black/50 transition-colors z-10"
                         >
                           <span className="text-lg font-black">+{moreCount}</span>
-                          <span className="text-[8px] font-bold tracking-wider uppercase opacity-85">ảnh khác</span>
+                          <span className="text-[8px] font-bold tracking-wider uppercase opacity-85">tệp khác</span>
                         </div>
                       ) : (
-                        <div className="absolute inset-0 bg-black/0 group-hover/img-item:bg-black/5 transition-colors pointer-events-none" />
+                        !isMediaVideo(url) && (
+                          <div className="absolute inset-0 bg-black/0 group-hover/img-item:bg-black/5 transition-colors pointer-events-none" />
+                        )
                       )}
                     </div>
                   );
@@ -291,17 +331,27 @@ export function MilestoneTimeline({
   setActivePreviewIdx,
   setZoomActive,
 }: MilestoneTimelineProps) {
+  // Trạng thái sắp xếp: 'desc' (mới -> cũ) hoặc 'asc' (cũ -> mới)
+  const [sortOrder, setSortOrder] = React.useState<'desc' | 'asc'>('desc');
+
   const handlePreview = (urls: string[], idx: number) => {
     setActivePreviewUrls(urls);
     setActivePreviewIdx(idx);
     setZoomActive(false);
   };
 
+  // Sắp xếp lại danh sách mốc kỷ niệm theo ngày
+  const sortedMilestones = React.useMemo(() => {
+    return [...milestones].sort((a, b) => {
+      const dateA = new Date(a.milestone_date).getTime();
+      const dateB = new Date(b.milestone_date).getTime();
+      return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
+    });
+  }, [milestones, sortOrder]);
+
   return (
     <div className="space-y-6">
-
-
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl md:text-2xl font-bold flex items-center gap-2">
             <Sparkles className={cn("size-5", theme.textRoseColor, theme.fillColor)} />
@@ -311,14 +361,39 @@ export function MilestoneTimeline({
             Lưu giữ những cột mốc đặc biệt trên con đường tình yêu của hai bạn.
           </p>
         </div>
-        <Button
-          onClick={handleOpenAddMilestone}
-          className={cn("cursor-pointer rounded-xl", theme.bg, theme.bgHover)}
-          size="sm"
-        >
-          <Plus className="size-4 mr-1.5" />
-          Thêm kỷ niệm
-        </Button>
+
+        {/* Nút hành động: Sắp xếp & Thêm kỷ niệm */}
+        <div className="flex items-center gap-2 self-end sm:self-auto">
+          {/* Nút toggle sắp xếp ngày */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setSortOrder(prev => (prev === 'desc' ? 'asc' : 'desc'))}
+            className="cursor-pointer rounded-xl text-xs flex items-center gap-1.5"
+            title={sortOrder === 'desc' ? 'Đang xếp: Mới nhất trước' : 'Đang xếp: Cũ nhất trước'}
+          >
+            {sortOrder === 'desc' ? (
+              <>
+                <ArrowDown className="size-3.5 text-primary" />
+                <span>Mới nhất</span>
+              </>
+            ) : (
+              <>
+                <ArrowUp className="size-3.5 text-primary" />
+                <span>Cũ nhất</span>
+              </>
+            )}
+          </Button>
+
+          <Button
+            onClick={handleOpenAddMilestone}
+            className={cn("cursor-pointer rounded-xl", theme.bg, theme.bgHover)}
+            size="sm"
+          >
+            <Plus className="size-4 mr-1.5" />
+            Thêm kỷ niệm
+          </Button>
+        </div>
       </div>
 
       {/* Timeline list */}
@@ -327,7 +402,7 @@ export function MilestoneTimeline({
           <Skeleton className="h-16 w-full rounded-xl" />
           <Skeleton className="h-16 w-full rounded-xl" />
         </div>
-      ) : milestones.length === 0 ? (
+      ) : sortedMilestones.length === 0 ? (
         <div className="bg-card border rounded-2xl p-10 text-center text-muted-foreground shadow-sm">
           <Heart className={cn("size-8 mx-auto mb-3 opacity-30", theme.textRoseColor)} />
           <p className="font-medium text-sm">Chưa có cột mốc kỷ niệm nào được lưu.</p>
@@ -336,9 +411,9 @@ export function MilestoneTimeline({
       ) : (
         <div className="relative ml-4 md:ml-6 pl-6 md:pl-8 space-y-8 py-2 select-none">
           {/* Đường kẻ dọc timeline gradient mượt mà */}
-          <div className={cn("absolute left-0 top-0 bottom-0 w-[2px] bg-gradient-to-b rounded-full opacity-60", theme.timelineLineGradient)} />
+          <div className={cn("absolute left-0 top-0 bottom-0 w-[2px] bg-linear-to-b rounded-full opacity-60", theme.timelineLineGradient)} />
 
-          {milestones.map((m, idx) => (
+          {sortedMilestones.map((m, idx) => (
             <MilestoneCardItem
               key={m.id}
               m={m}

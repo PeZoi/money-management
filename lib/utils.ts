@@ -80,6 +80,8 @@ export function getOptimizedCloudinaryUrl(
 ): string {
   if (!url) return '';
   if (!url.includes('res.cloudinary.com')) return url;
+  // Nếu là video Cloudinary, không chèn transform hình ảnh
+  if (url.includes('/video/upload/')) return url;
 
   // Tránh transform đè nếu URL đã chứa các cấu hình transform trước đó
   if (url.includes('/image/upload/f_auto') || url.includes('/image/upload/q_auto')) {
@@ -97,5 +99,18 @@ export function getOptimizedCloudinaryUrl(
   const transformString = transforms.join(',');
   return url.replace('/image/upload/', `/image/upload/${transformString}/`);
 }
+
+/**
+ * Kiểm tra xem URL hoặc Data URI có phải là tệp Video hay không.
+ */
+export function isMediaVideo(url: string | null | undefined): boolean {
+  if (!url) return false;
+  const cleanUrl = url.toLowerCase().split('?')[0];
+  if (cleanUrl.startsWith('data:video/')) return true;
+  if (cleanUrl.includes('/video/upload/')) return true;
+  const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov', '.m4v', '.avi', '.3gp', '.mkv'];
+  return videoExtensions.some(ext => cleanUrl.endsWith(ext));
+}
+
 
 

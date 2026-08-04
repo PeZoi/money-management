@@ -52,17 +52,21 @@ export async function POST(request: Request) {
     }
 
     // Kiểm tra định dạng file
-    if (!file.type.startsWith("image/")) {
+    const isImage = file.type.startsWith("image/");
+    const isVideo = file.type.startsWith("video/");
+
+    if (!isImage && !isVideo) {
       return NextResponse.json(
-        { error: "Định dạng file không hợp lệ. Chỉ chấp nhận ảnh." },
+        { error: "Định dạng file không hợp lệ. Chỉ chấp nhận ảnh hoặc video." },
         { status: 400 }
       );
     }
 
-    // Giới hạn dung lượng (5MB)
-    if (file.size > 5 * 1024 * 1024) {
+    // Giới hạn dung lượng: Video tối đa 50MB, Ảnh tối đa 10MB
+    const maxFileSize = isVideo ? 50 * 1024 * 1024 : 10 * 1024 * 1024;
+    if (file.size > maxFileSize) {
       return NextResponse.json(
-        { error: "Dung lượng ảnh tối đa là 5MB" },
+        { error: `Dung lượng ${isVideo ? 'video' : 'ảnh'} tối đa là ${isVideo ? '50MB' : '10MB'}` },
         { status: 400 }
       );
     }
@@ -79,19 +83,19 @@ export async function POST(request: Request) {
       ? `${slugTitle}_${Date.now()}`
       : `${type}_${Date.now()}`;
 
-    // Upload lên Cloudinary
+    // Upload lên Cloudinary (chọn resource_type phù hợp với loại file)
     const uploadResult = await new Promise<UploadApiResponse | undefined>((resolve, reject) => {
       cloudinary.uploader.upload_stream(
         {
           folder: folderPath,
           public_id: publicId,
-          resource_type: "image",
+          resource_type: isVideo ? "video" : "image",
           tags: type === "milestone" ? ["love_temp"] : undefined,
-          // Tối ưu hóa khi upload: Tự động xoay đúng chiều, resize nếu ảnh quá to (>2000px) và nén chất lượng thông minh
-          transformation: [
+          // Tối ưu hóa khi upload: Chỉ áp dụng transformation resize đối với ảnh
+          transformation: isImage ? [
             { width: 2000, height: 2000, crop: "limit" },
             { quality: "auto:good" }
-          ]
+          ] : undefined
         },
         (error, result) => {
           if (error) {

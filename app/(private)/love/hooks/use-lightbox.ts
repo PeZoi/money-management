@@ -48,6 +48,8 @@ export function useLightbox({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [activePreviewUrls, activePreviewIdx, setActivePreviewUrls, setActivePreviewIdx, setZoomActive]);
 
+  const rafRef = React.useRef<number | null>(null);
+
   // Touch Gestures cho Lightbox
   const handleTouchStart = (e: React.TouchEvent) => {
     if (zoomActive) return;
@@ -64,24 +66,33 @@ export function useLightbox({
     const deltaX = touch.clientX - touchStart.x;
     const deltaY = touch.clientY - touchStart.y;
 
-    let currentDir = swipeDir;
-    if (!currentDir) {
-      if (Math.abs(deltaX) > Math.abs(deltaY)) {
-        currentDir = 'horizontal';
-      } else {
-        currentDir = 'vertical';
-      }
-      setSwipeDir(currentDir);
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
     }
 
-    setTouchDelta({ x: deltaX, y: deltaY });
+    rafRef.current = requestAnimationFrame(() => {
+      let currentDir = swipeDir;
+      if (!currentDir) {
+        if (Math.abs(deltaX) > Math.abs(deltaY)) {
+          currentDir = 'horizontal';
+        } else {
+          currentDir = 'vertical';
+        }
+        setSwipeDir(currentDir);
+      }
+
+      setTouchDelta({ x: deltaX, y: deltaY });
+    });
   };
 
   const handleTouchEnd = () => {
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
+    }
     if (!touchStart || !isSwiping || !activePreviewUrls) return;
     setIsSwiping(false);
 
-    const threshold = 60;
+    const threshold = 50;
 
     if (swipeDir === 'horizontal') {
       if (touchDelta.x < -threshold) {
@@ -106,15 +117,31 @@ export function useLightbox({
     setSwipeDir(null);
   };
 
-  const getTransformStyle = () => {
-    if (!isSwiping) return undefined;
+  const getTransformStyle = (): React.CSSProperties | undefined => {
+    if (!isSwiping) {
+      return {
+        transition: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease-out',
+        willChange: 'transform, opacity',
+      };
+    }
     if (swipeDir === 'horizontal') {
-      return { transform: `translateX(${touchDelta.x}px)`, transition: 'none' };
+      return {
+        transform: `translate3d(${touchDelta.x}px, 0, 0)`,
+        transition: 'none',
+        willChange: 'transform',
+      };
     }
     if (swipeDir === 'vertical') {
-      return { transform: `translateY(${touchDelta.y}px)`, opacity: Math.max(0.3, 1 - Math.abs(touchDelta.y) / 300), transition: 'none' };
+      return {
+        transform: `translate3d(0, ${touchDelta.y}px, 0)`,
+        opacity: Math.max(0.3, 1 - Math.abs(touchDelta.y) / 300),
+        transition: 'none',
+        willChange: 'transform, opacity',
+      };
     }
-    return undefined;
+    return {
+      willChange: 'transform',
+    };
   };
 
   const handleImageClick = () => {

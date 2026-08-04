@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { cn } from '@/lib/utils';
+import { cn, isMediaVideo } from '@/lib/utils';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 
 import { useLightbox } from '../hooks/use-lightbox';
@@ -39,6 +39,9 @@ export function Lightbox({
   });
   if (!activePreviewUrls || activePreviewUrls.length === 0) return null;
 
+  const currentUrl = activePreviewUrls[activePreviewIdx];
+  const isVid = isMediaVideo(currentUrl);
+
   return (
     <div className="fixed inset-0 bg-black/95 backdrop-blur-md z-[99999] flex flex-col items-center justify-center select-none animate-fade-in touch-none">
       {/* Nút đóng ở góc trên bên phải */}
@@ -50,14 +53,14 @@ export function Lightbox({
         <X className="size-5" />
       </button>
 
-      {/* Chỉ số ảnh hiện tại */}
+      {/* Chỉ số tệp hiện tại */}
       {activePreviewUrls.length > 1 && (
         <div className="absolute top-5 left-1/2 -translate-x-1/2 z-50 px-3.5 py-1.5 bg-zinc-900/60 text-white text-xs font-extrabold tracking-wider rounded-full border border-white/5 shadow-inner">
           {activePreviewIdx + 1} / {activePreviewUrls.length}
         </div>
       )}
 
-      {/* Vùng xem ảnh ở trung tâm */}
+      {/* Vùng xem media ở trung tâm */}
       <div
         className="relative w-full flex-1 flex items-center justify-center p-4 overflow-hidden"
         onTouchStart={handleTouchStart}
@@ -78,22 +81,32 @@ export function Lightbox({
           </button>
         )}
 
-        {/* Ảnh chính */}
+        {/* Media chính (Ảnh hoặc Video) */}
         <div
           style={getTransformStyle()}
-          className="flex items-center justify-center max-w-full max-h-[85vh] transition-transform duration-300"
-          onClick={handleImageClick}
+          className="flex items-center justify-center max-w-full max-h-[85vh] transform-gpu will-change-transform"
+          onClick={isVid ? undefined : handleImageClick}
         >
-          <img
-            src={activePreviewUrls[activePreviewIdx]}
-            alt="Kỷ niệm preview"
-            className={cn(
-              "max-w-full max-h-[85vh] select-none pointer-events-none rounded-sm transition-transform ease-out duration-300",
-              zoomActive
-                ? "scale-175 cursor-zoom-out object-contain overflow-auto"
-                : "scale-100 object-contain"
-            )}
-          />
+          {isVid ? (
+            <video
+              src={currentUrl}
+              controls
+              autoPlay
+              playsInline
+              className="max-w-full max-h-[85vh] rounded-xl shadow-2xl object-contain"
+            />
+          ) : (
+            <img
+              src={currentUrl}
+              alt="Kỷ niệm preview"
+              className={cn(
+                "max-w-full max-h-[85vh] select-none pointer-events-none rounded-sm transition-transform ease-out duration-300 transform-gpu",
+                zoomActive
+                  ? "scale-175 cursor-zoom-out object-contain overflow-auto"
+                  : "scale-100 object-contain"
+              )}
+            />
+          )}
         </div>
 
         {/* Nút Next */}

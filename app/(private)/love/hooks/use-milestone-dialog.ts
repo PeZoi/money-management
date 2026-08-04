@@ -99,13 +99,17 @@ export function useMilestoneDialog({
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       const id = Math.random().toString(36).substring(2, 9);
+      const isImage = file.type.startsWith('image/');
+      const isVideo = file.type.startsWith('video/');
 
-      if (!file.type.startsWith('image/')) {
-        toast.error(`File ${file.name} không phải là ảnh.`);
+      if (!isImage && !isVideo) {
+        toast.error(`File ${file.name} không phải là ảnh hoặc video hợp lệ.`);
         continue;
       }
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error(`File ${file.name} vượt quá dung lượng 5MB.`);
+
+      const maxSize = isVideo ? 50 * 1024 * 1024 : 10 * 1024 * 1024;
+      if (file.size > maxSize) {
+        toast.error(`File ${file.name} vượt quá dung lượng cho phép (${isVideo ? '50MB' : '10MB'}).`);
         continue;
       }
 

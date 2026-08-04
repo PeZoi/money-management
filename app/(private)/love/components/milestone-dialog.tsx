@@ -3,7 +3,7 @@
 import * as React from 'react';
 import Image from 'next/image';
 import { format } from 'date-fns';
-import { cn } from '@/lib/utils';
+import { cn, isMediaVideo } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Calendar } from '@/components/ui/calendar';
@@ -15,7 +15,7 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog';
-import { Heart, Calendar as CalendarIcon, Upload, Camera } from 'lucide-react';
+import { Heart, Calendar as CalendarIcon, Upload, Camera, Video } from 'lucide-react';
 import { toast } from 'sonner';
 import EmojiPicker from 'emoji-picker-react';
 import type { LoveMilestoneRow } from '@/types/database';
@@ -137,13 +137,13 @@ export function MilestoneDialog({
             />
           </div>
 
-          {/* Image (Link or Upload) */}
+          {/* Image & Video (Link or Upload) */}
           <div className="space-y-2.5">
-            <label className="text-xs font-bold text-muted-foreground/80 tracking-wider uppercase block">Ảnh kỷ niệm (Tối đa nhiều ảnh)</label>
+            <label className="text-xs font-bold text-muted-foreground/80 tracking-wider uppercase block">Ảnh & Video kỷ niệm (Tối đa nhiều tệp)</label>
             {/* Input dán URL */}
             <div className="flex gap-2">
               <Input
-                placeholder="Dán link URL ảnh và nhấn Enter..."
+                placeholder="Dán link URL ảnh/video và nhấn Enter..."
                 value={tempImageUrl}
                 onChange={(e) => setTempImageUrl(e.target.value)}
                 onKeyDown={(e) => {
@@ -180,14 +180,14 @@ export function MilestoneDialog({
               )}
             </div>
 
-            {/* Chọn từ thư viện & Chụp ảnh ngay (Grid layout chia đều cực đẹp trên mobile) */}
+            {/* Chọn từ thư viện & Chụp/Quay ngay */}
             <div className="grid grid-cols-2 gap-2.5">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => {
                   if (!milestoneTitle.trim()) {
-                    toast.error("Vui lòng nhập tên cột mốc kỷ niệm trước khi chọn ảnh.");
+                    toast.error("Vui lòng nhập tên cột mốc kỷ niệm trước khi chọn tệp.");
                     return;
                   }
                   dialogMilestoneImageInputRef.current?.click();
@@ -197,14 +197,14 @@ export function MilestoneDialog({
                   !milestoneTitle.trim() && "opacity-60 cursor-not-allowed"
                 )}
               >
-                <Upload className="size-4 mr-1.5 shrink-0" /> Thư viện ảnh
+                <Upload className="size-4 mr-1.5 shrink-0" /> Thư viện ảnh & video
               </Button>
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => {
                   if (!milestoneTitle.trim()) {
-                    toast.error("Vui lòng nhập tên cột mốc kỷ niệm trước khi chụp ảnh.");
+                    toast.error("Vui lòng nhập tên cột mốc kỷ niệm trước khi quay/chụp.");
                     return;
                   }
                   dialogMilestoneCameraInputRef.current?.click();
@@ -214,14 +214,14 @@ export function MilestoneDialog({
                   !milestoneTitle.trim() && "opacity-60 cursor-not-allowed"
                 )}
               >
-                <Camera className="size-4 mr-1.5 shrink-0" /> Chụp hình ngay
+                <Camera className="size-4 mr-1.5 shrink-0" /> Quay / Chụp ngay
               </Button>
 
               <input
                 type="file"
                 ref={dialogMilestoneImageInputRef}
                 className="hidden"
-                accept="image/*"
+                accept="image/*,video/*"
                 multiple
                 onChange={(e) => handleMultipleFilesUpload(e)}
               />
@@ -229,13 +229,13 @@ export function MilestoneDialog({
                 type="file"
                 ref={dialogMilestoneCameraInputRef}
                 className="hidden"
-                accept="image/*"
+                accept="image/*,video/*"
                 capture="environment"
                 onChange={(e) => handleMultipleFilesUpload(e)}
               />
             </div>
 
-            {/* Hàng đợi hiển thị hàng đợi và tiến trình upload từng tệp */}
+            {/* Hàng đợi hiển thị tiến trình upload */}
             {uploadQueue.length > 0 && (
               <div className="space-y-2.5 mt-3 p-3 border rounded-2xl bg-muted/10 divide-y divide-border/50">
                 <div className="text-[11px] font-bold text-muted-foreground/80 pb-1 flex justify-between items-center tracking-wide">
@@ -244,76 +244,88 @@ export function MilestoneDialog({
                     <span className="animate-pulse text-rose-500 text-[10px] font-bold">Vui lòng không đóng cửa sổ...</span>
                   )}
                 </div>
-                {uploadQueue.map((item) => (
-                  <div key={item.id} className="flex items-center gap-3 pt-2.5 first:pt-0">
-                    {/* Thumbnail xem trước tạm thời */}
-                    <div className="relative size-10 rounded-xl overflow-hidden border shrink-0 bg-muted/50">
-                      {item.previewUrl && (
-                        <Image
-                          src={item.previewUrl}
-                          alt="Preview"
-                          fill
-                          sizes="40px"
-                          className="object-cover"
-                        />
-                      )}
-                      {item.status === 'uploading' && (
-                        <div className="absolute inset-0 bg-black/55 flex items-center justify-center">
-                          <span className="text-[9px] text-white font-black">{item.progress}%</span>
-                        </div>
-                      )}
-                      {item.status === 'completed' && (
-                        <div className="absolute inset-0 bg-emerald-500/80 flex items-center justify-center">
-                          <span className="text-xs text-white font-extrabold">✓</span>
-                        </div>
-                      )}
-                      {item.status === 'error' && (
-                        <div className="absolute inset-0 bg-destructive/80 flex items-center justify-center">
-                          <span className="text-xs text-white font-extrabold">✕</span>
-                        </div>
-                      )}
-                    </div>
+                {uploadQueue.map((item) => {
+                  const isVideoFile = isMediaVideo(item.previewUrl || item.fileName);
+                  return (
+                    <div key={item.id} className="flex items-center gap-3 pt-2.5 first:pt-0">
+                      {/* Thumbnail xem trước */}
+                      <div className="relative size-10 rounded-xl overflow-hidden border shrink-0 bg-muted/50 flex items-center justify-center">
+                        {item.previewUrl && (
+                          isVideoFile ? (
+                            <video src={item.previewUrl} className="object-cover size-full" muted />
+                          ) : (
+                            <Image
+                              src={item.previewUrl}
+                              alt="Preview"
+                              fill
+                              sizes="40px"
+                              className="object-cover"
+                            />
+                          )
+                        )}
+                        {isVideoFile && (
+                          <div className="absolute top-0.5 left-0.5 bg-black/60 p-0.5 rounded-md text-white">
+                            <Video className="size-2.5" />
+                          </div>
+                        )}
+                        {item.status === 'uploading' && (
+                          <div className="absolute inset-0 bg-black/55 flex items-center justify-center z-10">
+                            <span className="text-[9px] text-white font-black">{item.progress}%</span>
+                          </div>
+                        )}
+                        {item.status === 'completed' && (
+                          <div className="absolute inset-0 bg-emerald-500/80 flex items-center justify-center z-10">
+                            <span className="text-xs text-white font-extrabold">✓</span>
+                          </div>
+                        )}
+                        {item.status === 'error' && (
+                          <div className="absolute inset-0 bg-destructive/80 flex items-center justify-center z-10">
+                            <span className="text-xs text-white font-extrabold">✕</span>
+                          </div>
+                        )}
+                      </div>
 
-                    {/* Chi tiết file và thanh tiến trình */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex justify-between items-center gap-2 mb-1">
-                        <p className="text-xs font-bold truncate text-foreground/90">{item.fileName}</p>
-                        <span className={cn(
-                          "text-[9px] font-extrabold px-1.5 py-0.5 rounded-md uppercase tracking-wider",
-                          item.status === 'completed' && "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/20 dark:text-emerald-400",
-                          item.status === 'uploading' && "bg-sky-50 text-sky-600 dark:bg-sky-950/20 dark:text-sky-400",
-                          item.status === 'pending' && "bg-muted text-muted-foreground",
-                          item.status === 'error' && "bg-destructive/10 text-destructive"
-                        )}>
-                          {item.status === 'completed' && 'Hoàn thành'}
-                          {item.status === 'uploading' && `Tải... ${item.progress}%`}
-                          {item.status === 'pending' && 'Đang chờ'}
-                          {item.status === 'error' && 'Thất bại'}
-                        </span>
-                      </div>
-                      {/* Thanh progress bar */}
-                      <div className="w-full h-1.5 bg-muted dark:bg-muted/40 rounded-full overflow-hidden">
-                        <div
-                          className={cn(
-                            "h-full rounded-full transition-all duration-300 ease-out",
-                            item.status === 'completed' && "bg-emerald-500",
-                            item.status === 'uploading' && theme.bg.split(' ')[0],
-                            item.status === 'error' && "bg-destructive"
-                          )}
-                          style={{ width: `${item.progress}%` }}
-                        />
+                      {/* Chi tiết file và thanh tiến trình */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex justify-between items-center gap-2 mb-1">
+                          <p className="text-xs font-bold truncate text-foreground/90">{item.fileName}</p>
+                          <span className={cn(
+                            "text-[9px] font-extrabold px-1.5 py-0.5 rounded-md uppercase tracking-wider",
+                            item.status === 'completed' && "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/20 dark:text-emerald-400",
+                            item.status === 'uploading' && "bg-sky-50 text-sky-600 dark:bg-sky-950/20 dark:text-sky-400",
+                            item.status === 'pending' && "bg-muted text-muted-foreground",
+                            item.status === 'error' && "bg-destructive/10 text-destructive"
+                          )}>
+                            {item.status === 'completed' && 'Hoàn thành'}
+                            {item.status === 'uploading' && `Tải... ${item.progress}%`}
+                            {item.status === 'pending' && 'Đang chờ'}
+                            {item.status === 'error' && 'Thất bại'}
+                          </span>
+                        </div>
+                        {/* Thanh progress bar */}
+                        <div className="w-full h-1.5 bg-muted dark:bg-muted/40 rounded-full overflow-hidden">
+                          <div
+                            className={cn(
+                              "h-full rounded-full transition-all duration-300 ease-out",
+                              item.status === 'completed' && "bg-emerald-500",
+                              item.status === 'uploading' && theme.bg.split(' ')[0],
+                              item.status === 'error' && "bg-destructive"
+                            )}
+                            style={{ width: `${item.progress}%` }}
+                          />
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
 
-            {/* Danh sách ảnh đã chọn */}
+            {/* Danh sách ảnh & video đã chọn */}
             {milestoneImageUrls.length > 0 && (
               <div className="space-y-2 mt-3 select-none">
                 <div className="flex justify-between items-center text-xs font-bold text-muted-foreground/80 pl-1 tracking-wide">
-                  <span>ẢNH ĐÃ CHỌN ({milestoneImageUrls.length})</span>
+                  <span>TỆP ĐÃ CHỌN ({milestoneImageUrls.length})</span>
                   {milestoneImageUrls.length > 4 && (
                     <button
                       type="button"
@@ -331,27 +343,39 @@ export function MilestoneDialog({
                   if (total <= 4 || showAllMilestoneImages) {
                     return (
                       <div className="grid grid-cols-4 gap-2.5 p-2 border rounded-2xl bg-muted/10">
-                        {milestoneImageUrls.map((url, idx) => (
-                          <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border bg-background group/thumb">
-                            <Image
-                              src={url}
-                              alt={`Preview ${idx + 1}`}
-                              fill
-                              sizes="(max-width: 768px) 25vw, 100px"
-                              className="object-cover"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setMilestoneImageUrls(prev => prev.filter((_, i) => i !== idx));
-                              }}
-                              className={cn("absolute top-1 right-1 size-5 text-white rounded-full flex items-center justify-center text-[10px] font-bold shadow-md cursor-pointer transition-colors", theme.bg, theme.bgHover)}
-                              title="Xóa ảnh này"
-                            >
-                              ✕
-                            </button>
-                          </div>
-                        ))}
+                        {milestoneImageUrls.map((url, idx) => {
+                          const isVid = isMediaVideo(url);
+                          return (
+                            <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border bg-background group/thumb">
+                              {isVid ? (
+                                <video src={url} className="object-cover size-full" muted />
+                              ) : (
+                                <Image
+                                  src={url}
+                                  alt={`Preview ${idx + 1}`}
+                                  fill
+                                  sizes="(max-width: 768px) 25vw, 100px"
+                                  className="object-cover"
+                                />
+                              )}
+                              {isVid && (
+                                <div className="absolute bottom-1 left-1 bg-black/60 p-1 rounded-md text-white pointer-events-none">
+                                  <Video className="size-3" />
+                                </div>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setMilestoneImageUrls(prev => prev.filter((_, i) => i !== idx));
+                                }}
+                                className={cn("absolute top-1 right-1 size-5 text-white rounded-full flex items-center justify-center text-[10px] font-bold shadow-md cursor-pointer transition-colors z-10", theme.bg, theme.bgHover)}
+                                title="Xóa tệp này"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          );
+                        })}
                       </div>
                     );
                   }
@@ -363,24 +387,34 @@ export function MilestoneDialog({
                     <div className="grid grid-cols-4 gap-2.5 p-2 border rounded-2xl bg-muted/10">
                       {displayUrls.map((url, idx) => {
                         const isLast = idx === 3;
+                        const isVid = isMediaVideo(url);
 
                         return (
                           <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border bg-background group/thumb">
-                            <Image
-                              src={url}
-                              alt={`Preview ${idx + 1}`}
-                              fill
-                              sizes="(max-width: 768px) 25vw, 100px"
-                              className="object-cover"
-                            />
+                            {isVid ? (
+                              <video src={url} className="object-cover size-full" muted />
+                            ) : (
+                              <Image
+                                src={url}
+                                alt={`Preview ${idx + 1}`}
+                                fill
+                                sizes="(max-width: 768px) 25vw, 100px"
+                                className="object-cover"
+                              />
+                            )}
+                            {isVid && (
+                              <div className="absolute bottom-1 left-1 bg-black/60 p-1 rounded-md text-white pointer-events-none">
+                                <Video className="size-3" />
+                              </div>
+                            )}
 
                             {isLast ? (
                               <div
                                 onClick={() => setShowAllMilestoneImages(true)}
-                                className="absolute inset-0 bg-black/60 backdrop-blur-[1px] flex flex-col items-center justify-center text-white cursor-pointer hover:bg-black/50 transition-colors"
+                                className="absolute inset-0 bg-black/60 backdrop-blur-[1px] flex flex-col items-center justify-center text-white cursor-pointer hover:bg-black/50 transition-colors z-10"
                               >
                                 <span className="text-sm font-black">+{moreCount}</span>
-                                <span className="text-[8px] font-bold tracking-wider uppercase opacity-85">ảnh khác</span>
+                                <span className="text-[8px] font-bold tracking-wider uppercase opacity-85">tệp khác</span>
                               </div>
                             ) : (
                               <button
@@ -388,8 +422,8 @@ export function MilestoneDialog({
                                 onClick={() => {
                                   setMilestoneImageUrls(prev => prev.filter((_, i) => i !== idx));
                                 }}
-                                className={cn("absolute top-1 right-1 size-5 text-white rounded-full flex items-center justify-center text-[10px] font-bold shadow-md cursor-pointer transition-colors", theme.bg, theme.bgHover)}
-                                title="Xóa ảnh này"
+                                className={cn("absolute top-1 right-1 size-5 text-white rounded-full flex items-center justify-center text-[10px] font-bold shadow-md cursor-pointer transition-colors z-10", theme.bg, theme.bgHover)}
+                                title="Xóa tệp này"
                               >
                                 ✕
                               </button>
