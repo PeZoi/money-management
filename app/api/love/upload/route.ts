@@ -38,41 +38,16 @@ export async function POST(request: Request) {
   }
 
   try {
-    const formData = await request.formData();
-    const file = formData.get("file") as File | null;
-    const type = formData.get("type") as "avatar1" | "avatar2" | "background" | "milestone" | null;
-    const connectionId = formData.get("connectionId") as string | null;
-    const milestoneTitle = formData.get("milestoneTitle") as string | null;
+    const { type, connectionId, milestoneTitle } = await request.json();
 
-    if (!file || !type || !connectionId) {
+    if (!type || !connectionId) {
       return NextResponse.json(
-        { error: "Thiếu thông tin file, loại upload hoặc ID kết nối" },
+        { error: "Thiếu thông tin loại upload hoặc ID kết nối" },
         { status: 400 }
       );
     }
 
-    // Kiểm tra định dạng file
-    const isImage = file.type.startsWith("image/");
-    const isVideo = file.type.startsWith("video/");
-
-    if (!isImage && !isVideo) {
-      return NextResponse.json(
-        { error: "Định dạng file không hợp lệ. Chỉ chấp nhận ảnh hoặc video." },
-        { status: 400 }
-      );
-    }
-
-    // Giới hạn dung lượng: Video tối đa 50MB, Ảnh tối đa 10MB
-    const maxFileSize = isVideo ? 50 * 1024 * 1024 : 10 * 1024 * 1024;
-    if (file.size > maxFileSize) {
-      return NextResponse.json(
-        { error: `Dung lượng ${isVideo ? 'video' : 'ảnh'} tối đa là ${isVideo ? '50MB' : '10MB'}` },
-        { status: 400 }
-      );
-    }
-
-    const buffer = Buffer.from(await file.arrayBuffer());
-
+    const timestamp = Math.round(new Date().getTime() / 1000);
     const slugTitle = type === "milestone" && milestoneTitle ? slugify(milestoneTitle) : "chua-dat-ten";
     
     const folderPath = type === "milestone"
@@ -83,72 +58,32 @@ export async function POST(request: Request) {
       ? `${slugTitle}_${Date.now()}`
       : `${type}_${Date.now()}`;
 
-    // Upload lên Cloudinary (chọn resource_type phù hợp với loại file)
-    const uploadResult = await new Promise<UploadApiResponse | undefined>((resolve, reject) => {
-      cloudinary.uploader.upload_stream(
-        {
-          folder: folderPath,
-          public_id: publicId,
-          resource_type: isVideo ? "video" : "image",
-          tags: type === "milestone" ? ["love_temp"] : undefined,
-          // Tối ưu hóa khi upload: Chỉ áp dụng transformation resize đối với ảnh
-          transformation: isImage ? [
-            { width: 2000, height: 2000, crop: "limit" },
-            { quality: "auto:good" }
-          ] : undefined
-        },
-        (error, result) => {
-          if (error) {
-            reject(error);
-          } else {
-            resolve(result);
-          }
-        }
-      ).end(buffer);
-    });
+    // Các tham số cần ký để gửi lên Cloudinary
+    const paramsToSign = {
+      timestamp,
+      folder: folderPath,
+      public_id: publicId,
+    };
 
-    if (!uploadResult || !uploadResult.secure_url) {
-      return NextResponse.json(
-        { error: "Tải ảnh lên Cloudinary thất bại." },
-        { status: 500 }
-      );
-    }
-
-    const publicUrl = uploadResult.secure_url;
-
-    // 2. Cập nhật URL ảnh này vào bảng love_connections nếu không phải là milestone
-    if (type !== "milestone") {
-      const updatePayload: Record<string, string> = {};
-      if (type === "background") {
-        updatePayload.background_url = publicUrl;
-      } else if (type === "avatar1") {
-        updatePayload.user_1_avatar_url = publicUrl;
-      } else if (type === "avatar2") {
-        updatePayload.user_2_avatar_url = publicUrl;
-      }
-
-      const { error: dbError } = await supabase
-        .from("love_connections")
-        .update(updatePayload)
-        .eq("id", connectionId);
-
-      if (dbError) {
-        return NextResponse.json(
-          { error: `Đã upload ảnh nhưng không thể lưu vào database: ${dbError.message}` },
-          { status: 500 }
-        );
-      }
-    }
+    // Tạo signature sử dụng API Secret
+    const signature = cloudinary.utils.api_sign_request(
+      paramsToSign,
+      process.env.CLOUDINARY_API_SECRET || ""
+    );
 
     return NextResponse.json({
       success: true,
-      url: publicUrl,
-      message: "Tải ảnh lên thành công!",
+      signature,
+      timestamp,
+      folder: folderPath,
+      public_id: publicId,
+      apiKey: process.env.CLOUDINARY_API_KEY,
+      cloudName: process.env.CLOUDINARY_CLOUD_NAME,
     });
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : String(err);
     return NextResponse.json(
-      { error: `Lỗi hệ thống: ${errorMsg}` },
+      { error: `Lỗi hệ thống sinh signature: ${errorMsg}` },
       { status: 500 }
     );
   }

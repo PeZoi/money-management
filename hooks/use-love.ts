@@ -180,7 +180,7 @@ export function useLoveMutation() {
     },
   });
 
-  // 6. Upload ảnh lên Cloudinary
+  // 6. Upload file trực tiếp lên Cloudinary (Client-side signed upload)
   const uploadLoveAssetMutation = useMutation({
     mutationFn: async (payload: {
       file: File;
@@ -189,17 +189,38 @@ export function useLoveMutation() {
       milestoneTitle?: string;
       onProgress?: (percent: number) => void;
     }) => {
+      // 1. Lấy Signature từ backend Next.js
+      const sigRes = await fetch("/api/love/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: payload.type,
+          connectionId: payload.connectionId,
+          milestoneTitle: payload.milestoneTitle,
+        }),
+      });
+
+      const sigJson = await sigRes.json();
+      if (!sigRes.ok) {
+        throw new Error(sigJson.error || "Không thể khởi tạo phiên tải lên.");
+      }
+
+      const { signature, timestamp, folder, public_id, apiKey, cloudName } = sigJson;
+
+      // 2. Tải trực tiếp file lên Cloudinary thông qua XMLHttpRequest để theo dõi progress
       return new Promise<{ success: boolean; url: string; message: string }>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         const formData = new FormData();
-        formData.append("file", payload.file);
-        formData.append("type", payload.type);
-        formData.append("connectionId", payload.connectionId);
-        if (payload.milestoneTitle) {
-          formData.append("milestoneTitle", payload.milestoneTitle);
-        }
 
-        xhr.open("POST", "/api/love/upload");
+        formData.append("file", payload.file);
+        formData.append("api_key", apiKey);
+        formData.append("timestamp", timestamp.toString());
+        formData.append("signature", signature);
+        formData.append("folder", folder);
+        formData.append("public_id", public_id);
+
+        const resourceType = payload.file.type.startsWith("video/") ? "video" : "image";
+        xhr.open("POST", `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`);
 
         const onProgress = payload.onProgress;
         if (xhr.upload && onProgress) {
@@ -215,26 +236,30 @@ export function useLoveMutation() {
           if (xhr.status >= 200 && xhr.status < 300) {
             try {
               const response = JSON.parse(xhr.responseText);
-              resolve(response);
+              resolve({
+                success: true,
+                url: response.secure_url,
+                message: "Tải lên thành công!",
+              });
             } catch (e) {
-              reject(new Error("Phản hồi từ server không hợp lệ"));
+              reject(new Error("Phản hồi từ máy chủ Cloudinary không hợp lệ"));
             }
           } else {
             try {
               const response = JSON.parse(xhr.responseText);
-              reject(new Error(response.error || "Tải ảnh lên thất bại"));
+              reject(new Error(response.error?.message || "Tải lên Cloudinary thất bại"));
             } catch (e) {
-              reject(new Error(`Tải ảnh lên thất bại với mã lỗi ${xhr.status}`));
+              reject(new Error(`Tải lên Cloudinary thất bại với mã lỗi ${xhr.status}`));
             }
           }
         };
 
-        xhr.onerror = () => reject(new Error("Lỗi kết nối mạng"));
+        xhr.onerror = () => reject(new Error("Lỗi kết nối mạng khi tải lên"));
         xhr.send(formData);
       });
     },
     onSuccess: (data) => {
-      toast.success(data.message || "Tải ảnh lên và cập nhật thành công!");
+      toast.success(data.message || "Tải ảnh lên thành công!");
       queryClient.invalidateQueries({ queryKey: ["my-love-connection"] });
     },
     onError: (err: Error) => {
