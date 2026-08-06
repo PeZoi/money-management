@@ -21,6 +21,8 @@ import EmojiPicker from 'emoji-picker-react';
 import type { LoveMilestoneRow } from '@/types/database';
 import { MILESTONE_ICONS, LoveTheme, LoveConnection } from '../constants';
 import { useMilestoneDialog } from '../hooks/use-milestone-dialog';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 interface MilestoneDialogProps {
   isOpen: boolean;
@@ -60,6 +62,8 @@ export function MilestoneDialog({
     uploadQueue,
     handleMultipleFilesUpload,
     handleMilestoneSubmit,
+    shouldCompressImages,
+    setShouldCompressImages,
     isSaving
   } = useMilestoneDialog({
     loveConn,
@@ -232,6 +236,22 @@ export function MilestoneDialog({
                 accept="image/*,video/*"
                 capture="environment"
                 onChange={(e) => handleMultipleFilesUpload(e)}
+              />
+            </div>
+
+            {/* Công tắc tự động nén ảnh */}
+            <div className="flex items-center justify-between p-3 rounded-2xl border border-border/40 bg-muted/5">
+              <div className="flex flex-col gap-0.5 flex-1 pr-2">
+                <Label htmlFor="compress-images-switch" className="text-xs font-bold cursor-pointer text-foreground/90">
+                  Tự động nén ảnh trước khi tải
+                </Label>
+                <span className="text-[10px] text-muted-foreground">Giúp giảm dung lượng, tải nhanh và tiết kiệm bộ nhớ</span>
+              </div>
+              <Switch
+                id="compress-images-switch"
+                checked={shouldCompressImages}
+                onCheckedChange={setShouldCompressImages}
+                className="cursor-pointer"
               />
             </div>
 

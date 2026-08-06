@@ -41,6 +41,7 @@ export function useMilestoneDialog({
   const [milestoneImageUrls, setMilestoneImageUrls] = React.useState<string[]>([]);
   const [showAllMilestoneImages, setShowAllMilestoneImages] = React.useState(false);
   const [uploadQueue, setUploadQueue] = React.useState<UploadQueueItem[]>([]);
+  const [shouldCompressImages, setShouldCompressImages] = React.useState(true);
 
   // Đổ dữ liệu cũ hoặc reset khi đóng mở Dialog
   React.useEffect(() => {
@@ -82,6 +83,40 @@ export function useMilestoneDialog({
     return () => clearTimeout(timer);
   }, [isOpen, editingMilestone]);
 
+  // Định nghĩa hàm nén ảnh bằng canvas
+  const compressImage = async (file: File): Promise<File> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (e) => {
+        const img = new Image();
+        img.src = e.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          const ctx = canvas.getContext("2d");
+          const MAX_WIDTH = 1920;
+          let w = img.width;
+          let h = img.height;
+          if (w > MAX_WIDTH) {
+            h = Math.round((h * MAX_WIDTH) / w);
+            w = MAX_WIDTH;
+          }
+          canvas.width = w;
+          canvas.height = h;
+          ctx?.drawImage(img, 0, 0, w, h);
+          canvas.toBlob((blob) => {
+            if (blob) {
+              resolve(new File([blob], file.name, { type: "image/jpeg", lastModified: Date.now() }));
+            } else {
+              resolve(file);
+            }
+          }, "image/jpeg", 0.85); // Nén chất lượng 85%
+        };
+      };
+      reader.onerror = () => resolve(file);
+    });
+  };
+
   // Upload nhiều file hình ảnh song song cho cột mốc kỷ niệm với hàng đợi và tiến trình riêng
   const handleMultipleFilesUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -96,32 +131,43 @@ export function useMilestoneDialog({
     const newItems: UploadQueueItem[] = [];
     const filesToUpload: { file: File; id: string }[] = [];
 
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
+    // Nén ảnh song song trước khi đưa vào hàng đợi
+    const processPromises = Array.from(files).map(async (file) => {
       const id = Math.random().toString(36).substring(2, 9);
       const isImage = file.type.startsWith('image/');
       const isVideo = file.type.startsWith('video/');
 
       if (!isImage && !isVideo) {
         toast.error(`File ${file.name} không phải là ảnh hoặc video hợp lệ.`);
-        continue;
+        return;
+      }
+
+      let fileToUpload = file;
+      if (isImage && shouldCompressImages) {
+        try {
+          fileToUpload = await compressImage(file);
+        } catch (err) {
+          console.error(`Không thể nén ảnh ${file.name}, sử dụng ảnh gốc.`, err);
+        }
       }
 
       const maxSize = isVideo ? 50 * 1024 * 1024 : 10 * 1024 * 1024;
-      if (file.size > maxSize) {
+      if (fileToUpload.size > maxSize) {
         toast.error(`File ${file.name} vượt quá dung lượng cho phép (${isVideo ? '50MB' : '10MB'}).`);
-        continue;
+        return;
       }
 
       newItems.push({
         id,
-        fileName: file.name,
+        fileName: fileToUpload.name,
         progress: 0,
         status: 'pending',
-        previewUrl: URL.createObjectURL(file)
+        previewUrl: URL.createObjectURL(fileToUpload)
       });
-      filesToUpload.push({ file, id });
-    }
+      filesToUpload.push({ file: fileToUpload, id });
+    });
+
+    await Promise.all(processPromises);
 
     if (newItems.length === 0) return;
 
@@ -266,6 +312,8 @@ export function useMilestoneDialog({
     uploadQueue,
     handleMultipleFilesUpload,
     handleMilestoneSubmit,
+    shouldCompressImages,
+    setShouldCompressImages,
     isSaving: isCreatingMilestone || isUpdatingMilestone
   };
 }
