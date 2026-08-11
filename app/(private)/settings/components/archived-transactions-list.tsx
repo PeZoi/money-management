@@ -8,7 +8,13 @@ import {
   ChevronDownIcon,
   ClockIcon,
   ReceiptTextIcon,
+  TrendingDownIcon,
+  TrendingUpIcon,
+  WalletIcon,
+  UsersIcon,
 } from 'lucide-react';
+
+import { useWorkspaceMembers } from '@/hooks/use-workspaces';
 
 import IconPreview from '@/components/icons/icon-preview';
 import { Badge } from '@/components/ui/badge';
@@ -27,6 +33,7 @@ import {
 type Props = {
   transactions: TransactionWithCategory[];
   isLoading: boolean;
+  workspaceId?: string | null;
 };
 
 // Định dạng ngày giờ chi tiết: HH:mm - dd/MM/yyyy
@@ -208,7 +215,9 @@ function SkeletonRow() {
 export default function ArchivedTransactionsList({
   transactions,
   isLoading,
+  workspaceId,
 }: Props) {
+  const { data: members = [] } = useWorkspaceMembers(workspaceId ?? null);
   const [collapsedGroups, setCollapsedGroups] = React.useState<Record<string, boolean>>({});
 
   const toggleGroup = (title: string) => {
@@ -261,8 +270,132 @@ export default function ArchivedTransactionsList({
     return acc;
   }, []);
 
+  const totalIncome = transactions
+    .filter((t) => t.type === 'income')
+    .reduce((sum, t) => sum + Number(t.amount), 0);
+  const totalExpense = transactions
+    .filter((t) => t.type === 'expense')
+    .reduce((sum, t) => sum + Number(t.amount), 0);
+  const totalNet = totalIncome - totalExpense;
+
   return (
     <div className="space-y-6">
+      {/* Vùng hiển thị thông tin tổng quan ở đầu danh sách */}
+      <div className="grid grid-cols-3 gap-4 select-none">
+        {/* Thẻ Tổng Thu nhập */}
+        <div className="group relative overflow-hidden rounded-2xl border border-emerald-500/20 bg-gradient-to-br from-emerald-500/8 via-emerald-500/2 to-transparent p-4 shadow-2xs transition-all duration-300 hover:scale-[1.02] hover:shadow-emerald-500/5 dark:from-emerald-500/15 dark:via-emerald-950/10">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[10px] font-bold text-emerald-700/80 dark:text-emerald-400/80 uppercase tracking-wider">
+              Tổng Thu
+            </span>
+            <div className="rounded-xl bg-emerald-500/10 p-2 text-emerald-600 dark:text-emerald-400">
+              <TrendingUpIcon className="size-4" />
+            </div>
+          </div>
+          <div className="mt-2.5">
+            <span className="text-[1.0625rem] font-extrabold text-emerald-600 dark:text-emerald-400 tabular-nums tracking-tight">
+              +{formatVnd(totalIncome)}
+            </span>
+          </div>
+        </div>
+
+        {/* Thẻ Tổng Chi tiêu */}
+        <div className="group relative overflow-hidden rounded-2xl border border-rose-500/20 bg-gradient-to-br from-rose-500/8 via-rose-500/2 to-transparent p-4 shadow-2xs transition-all duration-300 hover:scale-[1.02] hover:shadow-rose-500/5 dark:from-rose-500/15 dark:via-rose-950/10">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[10px] font-bold text-rose-700/80 dark:text-rose-400/80 uppercase tracking-wider">
+              Tổng Chi
+            </span>
+            <div className="rounded-xl bg-rose-500/10 p-2 text-rose-600 dark:text-rose-400">
+              <TrendingDownIcon className="size-4" />
+            </div>
+          </div>
+          <div className="mt-2.5">
+            <span className="text-[1.0625rem] font-extrabold text-rose-600 dark:text-rose-400 tabular-nums tracking-tight">
+              -{formatVnd(totalExpense)}
+            </span>
+          </div>
+        </div>
+
+        {/* Thẻ Số tiền Còn lại */}
+        <div
+          className={cn(
+            'group relative overflow-hidden rounded-2xl border p-4 shadow-2xs transition-all duration-300 hover:scale-[1.02]',
+            totalNet >= 0
+              ? 'border-blue-500/20 bg-gradient-to-br from-blue-500/8 via-blue-500/2 to-transparent hover:shadow-blue-500/5 dark:from-blue-500/15 dark:via-blue-950/10'
+              : 'border-amber-500/20 bg-gradient-to-br from-amber-500/8 via-amber-500/2 to-transparent hover:shadow-amber-500/5 dark:from-amber-500/15 dark:via-amber-950/10',
+          )}
+        >
+          <div className="flex items-center justify-between gap-2">
+            <span
+              className={cn(
+                'text-[10px] font-bold uppercase tracking-wider',
+                totalNet >= 0
+                  ? 'text-blue-700/80 dark:text-blue-400/80'
+                  : 'text-amber-700/80 dark:text-amber-400/80',
+              )}
+            >
+              Còn lại
+            </span>
+            <div
+              className={cn(
+                'rounded-xl p-2',
+                totalNet >= 0
+                  ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
+                  : 'bg-amber-500/10 text-amber-600 dark:text-amber-500',
+              )}
+            >
+              <WalletIcon className="size-4" />
+            </div>
+          </div>
+          <div className="mt-2.5">
+            <span
+              className={cn(
+                'text-[1.0625rem] font-extrabold tabular-nums tracking-tight',
+                totalNet > 0
+                  ? 'text-emerald-600 dark:text-emerald-400'
+                  : totalNet < 0
+                    ? 'text-rose-600 dark:text-rose-400'
+                    : 'text-muted-foreground',
+              )}
+            >
+              {totalNet > 0 ? '+' : ''}
+              {formatVnd(totalNet)}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Vùng hiển thị danh sách thành viên trước khi giải tán */}
+      {members.length > 0 && (
+        <div className="flex items-center justify-between rounded-xl border border-border/40 bg-muted/10 px-4 py-2.5 text-xs animate-in fade-in duration-300">
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <UsersIcon className="size-3.5 text-muted-foreground/75" />
+            <span>Nhóm trước khi giải tán gồm <strong className="font-semibold text-foreground">{members.length} thành viên</strong>:</span>
+          </div>
+          <div className="flex items-center -space-x-1.5 overflow-hidden">
+            {members.map((member) => (
+              <div
+                key={member.id || member.user_id}
+                className="relative inline-block size-6.5 rounded-full ring-2 ring-background hover:z-10 transition-transform duration-200 hover:scale-110 cursor-help"
+                title={`${member.display_name || member.email} (${member.role === 'owner' ? 'Chủ nhóm' : 'Thành viên'})`}
+              >
+                {member.avatar_url ? (
+                  <img
+                    src={member.avatar_url}
+                    alt={member.display_name || member.email}
+                    className="size-full rounded-full object-cover border border-border/40"
+                  />
+                ) : (
+                  <div className="flex size-full items-center justify-center rounded-full bg-emerald-500/10 text-[9px] font-bold text-emerald-600 border border-emerald-500/20 uppercase dark:bg-emerald-500/20 dark:text-emerald-400">
+                    {(member.display_name || member.email).substring(0, 2)}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {groupedTransactions.map((group) => {
         const isCollapsed = collapsedGroups[group.title];
 

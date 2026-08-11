@@ -1228,6 +1228,7 @@ export default function SettingsPage() {
             <ArchivedTransactionsList
               transactions={transactions as TransactionWithCategory[]}
               isLoading={transactionsLoading}
+              workspaceId={groupForHistory?.id}
             />
           </div>
 
