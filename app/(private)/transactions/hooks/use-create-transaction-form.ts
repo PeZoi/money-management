@@ -28,13 +28,20 @@ type UseCreateTransactionFormOptions = {
  * Hook quản lý toàn bộ logic form tạo giao dịch mới
  * Hỗ trợ 2 tab: Tự động (AI + Regex) và Thủ công
  */
-export function useCreateTransactionForm({ onOpenChange, onSuccess }: UseCreateTransactionFormOptions) {
+export function useCreateTransactionForm({ open, onOpenChange, onSuccess }: UseCreateTransactionFormOptions) {
   const { categories } = useCategories();
   const { isSubmitting, createTransaction } = useTransactionMutation();
   const { accounts, activeAccount } = useAccounts();
 
   // === Tab State ===
   const [activeTab, setActiveTab] = useState<CreateDialogTab>('auto');
+
+  // Tự động chuyển về tab 'auto' mỗi khi mở popup giao dịch
+  useEffect(() => {
+    if (open) {
+      setActiveTab('auto');
+    }
+  }, [open]);
 
   // === Auto Tab State ===
   const [autoNote, setAutoNote] = useState('');
@@ -250,7 +257,8 @@ export function useCreateTransactionForm({ onOpenChange, onSuccess }: UseCreateT
           {
             onSuccess: () => {
               onSuccess?.();
-              handleClose(false);
+              // Giữ popup mở, chỉ reset ô mô tả tự động để nhập tiếp
+              setAutoNote('');
             },
           },
         );
@@ -261,7 +269,6 @@ export function useCreateTransactionForm({ onOpenChange, onSuccess }: UseCreateT
     } finally {
       setIsParsing(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoNote, autoAccountId, autoDate, categories, form, createTransaction, onSuccess]);
 
   // === Logic Submit tab Thủ công (giữ nguyên logic cũ) ===
@@ -299,7 +306,11 @@ export function useCreateTransactionForm({ onOpenChange, onSuccess }: UseCreateT
       {
         onSuccess: () => {
           onSuccess?.();
-          handleClose(false);
+          // Giữ popup mở để nhập nhiều giao dịch liên tiếp, reset thông tin và chuyển về tab tự động
+          form.resetField('amount', { defaultValue: '' });
+          form.resetField('note', { defaultValue: '' });
+          setAutoNote('');
+          setActiveTab('auto');
         },
       },
     );
