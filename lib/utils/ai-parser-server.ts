@@ -29,10 +29,10 @@ export async function parseTransactionWithAI(
   const categoryListStr =
     categories && categories.length > 0
       ? categories
-          .map(
-            (c) => `- "${c.name}" (loại: ${c.type === 'income' ? 'thu nhập' : 'chi tiêu'})`
-          )
-          .join('\n')
+        .map(
+          (c) => `- "${c.name}" (loại: ${c.type === 'income' ? 'thu nhập' : 'chi tiêu'})`
+        )
+        .join('\n')
       : 'Không có danh mục sẵn.';
 
   const prompt = `Bạn là trợ lý phân tích giao dịch tài chính cá nhân tiếng Việt.
@@ -48,10 +48,11 @@ Hãy trả về một đối tượng JSON có đúng cấu trúc sau:
   "amount": <số tiền VND quy đổi dạng số nguyên, ví dụ: 150000. Trả về 0 nếu không nhận diện được>,
   "type": <"expense" hoặc "income">,
   "category_suggestion": <Tên danh mục phù hợp nhất từ danh sách trên, hoặc "Khác" nếu không khớp>,
-  "clean_note": <Ghi chú ngắn gọn mô tả giao dịch, loại bỏ phần số tiền và từ viết tắt thừa. Ví dụ: "Ăn trưa 150k" -> "Ăn trưa">
+  "clean_note": <Ghi chú ngắn gọn mô tả giao dịch luôn luôn viết hoa ở đầu câu (ăn trưa -> Ăn trưa), loại bỏ phần số tiền và từ viết tắt thừa. Ví dụ: "ăn trưa 150k" -> "Ăn trưa">
 }`;
 
   // Gọi Groq API với model Llama 3.3 70b cho kết quả nhanh và chính xác
+  const model = process.env.AI_MODEL;
   const response = await fetch(
     'https://api.groq.com/openai/v1/chat/completions',
     {
@@ -61,7 +62,7 @@ Hãy trả về một đối tượng JSON có đúng cấu trúc sau:
         'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
+        model: model,
         messages: [{ role: 'user', content: prompt }],
         response_format: { type: 'json_object' },
         temperature: 0.1,
@@ -72,7 +73,7 @@ Hãy trả về một đối tượng JSON có đúng cấu trúc sau:
   if (!response.ok) {
     const errText = await response.text();
     console.error('[Groq API Error in Helper]', response.status, errText);
-    
+
     let errorMessage = 'Lỗi khi gọi API của AI';
     try {
       const errJson = JSON.parse(errText);
