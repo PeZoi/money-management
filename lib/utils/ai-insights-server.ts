@@ -1,13 +1,15 @@
+import { callAICompletions } from "./ai-client-server";
+
 export interface AIInputTransaction {
   created_at: string;
-  type: 'expense' | 'income' | 'transfer';
+  type: "expense" | "income" | "transfer";
   amount: number | string;
   category: { name: string } | null;
   note: string | null;
 }
 
 export interface AIAlert {
-  type: 'warning' | 'critical' | 'info';
+  type: "warning" | "critical" | "info";
   category: string;
   message: string;
   impact: string;
@@ -23,7 +25,7 @@ export interface AICategoryAnalysis {
   category: string;
   percentage: number;
   amount: number;
-  status: 'high' | 'normal' | 'low';
+  status: "high" | "normal" | "low";
 }
 
 export interface AIInsightsResponse {
@@ -41,7 +43,7 @@ export interface AIInsightsResponse {
 }
 
 /**
- * Gọi Groq API để phân tích dữ liệu chi tiêu trong 1-3 tháng qua.
+ * Gọi AI để phân tích dữ liệu chi tiêu trong 1-3 tháng qua.
  * Trả về kết quả phân tích có cấu trúc chi tiết để hiển thị trên UI.
  */
 export async function generateInsightsWithAI(
@@ -49,22 +51,16 @@ export async function generateInsightsWithAI(
   categories: { name: string; type: string }[],
   monthsCount: number
 ): Promise<AIInsightsResponse> {
-  const apiKey = process.env.GROQ_API_KEY || process.env.OPENROUTER_API_KEY || process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    throw new Error('Chưa cấu hình API Key cho AI (GROQ_API_KEY, OPENROUTER_API_KEY, hoặc GEMINI_API_KEY) trên server.');
-  }
-
   // 1. Tối ưu hóa payload transactions gửi lên AI để tiết kiệm token
-  // Chỉ lấy các thông tin thực sự cần thiết cho việc phân tích tài chính
   const simplifiedTransactions = transactions.map((t) => ({
-    date: t.created_at ? t.created_at.split('T')[0] : 'N/A',
+    date: t.created_at ? t.created_at.split("T")[0] : "N/A",
     type: t.type, // 'expense' | 'income' | 'transfer'
     amount: Number(t.amount),
-    category: t.category?.name || (t.type === 'transfer' ? 'Chuyển khoản' : 'Khác'),
-    note: t.note || '',
+    category: t.category?.name || (t.type === "transfer" ? "Chuyển khoản" : "Khác"),
+    note: t.note || "",
   }));
 
-  const categoryListStr = categories.map((c) => c.name).join(', ');
+  const categoryListStr = categories.map((c) => c.name).join(", ");
 
   const prompt = `Bạn là chuyên gia phân tích tài chính cá nhân AI tiếng Việt xuất sắc.
 Hãy phân tích dữ liệu giao dịch tài chính cá nhân của người dùng trong ${monthsCount} tháng qua và trả về kết quả dưới dạng JSON duy nhất.
@@ -116,36 +112,11 @@ Hãy trả về một đối tượng JSON có đúng cấu trúc sau và KHÔNG
   ]
 }`;
 
-  // Gọi Groq API
-  const response = await fetch(
-    'https://api.groq.com/openai/v1/chat/completions',
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
-        messages: [{ role: 'user', content: prompt }],
-        response_format: { type: 'json_object' },
-        temperature: 0.2,
-      }),
-    }
-  );
-
-  if (!response.ok) {
-    const errText = await response.text();
-    console.error('[Groq API Insights Error]', response.status, errText);
-    throw new Error(`AI Insights API Error (${response.status}): ${errText.substring(0, 100)}`);
-  }
-
-  const data = await response.json();
-  const resultText = data.choices?.[0]?.message?.content;
-
-  if (!resultText) {
-    throw new Error('AI không trả về kết quả phân tích hợp lệ');
-  }
+  const resultText = await callAICompletions({
+    messages: [{ role: "user", content: prompt }],
+    responseFormat: "json_object",
+    temperature: 0.2,
+  });
 
   return JSON.parse(resultText) as AIInsightsResponse;
 }

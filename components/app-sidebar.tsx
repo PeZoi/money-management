@@ -2,6 +2,9 @@
 
 import * as React from 'react';
 
+import CreateDebtDialog from '@/app/(private)/debts/components/create-debt-dialog';
+import CreateTransactionDialog from '@/app/(private)/transactions/components/create-transaction-dialog';
+import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import {
   Sidebar,
@@ -11,37 +14,35 @@ import {
   SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
+  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuBadge,
   SidebarRail,
   useSidebar,
 } from '@/components/ui/sidebar';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { UserMenu } from '@/components/user-menu';
 import { WorkspaceSwitcher } from '@/components/workspace-switcher';
+import { useAuth } from '@/hooks/use-auth';
+import { useMyLoveConnection } from '@/hooks/use-love';
+import { cn } from '@/lib/utils';
 import {
+  BriefcaseIcon,
   ChartPieIcon,
+  ClockIcon,
   CreditCardIcon,
+  HeartIcon,
   LayoutDashboardIcon,
   Plus,
   SettingsIcon,
-  TagsIcon,
-  WalletIcon,
   ShieldAlertIcon,
+  SlidersIcon,
+  TagsIcon,
   UsersIcon,
-  BriefcaseIcon,
-  HeartIcon,
-  ClockIcon
+  WalletIcon,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import CreateTransactionDialog from '@/app/(private)/transactions/components/create-transaction-dialog';
-import CreateDebtDialog from '@/app/(private)/debts/components/create-debt-dialog';
-import { useAuth } from '@/hooks/use-auth';
-import { useMyLoveConnection } from '@/hooks/use-love';
 
 type NavItem = {
   title: string;
@@ -121,6 +122,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           { title: 'Quản lý Workspace', url: '/admin/workspaces', icon: BriefcaseIcon, match: 'prefix' },
           { title: 'Kết nối tình yêu', url: '/admin/love', icon: HeartIcon, match: 'prefix' },
           { title: 'Quản lý Cronjob', url: '/admin/cronjobs', icon: ClockIcon, match: 'prefix' },
+          { title: 'Cấu hình hệ thống', url: '/admin/settings', icon: SlidersIcon, match: 'prefix' },
         ],
       });
     }

@@ -1,12 +1,6 @@
-import { NextResponse } from "next/server";
+import { getCloudinaryClient, getDynamicCloudinaryConfig } from "@/lib/services/cloudinary-server";
 import { createClient } from "@/lib/supabase/server";
-import { v2 as cloudinary, UploadApiResponse } from "cloudinary";
-
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
+import { NextResponse } from "next/server";
 
 /**
  * Chuyển chữ tiếng Việt có dấu thành dạng slug không dấu
@@ -47,16 +41,21 @@ export async function POST(request: Request) {
       );
     }
 
+    const cloudinary = await getCloudinaryClient();
+    const config = await getDynamicCloudinaryConfig();
+
     const timestamp = Math.round(new Date().getTime() / 1000);
     const slugTitle = type === "milestone" && milestoneTitle ? slugify(milestoneTitle) : "chua-dat-ten";
-    
-    const folderPath = type === "milestone"
-      ? `money-management/love-assets/${connectionId}/milestones/${slugTitle}`
-      : `money-management/love-assets/${connectionId}`;
 
-    const publicId = type === "milestone"
-      ? `${slugTitle}_${Date.now()}`
-      : `${type}_${Date.now()}`;
+    const folderPath =
+      type === "milestone"
+        ? `money-management/love-assets/${connectionId}/milestones/${slugTitle}`
+        : `money-management/love-assets/${connectionId}`;
+
+    const publicId =
+      type === "milestone"
+        ? `${slugTitle}_${Date.now()}`
+        : `${type}_${Date.now()}`;
 
     // Các tham số cần ký để gửi lên Cloudinary
     const paramsToSign = {
@@ -68,7 +67,7 @@ export async function POST(request: Request) {
     // Tạo signature sử dụng API Secret
     const signature = cloudinary.utils.api_sign_request(
       paramsToSign,
-      process.env.CLOUDINARY_API_SECRET || ""
+      config.api_secret
     );
 
     return NextResponse.json({
@@ -77,8 +76,8 @@ export async function POST(request: Request) {
       timestamp,
       folder: folderPath,
       public_id: publicId,
-      apiKey: process.env.CLOUDINARY_API_KEY,
-      cloudName: process.env.CLOUDINARY_CLOUD_NAME,
+      apiKey: config.api_key,
+      cloudName: config.cloud_name,
     });
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : String(err);

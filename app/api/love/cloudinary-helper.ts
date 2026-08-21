@@ -1,10 +1,4 @@
-import { v2 as cloudinary } from "cloudinary";
-
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
+import { getCloudinaryClient } from "@/lib/services/cloudinary-server";
 
 /**
  * Trích xuất public_id của Cloudinary từ URL hình ảnh.
@@ -13,7 +7,7 @@ cloudinary.config({
  */
 export function getPublicIdFromUrl(url: string): string | null {
   if (!url || !url.includes("res.cloudinary.com")) return null;
-  
+
   try {
     const regex = /\/image\/upload\/(?:v\d+\/)?([^.]+)/;
     const match = url.match(regex);
@@ -47,13 +41,13 @@ export async function removeTempTag(imageUrls: string[] | string | null | undefi
   }
 
   const publicIds = urls
-    .map(url => getPublicIdFromUrl(url))
+    .map((url) => getPublicIdFromUrl(url))
     .filter((id): id is string => id !== null);
 
   if (publicIds.length === 0) return;
 
   try {
-    // Gỡ bỏ tag "love_temp" cho các ảnh này trên Cloudinary
+    const cloudinary = await getCloudinaryClient();
     await cloudinary.uploader.remove_tag("love_temp", publicIds);
     console.log(`Đã gỡ bỏ tag 'love_temp' cho các public_id:`, publicIds);
   } catch (err) {
@@ -84,17 +78,16 @@ export async function addTempTag(imageUrls: string[] | string | null | undefined
   }
 
   const publicIds = urls
-    .map(url => getPublicIdFromUrl(url))
+    .map((url) => getPublicIdFromUrl(url))
     .filter((id): id is string => id !== null);
 
   if (publicIds.length === 0) return;
 
   try {
-    // Thêm tag "love_temp" cho các ảnh này trên Cloudinary
+    const cloudinary = await getCloudinaryClient();
     await cloudinary.uploader.add_tag("love_temp", publicIds);
     console.log(`Đã gắn tag 'love_temp' cho các public_id:`, publicIds);
   } catch (err) {
     console.error("Lỗi khi gắn tag 'love_temp' trên Cloudinary:", err);
   }
 }
-

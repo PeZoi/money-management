@@ -1,11 +1,5 @@
+import { getCloudinaryClient } from "@/lib/services/cloudinary-server";
 import { NextResponse } from "next/server";
-import { v2 as cloudinary } from "cloudinary";
-
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
 
 /**
  * GET /api/love/cron/clean-temp-assets
@@ -28,6 +22,8 @@ export async function GET(request: Request) {
   const expression = isTest ? "tags:love_temp" : "tags:love_temp AND uploaded_at < 1h";
 
   try {
+    const cloudinary = await getCloudinaryClient();
+
     // 1. Tìm các ảnh có tag "love_temp" (nếu là chạy test, dọn sạch ngay cả khi vừa upload)
     const searchResult = await cloudinary.search
       .expression(expression)

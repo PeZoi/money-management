@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { subMonths, startOfDay } from "date-fns";
 
 import { createClient } from "@/lib/supabase/server";
+import { callAICompletions, type AIChatMessage } from "@/lib/utils/ai-client-server";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 function isUuid(v: unknown): v is string {
@@ -109,17 +110,8 @@ Quy tắc trả lời:
 4. Phân tích sâu sắc, đưa ra lời khuyên thiết thực nếu thấy chi tiêu của người dùng có dấu hiệu mất cân đối hoặc tăng cao.
 5. Giữ câu trả lời ngắn gọn, trực diện, không dài dòng lan man.`;
 
-    // 7. Gọi Groq API
-    const apiKey = process.env.GROQ_API_KEY || process.env.OPENROUTER_API_KEY || process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      return NextResponse.json(
-        { error: "Chưa cấu hình API Key cho AI trên server." },
-        { status: 500 }
-      );
-    }
-
     // Ghép system prompt vào trước lịch sử chat
-    const fullMessages = [
+    const fullMessages: AIChatMessage[] = [
       { role: "system", content: systemPrompt },
       ...messages.map((m: ChatMessage) => ({
         role: m.role,
@@ -127,46 +119,15 @@ Quy tắc trả lời:
       })),
     ];
 
-    const response = await fetch(
-      "https://api.groq.com/openai/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          model: "llama-3.3-70b-versatile",
-          messages: fullMessages,
-          temperature: 0.3,
-        }),
-      }
-    );
-
-    if (!response.ok) {
-      const errText = await response.text();
-      console.error("[Groq Chat API Error]", response.status, errText);
-      return NextResponse.json(
-        { error: `AI Chat Error (${response.status})` },
-        { status: 500 }
-      );
-    }
-
-    const data = await response.json();
-    const reply = data.choices?.[0]?.message?.content;
-
-    if (!reply) {
-      return NextResponse.json(
-        { error: "AI không trả về kết quả hợp lệ." },
-        { status: 500 }
-      );
-    }
+    const reply = await callAICompletions({
+      messages: fullMessages,
+      temperature: 0.3,
+    });
 
     return NextResponse.json({
       success: true,
       data: reply,
     });
-
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Lỗi không xác định";
     console.error("[AI Chat Route Error]", message);
