@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { getOptimizedCloudinaryUrl, isMediaVideo } from '@/lib/utils';
 
 interface UseLightboxProps {
   activePreviewUrls: string[] | null;
@@ -109,6 +110,24 @@ export function useLightbox({
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [activePreviewUrls, activePreviewIdx, setActivePreviewUrls, setActivePreviewIdx]);
+
+  // Preload ảnh liền kề (next và prev) để khi bấm chuyển ảnh hiển thị tức thì (0ms latency)
+  React.useEffect(() => {
+    if (!activePreviewUrls || activePreviewUrls.length <= 1) return;
+
+    const urlsToPreload = [
+      activePreviewUrls[activePreviewIdx + 1],
+      activePreviewUrls[activePreviewIdx - 1],
+      activePreviewUrls[activePreviewIdx + 2],
+    ].filter(Boolean);
+
+    urlsToPreload.forEach((url) => {
+      if (!isMediaVideo(url)) {
+        const img = new Image();
+        img.src = getOptimizedCloudinaryUrl(url, { width: 1600 });
+      }
+    });
+  }, [activePreviewUrls, activePreviewIdx]);
 
   // === Hàm áp dụng transform trực tiếp lên DOM (zero re-render) ===
   const applyTransform = React.useCallback((

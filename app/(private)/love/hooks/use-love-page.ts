@@ -3,7 +3,7 @@
 import * as React from 'react';
 import {
   useMyLoveConnection,
-  useLoveMilestones,
+  useInfiniteLoveMilestones,
   useLoveMutation
 } from '@/hooks/use-love';
 import { useAuth } from '@/hooks/use-auth';
@@ -15,9 +15,16 @@ export type LoveThemeType = 'rose' | 'primary' | 'ocean' | 'lavender' | 'sunset'
 export function useLovePage() {
   const { user } = useAuth();
   const { data: loveConn, isLoading: isConnLoading } = useMyLoveConnection();
-  const { data: milestones = [], isLoading: isMilestonesLoading } = useLoveMilestones(
-    loveConn?.connection_id
-  );
+  const {
+    milestones,
+    isLoading: isMilestonesLoading,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  } = useInfiniteLoveMilestones({
+    connectionId: loveConn?.connection_id,
+    limit: 12,
+  });
 
   const { deleteMilestone, isDeletingMilestone } = useLoveMutation();
 
@@ -108,6 +115,9 @@ export function useLovePage() {
     isConnLoading,
     milestones,
     isMilestonesLoading,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
     isEditAnniversaryOpen,
     setIsEditAnniversaryOpen,
     isMilestoneDialogOpen,

@@ -15,14 +15,24 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog';
+import dynamic from 'next/dynamic';
 import { Heart, Calendar as CalendarIcon, Upload, Camera, Video } from 'lucide-react';
 import { toast } from 'sonner';
-import EmojiPicker from 'emoji-picker-react';
+import { Skeleton } from '@/components/ui/skeleton';
 import type { LoveMilestoneRow } from '@/types/database';
 import { MILESTONE_ICONS, LoveTheme, LoveConnection } from '../constants';
 import { useMilestoneDialog } from '../hooks/use-milestone-dialog';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+
+const EmojiPicker = dynamic(() => import('emoji-picker-react'), {
+  ssr: false,
+  loading: () => (
+    <div className="h-[350px] w-[300px] flex items-center justify-center p-4 bg-popover rounded-2xl">
+      <Skeleton className="h-full w-full rounded-xl" />
+    </div>
+  ),
+});
 
 interface MilestoneDialogProps {
   isOpen: boolean;

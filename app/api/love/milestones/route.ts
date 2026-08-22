@@ -13,30 +13,67 @@ const milestoneCreateSchema = z.object({
 });
 
 /**
- * GET /api/love/milestones?connectionId=xxx
- * Lấy danh sách tất cả các cột mốc của kết nối.
+ * GET /api/love/milestones?connectionId=xxx&limit=12&cursor=...&order=desc
+ * Lấy danh sách cột mốc kỷ niệm (hỗ trợ phân trang Cursor-based và tự nhận diện connection).
  */
 export async function GET(request: Request) {
   const supabase = createClient();
   const { searchParams } = new URL(request.url);
-  const connectionId = searchParams.get("connectionId");
+  let connectionId = searchParams.get("connectionId");
+  const cursor = searchParams.get("cursor");
+  const limitParam = parseInt(searchParams.get("limit") || "12", 10);
+  const limit = Math.min(Math.max(1, isNaN(limitParam) ? 12 : limitParam), 50);
+  const order = searchParams.get("order") === "asc" ? "asc" : "desc";
 
+  // Nếu không truyền connectionId, tự động tra cứu từ session user
   if (!connectionId) {
-    return NextResponse.json({ error: "Thiếu ID kết nối" }, { status: 400 });
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+    if (userError || !userData.user) {
+      return NextResponse.json({ error: "Chưa đăng nhập" }, { status: 401 });
+    }
+
+    const { data: connData } = await supabase.rpc("get_my_love_connection");
+    if (connData && connData.length > 0) {
+      connectionId = connData[0].connection_id;
+    } else {
+      return NextResponse.json({ data: [], next_cursor: null, has_more: false });
+    }
   }
 
-  // RLS sẽ tự lọc hoặc chặn nếu user không thuộc connection này
-  const { data, error } = await supabase
+  // Khởi tạo query lấy milestones theo connection
+  let query = supabase
     .from("love_milestones")
     .select("*")
-    .eq("connection_id", connectionId)
-    .order("milestone_date", { ascending: true });
+    .eq("connection_id", connectionId);
+
+  if (order === "desc") {
+    if (cursor) {
+      query = query.lt("milestone_date", cursor);
+    }
+    query = query.order("milestone_date", { ascending: false }).order("created_at", { ascending: false });
+  } else {
+    if (cursor) {
+      query = query.gt("milestone_date", cursor);
+    }
+    query = query.order("milestone_date", { ascending: true }).order("created_at", { ascending: true });
+  }
+
+  const { data: rawRows, error } = await query.limit(limit + 1);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ data: data ?? [] });
+  const rows = rawRows ?? [];
+  const hasMore = rows.length > limit;
+  const pageRows = hasMore ? rows.slice(0, limit) : rows;
+  const nextCursor = hasMore && pageRows.length > 0 ? pageRows[pageRows.length - 1].milestone_date : null;
+
+  return NextResponse.json({
+    data: pageRows,
+    next_cursor: nextCursor,
+    has_more: hasMore,
+  });
 }
 
 /**

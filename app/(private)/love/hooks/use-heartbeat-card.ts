@@ -17,14 +17,6 @@ export function useHeartbeatCard(
 ) {
   const { uploadLoveAsset, updateLoveCustomize } = useLoveMutation();
 
-  // State cập nhật thời gian thực
-  const [timePassed, setTimePassed] = React.useState({
-    days: 0,
-    hours: 0,
-    minutes: 0,
-    seconds: 0
-  });
-
   // State quản lý việc Cắt ảnh (Crop Image) trước khi upload
   const [cropperOpen, setCropperOpen] = React.useState(false);
   const [cropperFile, setCropperFile] = React.useState<File | null>(null);
@@ -37,35 +29,6 @@ export function useHeartbeatCard(
   // Refs cho các input file ẩn
   const myAvatarInputRef = React.useRef<HTMLInputElement>(null);
   const partnerAvatarInputRef = React.useRef<HTMLInputElement>(null);
-
-  // Tính thời gian yêu nhau (chạy mỗi giây)
-  React.useEffect(() => {
-    if (!loveConn.anniversary_date) return;
-
-    const calculateTime = () => {
-      const annivDate = new Date(loveConn.anniversary_date);
-      annivDate.setHours(0, 0, 0, 0);
-
-      const now = new Date();
-      const diffMs = now.getTime() - annivDate.getTime();
-
-      if (diffMs < 0) {
-        setTimePassed({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-        return;
-      }
-
-      const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((diffMs % (1000 * 60)) / 1000);
-
-      setTimePassed({ days, hours, minutes, seconds });
-    };
-
-    calculateTime();
-    const interval = setInterval(calculateTime, 1000);
-    return () => clearInterval(interval);
-  }, [loveConn.anniversary_date]);
 
   // Thực hiện tải lên file sau khi đã qua bước cắt ảnh (Crop)
   const uploadCroppedFile = async (file: File, uploadType: 'myAvatar' | 'partnerAvatar') => {
@@ -184,7 +147,6 @@ export function useHeartbeatCard(
   const partnerDisplayName = (loveConn.is_user_1 ? loveConn.user_2_nickname : loveConn.user_1_nickname) || partnerName;
 
   return {
-    timePassed,
     cropperOpen,
     setCropperOpen,
     cropperFile,

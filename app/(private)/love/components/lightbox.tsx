@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { cn, isMediaVideo } from '@/lib/utils';
+import { cn, isMediaVideo, getOptimizedCloudinaryUrl } from '@/lib/utils';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 
 import { useLightbox } from '../hooks/use-lightbox';
@@ -109,8 +109,9 @@ export function Lightbox({
               className="max-w-full max-h-[85vh] rounded-xl shadow-2xl object-contain"
             />
           ) : (
+            // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={currentUrl}
+              src={getOptimizedCloudinaryUrl(currentUrl, { width: 1600 })}
               alt="Kỷ niệm preview"
               draggable={false}
               className="max-w-full max-h-[85vh] select-none pointer-events-none rounded-sm object-contain transform-gpu"

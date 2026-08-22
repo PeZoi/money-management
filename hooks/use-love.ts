@@ -1,10 +1,17 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
 import { toast } from "sonner";
 import type { 
   MyLoveConnection, 
   LoveMilestoneRow, 
   AdminLoveUser 
 } from "@/types/database";
+
+export interface LoveMilestonesApiResponse {
+  data: LoveMilestoneRow[];
+  next_cursor: string | null;
+  has_more: boolean;
+}
 
 // ─── User Hooks ─────────────────────────────────────────
 
@@ -20,24 +27,67 @@ export function useMyLoveConnection() {
       const json = await res.json();
       return json.data;
     },
+    staleTime: 5 * 60 * 1000, // Cache 5 phút
     refetchOnWindowFocus: false,
   });
 }
 
 /**
- * Hook lấy danh sách cột mốc kỷ niệm.
+ * Hook fetch danh sách cột mốc kỷ niệm phân trang Infinite Scroll.
+ */
+export function useInfiniteLoveMilestones(params?: {
+  connectionId?: string;
+  order?: "desc" | "asc";
+  limit?: number;
+}) {
+  const limit = params?.limit || 12;
+  const order = params?.order || "desc";
+
+  const queryResult = useInfiniteQuery({
+    queryKey: ["love-milestones-infinite", params?.connectionId, order],
+    queryFn: async ({ pageParam }: { pageParam: string | null }): Promise<LoveMilestonesApiResponse> => {
+      const searchParams = new URLSearchParams({
+        limit: String(limit),
+        order,
+      });
+
+      if (params?.connectionId) searchParams.set("connectionId", params.connectionId);
+      if (pageParam) searchParams.set("cursor", pageParam);
+
+      const res = await fetch(`/api/love/milestones?${searchParams.toString()}`);
+      if (!res.ok) throw new Error("Không thể tải danh sách kỷ niệm");
+      return await res.json();
+    },
+    initialPageParam: null as string | null,
+    getNextPageParam: (lastPage) => (lastPage.has_more ? lastPage.next_cursor : undefined),
+    staleTime: 5 * 60 * 1000, // Cache 5 phút
+    refetchOnWindowFocus: false,
+  });
+
+  const milestones: LoveMilestoneRow[] = useMemo(() => {
+    return queryResult.data?.pages.flatMap((page) => page.data) || [];
+  }, [queryResult.data]);
+
+  return {
+    ...queryResult,
+    milestones,
+  };
+}
+
+/**
+ * Hook lấy danh sách cột mốc kỷ niệm (backward compatibility).
  */
 export function useLoveMilestones(connectionId: string | undefined) {
   return useQuery<LoveMilestoneRow[]>({
     queryKey: ["love-milestones", connectionId],
     queryFn: async () => {
-      if (!connectionId) return [];
-      const res = await fetch(`/api/love/milestones?connectionId=${connectionId}`);
+      const url = connectionId ? `/api/love/milestones?connectionId=${connectionId}` : "/api/love/milestones";
+      const res = await fetch(url);
       if (!res.ok) throw new Error("Không thể tải danh sách kỷ niệm");
       const json = await res.json();
       return json.data ?? [];
     },
-    enabled: !!connectionId,
+    staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
   });
 }
@@ -88,9 +138,10 @@ export function useLoveMutation() {
       if (!res.ok) throw new Error(json.error || "Không thể tạo cột mốc kỷ niệm");
       return json;
     },
-    onSuccess: (data, variables) => {
+    onSuccess: (data) => {
       toast.success(data.message || "Đã lưu một kỷ niệm mới!");
-      queryClient.invalidateQueries({ queryKey: ["love-milestones", variables.connectionId] });
+      queryClient.invalidateQueries({ queryKey: ["love-milestones"] });
+      queryClient.invalidateQueries({ queryKey: ["love-milestones-infinite"] });
     },
     onError: (err: Error) => {
       toast.error(err.message);
@@ -101,11 +152,14 @@ export function useLoveMutation() {
   const updateMilestoneMutation = useMutation({
     mutationFn: async ({
       id,
-      connectionId,
-      ...milestone
+      title,
+      description,
+      milestoneDate,
+      icon,
+      imageUrl,
     }: {
       id: string;
-      connectionId: string;
+      connectionId?: string;
       title: string;
       description?: string | null;
       milestoneDate: string;
@@ -115,15 +169,22 @@ export function useLoveMutation() {
       const res = await fetch(`/api/love/milestones/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(milestone),
+        body: JSON.stringify({
+          title,
+          description,
+          milestoneDate,
+          icon,
+          imageUrl,
+        }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Không thể sửa cột mốc kỷ niệm");
       return json;
     },
-    onSuccess: (data, variables) => {
+    onSuccess: (data) => {
       toast.success(data.message || "Kỷ niệm đã được cập nhật!");
-      queryClient.invalidateQueries({ queryKey: ["love-milestones", variables.connectionId] });
+      queryClient.invalidateQueries({ queryKey: ["love-milestones"] });
+      queryClient.invalidateQueries({ queryKey: ["love-milestones-infinite"] });
     },
     onError: (err: Error) => {
       toast.error(err.message);
@@ -132,7 +193,7 @@ export function useLoveMutation() {
 
   // 4. Xóa cột mốc
   const deleteMilestoneMutation = useMutation({
-    mutationFn: async ({ id, connectionId }: { id: string; connectionId: string }) => {
+    mutationFn: async ({ id }: { id: string; connectionId?: string }) => {
       const res = await fetch(`/api/love/milestones/${id}`, {
         method: "DELETE",
       });
@@ -140,9 +201,10 @@ export function useLoveMutation() {
       if (!res.ok) throw new Error(json.error || "Không thể xóa cột mốc");
       return json;
     },
-    onSuccess: (data, variables) => {
+    onSuccess: (data) => {
       toast.success(data.message || "Đã xóa kỷ niệm.");
-      queryClient.invalidateQueries({ queryKey: ["love-milestones", variables.connectionId] });
+      queryClient.invalidateQueries({ queryKey: ["love-milestones"] });
+      queryClient.invalidateQueries({ queryKey: ["love-milestones-infinite"] });
     },
     onError: (err: Error) => {
       toast.error(err.message);
@@ -241,14 +303,14 @@ export function useLoveMutation() {
                 url: response.secure_url,
                 message: "Tải lên thành công!",
               });
-            } catch (e) {
+            } catch {
               reject(new Error("Phản hồi từ máy chủ Cloudinary không hợp lệ"));
             }
           } else {
             try {
               const response = JSON.parse(xhr.responseText);
               reject(new Error(response.error?.message || "Tải lên Cloudinary thất bại"));
-            } catch (e) {
+            } catch {
               reject(new Error(`Tải lên Cloudinary thất bại với mã lỗi ${xhr.status}`));
             }
           }

@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import dynamic from 'next/dynamic';
 import { m } from 'framer-motion';
 import { staggerContainer, scaleIn } from '@/lib/motion-variants';
 import { useLovePage } from './hooks/use-love-page';
@@ -9,13 +10,27 @@ import { Heart, Plus } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 
-// Import các subcomponents
+// Import subcomponents chính
 import { HeartbeatCard } from './components/heartbeat-card';
 import { MilestoneTimeline } from './components/milestone-timeline';
-import { EditAnniversaryDialog } from './components/edit-anniversary-dialog';
-import { MilestoneDialog } from './components/milestone-dialog';
-import { CustomizeDialog } from './components/customize-dialog';
-import { Lightbox } from './components/lightbox';
+
+// Lazy-load các Dialogs và Lightbox để giảm bundle size ban đầu của trang
+const EditAnniversaryDialog = dynamic(
+  () => import('./components/edit-anniversary-dialog').then((mod) => mod.EditAnniversaryDialog),
+  { ssr: false }
+);
+const MilestoneDialog = dynamic(
+  () => import('./components/milestone-dialog').then((mod) => mod.MilestoneDialog),
+  { ssr: false }
+);
+const CustomizeDialog = dynamic(
+  () => import('./components/customize-dialog').then((mod) => mod.CustomizeDialog),
+  { ssr: false }
+);
+const Lightbox = dynamic(
+  () => import('./components/lightbox').then((mod) => mod.Lightbox),
+  { ssr: false }
+);
 
 export default function LovePage() {
   const {
@@ -24,6 +39,9 @@ export default function LovePage() {
     isConnLoading,
     milestones,
     isMilestonesLoading,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
     isEditAnniversaryOpen,
     setIsEditAnniversaryOpen,
     isMilestoneDialogOpen,
@@ -107,6 +125,9 @@ export default function LovePage() {
         <MilestoneTimeline
           milestones={milestones}
           isMilestonesLoading={isMilestonesLoading}
+          hasNextPage={hasNextPage}
+          isFetchingNextPage={isFetchingNextPage}
+          fetchNextPage={fetchNextPage}
           theme={theme}
           handleOpenAddMilestone={handleOpenAddMilestone}
           handleOpenEditMilestone={handleOpenEditMilestone}
