@@ -1,6 +1,11 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  useInfiniteQuery,
+} from '@tanstack/react-query';
 
 import type { TransactionWithCategory, AccountRow } from '@/types/database';
 import type { CategoryUi } from '@/types/category';
@@ -9,7 +14,78 @@ import { useWorkspaceStore } from './use-workspace';
 export type TransactionFilter = {
   type?: 'all' | 'expense' | 'income' | 'transfer';
   query?: string;
+  categoryId?: string;
+  accountId?: string;
 };
+
+export interface TransactionsApiResponse {
+  data: TransactionWithCategory[];
+  next_cursor: string | null;
+  has_more: boolean;
+  total_count: number | null;
+}
+
+/**
+ * Hook fetch danh sách giao dịch phân trang dạng Infinite Scroll (Cursor-based)
+ */
+export function useInfiniteTransactions(params?: {
+  month?: string;
+  type?: string;
+  categoryId?: string;
+  accountId?: string;
+  limit?: number;
+}) {
+  const { activeWorkspaceId } = useWorkspaceStore();
+  const limit = params?.limit || 30;
+
+  const queryResult = useInfiniteQuery({
+    queryKey: [
+      'transactions-infinite',
+      activeWorkspaceId,
+      params?.month,
+      params?.type,
+      params?.categoryId,
+      params?.accountId,
+    ],
+    queryFn: async ({ pageParam }: { pageParam: string | null }): Promise<TransactionsApiResponse> => {
+      if (!activeWorkspaceId) {
+        return { data: [], next_cursor: null, has_more: false, total_count: 0 };
+      }
+      const searchParams = new URLSearchParams({
+        workspace_id: activeWorkspaceId,
+        limit: String(limit),
+      });
+
+      if (params?.month) searchParams.set('month', params.month);
+      if (params?.type && params.type !== 'all') searchParams.set('type', params.type);
+      if (params?.categoryId) searchParams.set('category_id', params.categoryId);
+      if (params?.accountId) searchParams.set('account_id', params.accountId);
+      if (pageParam) searchParams.set('cursor', pageParam);
+
+      const res = await fetch(`/api/transactions?${searchParams.toString()}`);
+      if (!res.ok) throw new Error('Không thể tải danh sách giao dịch');
+      return await res.json();
+    },
+    initialPageParam: null as string | null,
+    getNextPageParam: (lastPage) => (lastPage.has_more ? lastPage.next_cursor : undefined),
+    enabled: !!activeWorkspaceId,
+    staleTime: 60 * 1000, // 1 phút
+  });
+
+  // Gom phẳng tất cả các trang thành một mảng giao dịch duy nhất
+  const transactions: TransactionWithCategory[] = useMemo(() => {
+    return queryResult.data?.pages.flatMap((page) => page.data) || [];
+  }, [queryResult.data]);
+
+  // Lấy tổng số giao dịch thực tế từ trang đầu tiên (server trả về qua countQuery)
+  const totalCount: number = queryResult.data?.pages[0]?.total_count ?? transactions.length;
+
+  return {
+    ...queryResult,
+    transactions,
+    totalCount,
+  };
+}
 
 /**
  * Hook fetch danh sách giao dịch (GET /api/transactions)
@@ -23,22 +99,33 @@ export function useTransactions() {
     return `${y}-${m}`;
   });
 
-  const { data: transactions = [], isLoading, refetch } = useQuery<TransactionWithCategory[]>({
+  const { data: rawData, isLoading, refetch, isFetching } = useQuery<TransactionWithCategory[] | { data: TransactionWithCategory[] }>({
     queryKey: ['transactions', activeWorkspaceId, month],
     queryFn: async () => {
       if (!activeWorkspaceId) return [];
-      const url = `/api/transactions?workspace_id=${activeWorkspaceId}${month ? `&month=${month}` : ''}`;
+      // Giảm limit xuống 60 bản ghi/lần để giảm tải DOM và render mượt mà
+      const url = `/api/transactions?workspace_id=${activeWorkspaceId}${month ? `&month=${month}` : ''}&limit=60`;
       const res = await fetch(url);
       if (!res.ok) throw new Error('Không thể tải danh sách giao dịch');
       const json = await res.json();
       return json.data || [];
     },
     enabled: !!activeWorkspaceId,
+    staleTime: 60 * 1000, // Cache 1 phút
+    placeholderData: (prev) => prev, // Giữ dữ liệu cũ khi đổi tháng để chống layout shift
   });
+
+  const transactions: TransactionWithCategory[] = useMemo(() => {
+    if (!rawData) return [];
+    if (Array.isArray(rawData)) return rawData;
+    if (Array.isArray(rawData.data)) return rawData.data;
+    return [];
+  }, [rawData]);
 
   return {
     transactions,
     isLoading,
+    isFetching,
     fetchTransactions: refetch, // Giữ tương thích cho UI gọi
     month,
     setMonth,
@@ -55,6 +142,7 @@ export function useTransactionMutation() {
   // Hàm helper dùng chung để làm mới (invalidate) tất cả các query liên quan đến giao dịch và ví
   const invalidateAllTransactionQueries = () => {
     queryClient.invalidateQueries({ queryKey: ['transactions', activeWorkspaceId] });
+    queryClient.invalidateQueries({ queryKey: ['transactions-infinite', activeWorkspaceId] });
     queryClient.invalidateQueries({ queryKey: ['transactions-today', activeWorkspaceId] });
     queryClient.invalidateQueries({ queryKey: ['transactions-report', activeWorkspaceId] });
     queryClient.invalidateQueries({ queryKey: ['transactions-report-prev', activeWorkspaceId] });

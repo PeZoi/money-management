@@ -39,8 +39,14 @@ export async function GET(req: Request) {
   const workspaceId = searchParams.get("workspace_id");
   const monthParam = searchParams.get("month"); // "YYYY-MM" hoặc "all"
   const accountId = searchParams.get("account_id");
+  const categoryId = searchParams.get("category_id");
+  const typeParam = searchParams.get("type");
   const startDateParam = searchParams.get("start_date");
   const endDateParam = searchParams.get("end_date");
+  const cursor = searchParams.get("cursor"); // ISO string của giao dịch cuối cùng để phân trang Keyset
+  const limitParam = parseInt(searchParams.get("limit") || "50", 10);
+  // Giảm giới hạn tối đa mỗi lần fetch xuống 100 để đảm bảo render mượt mà
+  const limit = Math.min(Math.max(1, isNaN(limitParam) ? 50 : limitParam), 100);
 
   if (!isUuid(workspaceId)) {
     return NextResponse.json(
@@ -64,23 +70,59 @@ export async function GET(req: Request) {
     });
   }
 
+  // 1. Tạo query lấy dữ liệu danh sách giao dịch
   let query = session.supabase
     .from("transactions")
     .select("*, category:categories(*), account:accounts!account_id(*), to_account:accounts!to_account_id(*)")
     .eq("workspace_id", workspaceId);
 
+  // 2. Tạo query đếm tổng số giao dịch (chỉ chạy ở trang đầu tiên khi không có cursor)
+  let countQuery = !cursor
+    ? session.supabase
+        .from("transactions")
+        .select("id", { count: "exact", head: true })
+        .eq("workspace_id", workspaceId)
+    : null;
+
   // Lọc theo tài khoản nếu có (là tài khoản nguồn hoặc đích)
   if (accountId && isUuid(accountId)) {
     query = query.or(`account_id.eq.${accountId},to_account_id.eq.${accountId}`);
+    if (countQuery) {
+      countQuery = countQuery.or(`account_id.eq.${accountId},to_account_id.eq.${accountId}`);
+    }
+  }
+
+  // Lọc theo danh mục nếu có
+  if (categoryId && isUuid(categoryId)) {
+    query = query.eq("category_id", categoryId);
+    if (countQuery) {
+      countQuery = countQuery.eq("category_id", categoryId);
+    }
+  }
+
+  // Lọc theo loại giao dịch nếu có
+  const parsedType = parseType(typeParam);
+  if (parsedType) {
+    query = query.eq("type", parsedType);
+    if (countQuery) {
+      countQuery = countQuery.eq("type", parsedType);
+    }
+  }
+
+  // Lọc theo Cursor nếu đang phân trang vô tận
+  if (cursor && !isNaN(Date.parse(cursor))) {
+    query = query.lt("created_at", cursor);
   }
 
   // Lọc theo khoảng thời gian tùy chọn nếu được cung cấp
   if (startDateParam || endDateParam) {
     if (startDateParam && !isNaN(Date.parse(startDateParam))) {
       query = query.gte("created_at", startDateParam);
+      if (countQuery) countQuery = countQuery.gte("created_at", startDateParam);
     }
     if (endDateParam && !isNaN(Date.parse(endDateParam))) {
       query = query.lte("created_at", endDateParam);
+      if (countQuery) countQuery = countQuery.lte("created_at", endDateParam);
     }
   } else if (monthParam !== "all") {
     // Mặc định lọc theo tháng hiện tại nếu không chỉ định, trừ khi chọn "all"
@@ -94,24 +136,33 @@ export async function GET(req: Request) {
 
     if (/^\d{4}-\d{2}$/.test(targetMonth)) {
       const [year, month] = targetMonth.split("-").map(Number);
-      // Điểm bắt đầu và kết thúc của tháng dựa trên múi giờ địa phương của máy chủ (dev chạy máy local)
+      // Điểm bắt đầu và kết thúc của tháng dựa trên múi giờ địa phương của máy chủ
       const startDate = new Date(year, month - 1, 1, 0, 0, 0, 0).toISOString();
       const endDate = new Date(year, month, 1, 0, 0, 0, 0).toISOString();
 
       query = query.gte("created_at", startDate).lt("created_at", endDate);
+      if (countQuery) {
+        countQuery = countQuery.gte("created_at", startDate).lt("created_at", endDate);
+      }
     }
   }
 
-  const { data, error } = await query
-    .order("created_at", { ascending: false })
-    .limit(500);
+  // Chạy truy vấn lấy danh sách (limit + 1) song song với truy vấn đếm tổng số
+  const [listResult, countResult] = await Promise.all([
+    query.order("created_at", { ascending: false }).limit(limit + 1),
+    countQuery ? countQuery : Promise.resolve({ count: null, error: null }),
+  ]);
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  if (listResult.error) {
+    return NextResponse.json({ error: listResult.error.message }, { status: 500 });
   }
 
+  const rawRows = listResult.data ?? [];
+  const hasMore = rawRows.length > limit;
+  const pageRows = hasMore ? rawRows.slice(0, limit) : rawRows;
+
   // Đính kèm thông tin người tạo giao dịch
-  const mappedData = (data ?? []).map((t) => {
+  const mappedData = pageRows.map((t) => {
     const creator = memberMap.get(t.created_by) || {
       display_name: "Thành viên cũ",
       email: "",
@@ -123,7 +174,16 @@ export async function GET(req: Request) {
     };
   });
 
-  return NextResponse.json({ data: mappedData });
+  const nextCursor = hasMore && mappedData.length > 0
+    ? mappedData[mappedData.length - 1].created_at
+    : null;
+
+  return NextResponse.json({
+    data: mappedData,
+    next_cursor: nextCursor,
+    has_more: hasMore,
+    total_count: countResult.count ?? null,
+  });
 }
 
 /**

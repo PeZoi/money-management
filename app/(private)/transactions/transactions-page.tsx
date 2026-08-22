@@ -30,7 +30,11 @@ const SORT_OPTIONS = [
 export default function TransactionsPage() {
   const {
     transactions,
+    totalCount,
     isLoading,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
     fetchTransactions,
     month,
     setMonth,
@@ -198,7 +202,7 @@ export default function TransactionsPage() {
                 <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground shrink-0 px-1 select-none sm:ml-auto">
                   <span>Tìm thấy</span>
                   <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-md bg-muted text-foreground font-semibold border border-muted-foreground/10">
-                    {filtered.length}
+                    {query.trim() || typeFilter !== 'all' ? filtered.length : totalCount}
                   </span>
                   <span>giao dịch</span>
                 </div>
@@ -212,6 +216,10 @@ export default function TransactionsPage() {
           <TransactionsList
             transactions={filtered}
             isLoading={isLoading}
+            hasNextPage={hasNextPage}
+            isFetchingNextPage={isFetchingNextPage}
+            fetchNextPage={fetchNextPage}
+            totalCount={totalCount}
             onRequestCreate={() => setCreateOpen(true)}
             onRequestDelete={handleDelete}
             onRequestUpdate={(t) => {

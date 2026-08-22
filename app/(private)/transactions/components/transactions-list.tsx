@@ -1,6 +1,6 @@
 'use client';
 
-import { m } from 'framer-motion';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowDownCircleIcon,
   ArrowRightLeftIcon,
@@ -12,7 +12,6 @@ import {
   Trash2Icon,
   RefreshCwIcon,
 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
 
 import IconPreview from '@/components/icons/icon-preview';
 import { Badge } from '@/components/ui/badge';
@@ -21,22 +20,30 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useWorkspaceStore } from '@/hooks/use-workspace';
 import { useTransactionMutation } from '@/hooks/use-transactions';
 import { useWorkspaces } from '@/hooks/use-workspaces';
-import { cn } from '@/lib/utils';
+import { cn, getTransactionSystemImpact } from '@/lib/utils';
 import type { TransactionWithCategory } from '@/types/database';
 
-import { formatVnd, typeAmountClass, typeAmountPrefix, typeBadgeClass, typeLabel, getTransactionAmountClass, getTransactionAmountPrefix } from '../transaction-ui';
-import { getTransactionSystemImpact } from '@/lib/utils';
-import { staggerContainer, fadeSlideUp } from '@/lib/motion-variants';
+import {
+  formatVnd,
+  typeBadgeClass,
+  typeLabel,
+  getTransactionAmountClass,
+  getTransactionAmountPrefix,
+} from '../transaction-ui';
 
 type Props = {
   transactions: TransactionWithCategory[];
   isLoading: boolean;
+  hasNextPage?: boolean;
+  isFetchingNextPage?: boolean;
+  fetchNextPage?: () => void;
+  totalCount?: number;
   onRequestCreate: () => void;
   onRequestDelete: (id: string) => void;
   onRequestUpdate: (transaction: TransactionWithCategory) => void;
 };
 
-// Định dạng ngày giờ chi tiết: HH:mm - dd/MM/yyyy (Chuyển lên global scope để dùng chung)
+// Định dạng ngày giờ chi tiết: HH:mm - dd/MM/yyyy
 const formatTime = (iso: string) => {
   try {
     const d = new Date(iso);
@@ -51,8 +58,8 @@ const formatTime = (iso: string) => {
   }
 };
 
-// Component hàng giao dịch hỗ trợ kéo thả vuốt trái (Swipe to Delete)
-function TransactionRow({
+// Component hàng giao dịch hỗ trợ kéo thả vuốt trái (Swipe to Delete) - Bọc memo để tránh re-render thừa
+const TransactionRow = React.memo(function TransactionRow({
   t,
   isSubmitting,
   onRequestUpdate,
@@ -78,7 +85,6 @@ function TransactionRow({
     touchStart.current = { x: touch.clientX, y: touch.clientY };
     isDragging.current = true;
 
-    // Tắt transition để khi vuốt ngón tay phản hồi ngay lập tức không bị trễ
     if (rowRef.current) {
       rowRef.current.style.transition = 'none';
     }
@@ -95,15 +101,12 @@ function TransactionRow({
     const diffX = touch.clientX - touchStart.current.x;
     const diffY = touch.clientY - touchStart.current.y;
 
-    // Nếu người dùng cuộn dọc nhiều hơn kéo ngang thì bỏ qua
     if (Math.abs(diffY) > Math.abs(diffX)) {
       return;
     }
 
-    // Khoảng cách dịch chuyển thực tế
     let targetX = isOpen.current ? diffX - 80 : diffX;
 
-    // Tạo hiệu ứng đàn hồi giảm lực cản (Elastic effect)
     if (targetX < -80) {
       targetX = -80 + (targetX + 80) * 0.35;
     }
@@ -116,7 +119,6 @@ function TransactionRow({
       rowRef.current.style.transform = `translate3d(${targetX}px, 0, 0)`;
     }
 
-    // Điều chỉnh độ mờ (opacity) của nút xóa tỉ lệ với khoảng cách kéo
     if (deleteBtnRef.current) {
       const opacity = Math.min(1, Math.abs(targetX) / 80);
       deleteBtnRef.current.style.opacity = String(opacity);
@@ -134,7 +136,6 @@ function TransactionRow({
       deleteBtnRef.current.style.transition = 'opacity 0.25s ease, visibility 0.25s ease';
     }
 
-    // Nếu vuốt qua trái hơn nửa chặng đường (-40px) thì mở hoàn toàn nút xóa (-80px)
     if (currentX.current < -40) {
       if (rowRef.current) rowRef.current.style.transform = 'translate3d(-80px, 0, 0)';
       isOpen.current = true;
@@ -154,7 +155,6 @@ function TransactionRow({
     }
   };
 
-  // Tự động đóng lại khi người dùng nhấp ra ngoài khu vực hàng đang mở
   useEffect(() => {
     const handleGlobalClick = () => {
       if (isOpen.current) {
@@ -189,11 +189,11 @@ function TransactionRow({
   return (
     <div
       className={cn(
-        'relative overflow-hidden rounded-2xl border border-border/50 bg-gray-200 dark:bg-muted/20 shadow-xs transition-colors duration-300',
+        'relative overflow-hidden rounded-2xl border border-border/50 bg-card shadow-xs transition-colors duration-200',
         isTransfer ? 'hover:border-blue-500/35' : isIncome ? 'hover:border-emerald-500/35' : 'hover:border-rose-500/35',
       )}
     >
-      {/* Nút Xoá nằm chìm bên dưới (Chỉ hiển thị trên mobile, mặc định ẩn để tránh lộ viền) */}
+      {/* Nút Xoá nằm chìm bên dưới (Mobile) */}
       <button
         ref={deleteBtnRef}
         type="button"
@@ -214,7 +214,7 @@ function TransactionRow({
         </div>
       </button>
 
-      {/* Panel nội dung chính nằm phía trên */}
+      {/* Panel nội dung chính */}
       <div
         ref={rowRef}
         onTouchStart={handleTouchStart}
@@ -245,7 +245,7 @@ function TransactionRow({
               : 'hover:bg-rose-50/70 dark:hover:bg-rose-950/30',
         )}
       >
-        {/* Icon mờ nghệ thuật (watermark) lớn ở góc dưới bên phải */}
+        {/* Watermark Icon */}
         <div className="absolute -right-6 -bottom-6 pointer-events-none select-none opacity-[0.04] dark:opacity-[0.02] transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6">
           {t.category?.icon ? (
             <IconPreview name={t.category.icon} className={cn('size-28', amountIconClass)} />
@@ -256,7 +256,7 @@ function TransactionRow({
           )}
         </div>
 
-        {/* Bọc chứa Category Icon bo góc mềm mại & sub-badge thu/chi */}
+        {/* Category Icon */}
         <div
           className={cn(
             'relative flex size-12 shrink-0 items-center justify-center rounded-2xl border transition-transform duration-300 group-hover:scale-105',
@@ -270,7 +270,6 @@ function TransactionRow({
               {t.type === 'transfer' ? '🔄' : '🏷️'}
             </span>
           )}
-          {/* Badge phụ góc dưới bên phải thể hiện thu/chi */}
           <span
             className={cn(
               'absolute -bottom-1 -right-1 flex size-5 items-center justify-center rounded-full border bg-background shadow-xs text-[10px]',
@@ -285,7 +284,7 @@ function TransactionRow({
           </span>
         </div>
 
-        {/* Info phân cấp rõ ràng (Note > Category > Date) */}
+        {/* Info */}
         <div className="min-w-0 flex-1 space-y-2">
           <div className="flex items-center gap-2">
             <h4 className="truncate font-semibold text-sm leading-tight text-foreground transition-colors ">
@@ -315,7 +314,6 @@ function TransactionRow({
                   <span className="text-[11px] leading-none select-none">{t.account.icon}</span>
                   <span>{t.account.name}</span>
                 </span>
-                {/* Hiển thị mũi tên chuyển tiền nếu là transfer */}
                 {isTransfer && (
                   <>
                     <span className="text-blue-500 font-medium select-none">→</span>
@@ -349,7 +347,7 @@ function TransactionRow({
           </div>
         </div>
 
-        {/* Số tiền & Nút xóa slide-in ngang tinh tế */}
+        {/* Số tiền & Nút xóa Desktop */}
         <div className="flex shrink-0 items-center gap-3">
           <div className="text-right">
             <p
@@ -360,7 +358,6 @@ function TransactionRow({
             </p>
           </div>
 
-          {/* Nút xóa slide-in thông minh (Chỉ hiện khi hover trên máy tính bàn) */}
           <div className="hidden md:flex items-center justify-center w-0 opacity-0 overflow-hidden transition-all duration-300 group-hover:w-8 group-hover:opacity-100">
             <button
               type="button"
@@ -388,7 +385,59 @@ function TransactionRow({
       </div>
     </div>
   );
-}
+});
+
+// Component Header ngày phân cách
+const DateHeaderGroup = React.memo(function DateHeaderGroup({
+  title,
+  count,
+  dayNet,
+  hasOnlyTransfer,
+  isCollapsed,
+  onToggle,
+}: {
+  title: string;
+  count: number;
+  dayNet: number;
+  hasOnlyTransfer: boolean;
+  isCollapsed: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      className="flex w-full items-center gap-3 px-1 py-2 text-left select-none group/header hover:opacity-85 transition-opacity cursor-pointer bg-background/95 border-b border-border/30 sticky top-0 z-20"
+    >
+      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider transition-colors group-hover/header:text-foreground">
+        {title}
+      </span>
+      <ChevronDownIcon
+        className={cn(
+          'size-3.5 text-muted-foreground/60 transition-transform duration-300 group-hover/header:text-foreground',
+          isCollapsed && '-rotate-90 text-muted-foreground/40',
+        )}
+      />
+      <div className="h-px flex-1 bg-border/40" />
+      <span className="text-[11px] font-medium text-muted-foreground/60">{count} giao dịch</span>
+      {!hasOnlyTransfer && (
+        <span
+          className={cn(
+            'text-[11px] font-semibold tabular-nums',
+            dayNet > 0
+              ? 'text-emerald-600 dark:text-emerald-400'
+              : dayNet < 0
+                ? 'text-rose-600 dark:text-rose-400'
+                : 'text-muted-foreground/60',
+          )}
+        >
+          {dayNet > 0 ? '+' : ''}
+          {formatVnd(dayNet)}
+        </span>
+      )}
+    </button>
+  );
+});
 
 function SkeletonRow() {
   return (
@@ -409,6 +458,10 @@ function SkeletonRow() {
 export default function TransactionsList({
   transactions,
   isLoading,
+  hasNextPage,
+  isFetchingNextPage,
+  fetchNextPage,
+  totalCount,
   onRequestCreate,
   onRequestDelete,
   onRequestUpdate,
@@ -417,12 +470,30 @@ export default function TransactionsList({
   const { data: workspaces = [] } = useWorkspaces();
   const { isSubmitting } = useTransactionMutation();
 
-  // Xác định xem workspace đang hoạt động có phải là nhóm hay không
   const currentWorkspace = workspaces.find((w) => w.id === activeWorkspaceId);
   const isGroupWorkspace = currentWorkspace ? !currentWorkspace.is_personal : false;
 
-  // Trạng thái đóng/mở của mỗi nhóm ngày giao dịch
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  // Tự động kích hoạt nạp trước trang mới từ xa (cách đáy 1000px) để người dùng lướt liên tục không bị gián đoạn
+  useEffect(() => {
+    if (!hasNextPage || isFetchingNextPage || !fetchNextPage) return;
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { rootMargin: '1000px' }
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const toggleGroup = (title: string) => {
     setCollapsedGroups((prev) => ({
@@ -430,6 +501,46 @@ export default function TransactionsList({
       [title]: !prev[title],
     }));
   };
+
+  // 1. Gom nhóm theo ngày tối ưu với Map O(N) và tính sẵn dayNet để render siêu tốc
+  const groupedTransactions = useMemo(() => {
+    const map = new Map<
+      string,
+      {
+        title: string;
+        items: TransactionWithCategory[];
+        dayIncome: number;
+        dayExpense: number;
+      }
+    >();
+
+    const dayNames = ['Chủ Nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
+
+    for (let i = 0; i < transactions.length; i++) {
+      const t = transactions[i];
+      const date = new Date(t.created_at);
+      const dayOfWeek = date.getDay();
+      const title = `${dayNames[dayOfWeek]}, ${date.getDate()}/${date.getMonth() + 1}`;
+
+      let group = map.get(title);
+      if (!group) {
+        group = { title, items: [], dayIncome: 0, dayExpense: 0 };
+        map.set(title, group);
+      }
+      group.items.push(t);
+
+      const impact = getTransactionSystemImpact(t);
+      if (impact.type === 'income') group.dayIncome += impact.amount;
+      else if (impact.type === 'expense') group.dayExpense += impact.amount;
+    }
+
+    return Array.from(map.values()).map((g) => ({
+      title: g.title,
+      items: g.items,
+      dayNet: g.dayIncome - g.dayExpense,
+      hasOnlyTransfer: g.dayIncome === 0 && g.dayExpense === 0,
+    }));
+  }, [transactions]);
 
   if (isLoading) {
     return (
@@ -459,85 +570,24 @@ export default function TransactionsList({
     );
   }
 
-  // Gom nhóm giao dịch theo ngày cục bộ để đảm bảo chính xác múi giờ của người dùng
-  const groupedTransactions = transactions.reduce<{ title: string; items: TransactionWithCategory[] }[]>((acc, t) => {
-    const date = new Date(t.created_at);
-    const dayOfWeek = date.getDay();
-    const dayNames = ['Chủ Nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
-    const dayLabel = dayNames[dayOfWeek];
-    const day = date.getDate();
-    const month = date.getMonth() + 1;
-    const title = `${dayLabel}, ${day}/${month}`;
-
-    const existingGroup = acc.find((g) => g.title === title);
-    if (existingGroup) {
-      existingGroup.items.push(t);
-    } else {
-      acc.push({ title, items: [t] });
-    }
-    return acc;
-  }, []);
-
   return (
-    <m.div
-      className="space-y-6"
-      variants={staggerContainer}
-      initial="hidden"
-      animate="visible"
-    >
+    <div className="space-y-6">
       {groupedTransactions.map((group) => {
         const isCollapsed = collapsedGroups[group.title];
 
-        // Tính tổng net của ngày: lấy từ impact dòng tiền thực tế đối với hệ thống ví nội bộ
-        let dayIncome = 0;
-        let dayExpense = 0;
-        group.items.forEach((t) => {
-          const impact = getTransactionSystemImpact(t);
-          if (impact.type === 'income') dayIncome += impact.amount;
-          else if (impact.type === 'expense') dayExpense += impact.amount;
-        });
-        const dayNet = dayIncome - dayExpense;
-        const hasOnlyTransfer = dayIncome === 0 && dayExpense === 0;
-
         return (
-          <m.div key={group.title} className="space-y-3" variants={fadeSlideUp}>
-            {/* Tiêu đề Section (Ngày giao dịch) được thiết kế thành nút bấm đóng/mở thông minh */}
-            <button
-              type="button"
-              onClick={() => toggleGroup(group.title)}
-              className="flex w-full items-center gap-3 px-1 py-1 text-left select-none group/header hover:opacity-85 transition-opacity cursor-pointer"
-            >
-              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider transition-colors group-hover/header:text-foreground">
-                {group.title}
-              </span>
-              <ChevronDownIcon
-                className={cn(
-                  'size-3.5 text-muted-foreground/60 transition-transform duration-300 group-hover/header:text-foreground',
-                  isCollapsed && '-rotate-90 text-muted-foreground/40',
-                )}
-              />
-              <div className="h-px flex-1 bg-border/40" />
-              <span className="text-[11px] font-medium text-muted-foreground/60">{group.items.length} giao dịch</span>
-              {/* Tổng tiền net của ngày */}
-              {!hasOnlyTransfer && (
-                <span
-                  className={cn(
-                    'text-[11px] font-semibold tabular-nums',
-                    dayNet > 0
-                      ? 'text-emerald-600 dark:text-emerald-400'
-                      : dayNet < 0
-                        ? 'text-rose-600 dark:text-rose-400'
-                        : 'text-muted-foreground/60',
-                  )}
-                >
-                  {dayNet > 0 ? '+' : ''}
-                  {formatVnd(dayNet)}
-                </span>
-              )}
-            </button>
+          <div key={group.title} className="space-y-3">
+            <DateHeaderGroup
+              title={group.title}
+              count={group.items.length}
+              dayNet={group.dayNet}
+              hasOnlyTransfer={group.hasOnlyTransfer}
+              isCollapsed={!!isCollapsed}
+              onToggle={() => toggleGroup(group.title)}
+            />
 
             {!isCollapsed && (
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-2.5">
                 {group.items.map((t) => (
                   <TransactionRow
                     key={t.id}
@@ -550,9 +600,24 @@ export default function TransactionsList({
                 ))}
               </div>
             )}
-          </m.div>
+          </div>
         );
       })}
-    </m.div>
+
+      {/* Sentinel & Trạng thái tải thêm cho Infinite Scroll */}
+      <div ref={sentinelRef} className="py-2 text-center min-h-[40px]">
+        {isFetchingNextPage && (
+          <div className="flex items-center justify-center gap-2 py-3 text-xs font-medium text-muted-foreground animate-in fade-in">
+            <RefreshCwIcon className="size-4 animate-spin text-primary" />
+            <span>Đang tải thêm giao dịch...</span>
+          </div>
+        )}
+        {!hasNextPage && transactions.length > 0 && totalCount && totalCount > 15 && (
+          <p className="py-3 text-center text-xs text-muted-foreground/60">
+            Đã hiển thị toàn bộ {totalCount} giao dịch
+          </p>
+        )}
+      </div>
+    </div>
   );
 }

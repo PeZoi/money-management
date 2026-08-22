@@ -2,7 +2,7 @@
 
 import { useConfirm } from '@/hooks/use-confirm';
 import { useDraggable } from '@/hooks/use-draggable';
-import { useTransactionMutation, useTransactions } from '@/hooks/use-transactions';
+import { useTransactionMutation, useInfiniteTransactions } from '@/hooks/use-transactions';
 import type { TransactionType, TransactionWithCategory } from '@/types/database';
 import { useMemo, useState } from 'react';
 import { normalizeText, typeLabel } from '../transaction-ui';
@@ -13,7 +13,24 @@ export type FilterType = 'all' | TransactionType;
 export type SortOption = 'newest' | 'oldest' | 'amount_desc' | 'amount_asc';
 
 export function useTransactionsPage() {
-  const { transactions, isLoading, fetchTransactions, month, setMonth } = useTransactions();
+  const [month, setMonth] = useState<string>(() => {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    return `${y}-${m}`;
+  });
+
+  // Sử dụng hook Infinite Query với phân trang Cursor-based
+  const {
+    transactions,
+    totalCount,
+    isLoading,
+    isFetching,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+    refetch: fetchTransactions,
+  } = useInfiniteTransactions({ month, limit: 30 });
   const { deleteTransaction } = useTransactionMutation();
   const confirm = useConfirm();
 
@@ -63,7 +80,7 @@ export function useTransactionsPage() {
     });
 
     return list;
-  }, [transactions, query, typeFilter, sort]);
+  }, [transactions, query, typeFilter, sort, accounts]);
 
   const handleDelete = async (id: string) => {
     const confirmed = await confirm({
@@ -79,7 +96,12 @@ export function useTransactionsPage() {
 
   return {
     transactions,
+    totalCount,
     isLoading,
+    isFetching,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
     fetchTransactions,
     month,
     setMonth,
