@@ -39,9 +39,16 @@ export function BottomNav() {
     return pathname === url || pathname.startsWith(`${url}/`);
   };
 
+  // Hàm định dạng số ngày gọn gàng (ví dụ: 1050 -> 1.1k nếu > 999)
+  const formatDaysBadge = (days: number) => {
+    if (days > 9999) return `${Math.floor(days / 1000)}k`;
+    if (days > 999) return `${(days / 1000).toFixed(1).replace('.0', '')}k`;
+    return String(days);
+  };
+
   return (
     <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-border/50 bg-background/80 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] pt-2 backdrop-blur-lg md:hidden shadow-[0_-8px_30px_rgba(0,0,0,0.08)] dark:shadow-[0_-8px_30px_rgba(0,0,0,0.3)]">
-      <div className="mx-auto flex h-14 max-w-lg items-center justify-around px-4">
+      <div className="mx-auto flex h-14 max-w-md items-center justify-around px-1 sm:px-3">
         {navItems.map((item, index) => {
           const active = isItemActive(item.url);
           const Icon = item.icon;
@@ -52,7 +59,7 @@ export function BottomNav() {
               <Link
                 key={`${item.key}-${index}`}
                 href={item.url}
-                className="relative -top-5 flex flex-col items-center justify-center group"
+                className="relative -top-5 flex flex-col items-center justify-center group shrink-0 px-1"
               >
                 <div
                   className={cn(
@@ -62,19 +69,19 @@ export function BottomNav() {
                       : "bg-primary/95 hover:bg-primary shadow-primary/20"
                   )}
                 >
-                  <div className="relative">
-                    <Icon className="size-6" />
+                  <div className="relative flex items-center justify-center">
+                    <Icon className="size-6 shrink-0" />
                     {/* Badge số ngày bên nhau trên mobile cho nút chính giữa */}
                     {item.key === 'love' && loveConn?.days_together !== undefined && (
-                      <span className="absolute -top-2 -right-3 flex h-4.5 min-w-[18px] items-center justify-center rounded-full bg-emerald-500 px-1 text-[9px] font-extrabold text-white shadow-sm border border-background animate-in zoom-in duration-300">
-                        {loveConn.days_together}
+                      <span className="absolute -top-2.5 -right-3 flex h-4 min-w-[17px] items-center justify-center rounded-full bg-gradient-to-r from-rose-500 to-pink-500 px-1 text-[8.5px] font-black text-white shadow-sm border-2 border-background tabular-nums pointer-events-none z-10 animate-in zoom-in duration-300">
+                        {formatDaysBadge(loveConn.days_together)}
                       </span>
                     )}
                   </div>
                 </div>
                 <span
                   className={cn(
-                    "text-[10px] font-medium tracking-wide mt-1 transition-colors duration-200",
+                    "text-[10px] font-medium tracking-tight mt-1 max-w-[64px] truncate text-center leading-none transition-colors duration-200",
                     active ? "text-primary font-semibold" : "text-muted-foreground"
                   )}
                 >
@@ -96,25 +103,25 @@ export function BottomNav() {
             <Link
               key={`${item.key}-${index}`}
               href={item.url}
-              className="relative flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all duration-200 hover:bg-muted/50 active:scale-95"
+              className="relative flex flex-1 min-w-0 max-w-[70px] flex-col items-center justify-center py-1 px-1 rounded-xl transition-all duration-200 hover:bg-muted/50 active:scale-95"
             >
-              <div className="relative">
+              <div className="relative flex items-center justify-center">
                 <Icon
                   className={cn(
-                    "size-5 transition-transform duration-200",
+                    "size-5 shrink-0 transition-transform duration-200",
                     active ? "text-primary scale-105" : "text-muted-foreground/80"
                   )}
                 />
                 {/* Badge số ngày bên nhau trên mobile cho nút bình thường */}
                 {item.key === 'love' && loveConn?.days_together !== undefined && (
-                  <span className="absolute -top-1.5 -right-2.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-emerald-500 px-1 text-[9px] font-extrabold text-white shadow-xs animate-in zoom-in duration-300">
-                    {loveConn.days_together}
+                  <span className="absolute -top-1.5 -right-2.5 flex h-3.5 min-w-[15px] items-center justify-center rounded-full bg-gradient-to-r from-rose-500 to-pink-500 px-1 text-[7.5px] font-black text-white shadow-xs border border-background tabular-nums pointer-events-none z-10 animate-in zoom-in duration-300">
+                    {formatDaysBadge(loveConn.days_together)}
                   </span>
                 )}
               </div>
               <span
                 className={cn(
-                  "text-[10px] font-medium tracking-wide mt-1 transition-colors duration-200",
+                  "text-[10px] font-medium tracking-tight mt-1 max-w-[60px] truncate text-center leading-none transition-colors duration-200",
                   active ? "text-primary font-semibold" : "text-muted-foreground"
                 )}
               >

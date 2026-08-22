@@ -296,8 +296,8 @@ export default function SettingsPage() {
                                   <Icon className="size-5" />
                                   {/* Badge ngày bên nhau cho nút chính giữa trong bản xem trước */}
                                   {item.key === 'love' && loveConn?.days_together !== undefined && (
-                                    <span className="absolute -top-1.5 -right-2 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-emerald-500 px-0.5 text-[8px] font-extrabold text-white shadow-sm border border-background">
-                                      {loveConn.days_together}
+                                    <span className="absolute -top-2 -right-2.5 flex h-3.5 min-w-[15px] items-center justify-center rounded-full bg-gradient-to-r from-rose-500 to-pink-500 px-0.5 text-[7.5px] font-black text-white shadow-sm border border-background tabular-nums pointer-events-none">
+                                      {loveConn.days_together > 9999 ? `${Math.floor(loveConn.days_together / 1000)}k` : loveConn.days_together > 999 ? `${(loveConn.days_together / 1000).toFixed(1).replace('.0', '')}k` : loveConn.days_together}
                                     </span>
                                   )}
                                 </div>
@@ -309,15 +309,15 @@ export default function SettingsPage() {
                           ) : (
                             <button
                               type="button"
-                              className="flex flex-col items-center justify-center py-1 px-2.5 rounded-lg transition-colors duration-200 hover:bg-muted/60 cursor-pointer active:scale-95 outline-none"
+                              className="flex flex-col items-center justify-center py-1 px-1.5 rounded-lg transition-colors duration-200 hover:bg-muted/60 cursor-pointer active:scale-95 outline-none flex-1 min-w-0"
                               title={`Bấm để đổi vị trí ${index + 1}`}
                             >
-                              <div className="relative">
+                              <div className="relative flex items-center justify-center">
                                 <Icon className="size-4.5 text-muted-foreground/80" />
                                 {/* Badge ngày bên nhau cho nút thường trong bản xem trước */}
                                 {item.key === 'love' && loveConn?.days_together !== undefined && (
-                                  <span className="absolute -top-1 -right-1.5 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-emerald-500 px-0.5 text-[8px] font-extrabold text-white shadow-xs">
-                                    {loveConn.days_together}
+                                  <span className="absolute -top-1 -right-2 flex h-3 min-w-[13px] items-center justify-center rounded-full bg-gradient-to-r from-rose-500 to-pink-500 px-0.5 text-[7px] font-black text-white shadow-xs border border-background tabular-nums pointer-events-none">
+                                    {loveConn.days_together > 9999 ? `${Math.floor(loveConn.days_together / 1000)}k` : loveConn.days_together > 999 ? `${(loveConn.days_together / 1000).toFixed(1).replace('.0', '')}k` : loveConn.days_together}
                                   </span>
                                 )}
                               </div>

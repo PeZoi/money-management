@@ -75,7 +75,7 @@ export const ALL_NAV_ITEMS: Record<NavItemKey, NavItemInfo> = {
   },
   love: {
     key: 'love',
-    title: 'Ngày bên nhau',
+    title: 'Bên nhau',
     label: 'Ngày bên nhau',
     url: '/love',
     icon: HeartIcon,
