@@ -23,6 +23,7 @@ import {
   DEFAULT_EXPENSE_CATEGORIES,
   DEFAULT_INCOME_CATEGORIES,
 } from '@/lib/constants/default-categories';
+import { categoriesApi, categoryKeys } from '@/lib/api/categories';
 import { CategoryUi } from '@/types/category';
 
 type ApplyDefaultCategoriesDialogProps = {
@@ -113,28 +114,19 @@ export default function ApplyDefaultCategoriesDialog({
     setIsSubmitting(true);
     try {
       const payload = totalToCreate.map((c) => ({
-        workspace_id: activeWorkspaceId,
+        workspace_id: activeWorkspaceId!,
         name: c.name,
         icon: c.icon,
         type: c.type,
       }));
 
-      const res = await fetch('/api/categories', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) {
-        const errJson = await res.json();
-        throw new Error(errJson.error || 'Lỗi thêm danh mục');
-      }
+      await categoriesApi.createBulk(payload);
 
       toast.success(`Đã thêm thành công ${totalToCreate.length} danh mục mặc định!`);
       
       // Invalidate cache
       queryClient.invalidateQueries({
-        queryKey: ['categories', activeWorkspaceId],
+        queryKey: categoryKeys.workspace(activeWorkspaceId),
       });
 
       onSuccess?.();

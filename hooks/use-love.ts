@@ -6,12 +6,16 @@ import type {
   LoveMilestoneRow, 
   AdminLoveUser 
 } from "@/types/database";
+import {
+  loveApi,
+  loveKeys,
+  type LoveMilestonesApiResponse,
+  type UpdateAnniversaryPayload,
+  type CreateMilestonePayload,
+  type UpdateLoveCustomizePayload,
+} from "@/lib/api/love";
 
-export interface LoveMilestonesApiResponse {
-  data: LoveMilestoneRow[];
-  next_cursor: string | null;
-  has_more: boolean;
-}
+export type { LoveMilestonesApiResponse };
 
 // ─── User Hooks ─────────────────────────────────────────
 
@@ -20,12 +24,9 @@ export interface LoveMilestonesApiResponse {
  */
 export function useMyLoveConnection() {
   return useQuery<MyLoveConnection | null>({
-    queryKey: ["my-love-connection"],
+    queryKey: loveKeys.connection(),
     queryFn: async () => {
-      const res = await fetch("/api/love/my-connection");
-      if (!res.ok) throw new Error("Không thể tải thông tin ngày bên nhau");
-      const json = await res.json();
-      return json.data;
+      return loveApi.getMyConnection();
     },
     staleTime: 5 * 60 * 1000, // Cache 5 phút
     refetchOnWindowFocus: false,
@@ -44,19 +45,14 @@ export function useInfiniteLoveMilestones(params?: {
   const order = params?.order || "desc";
 
   const queryResult = useInfiniteQuery({
-    queryKey: ["love-milestones-infinite", params?.connectionId, order],
+    queryKey: loveKeys.milestonesInfinite(params?.connectionId, order),
     queryFn: async ({ pageParam }: { pageParam: string | null }): Promise<LoveMilestonesApiResponse> => {
-      const searchParams = new URLSearchParams({
-        limit: String(limit),
+      return loveApi.getMilestones({
+        connectionId: params?.connectionId,
+        limit,
         order,
+        cursor: pageParam,
       });
-
-      if (params?.connectionId) searchParams.set("connectionId", params.connectionId);
-      if (pageParam) searchParams.set("cursor", pageParam);
-
-      const res = await fetch(`/api/love/milestones?${searchParams.toString()}`);
-      if (!res.ok) throw new Error("Không thể tải danh sách kỷ niệm");
-      return await res.json();
     },
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage) => (lastPage.has_more ? lastPage.next_cursor : undefined),
@@ -79,13 +75,10 @@ export function useInfiniteLoveMilestones(params?: {
  */
 export function useLoveMilestones(connectionId: string | undefined) {
   return useQuery<LoveMilestoneRow[]>({
-    queryKey: ["love-milestones", connectionId],
+    queryKey: loveKeys.milestones(connectionId),
     queryFn: async () => {
-      const url = connectionId ? `/api/love/milestones?connectionId=${connectionId}` : "/api/love/milestones";
-      const res = await fetch(url);
-      if (!res.ok) throw new Error("Không thể tải danh sách kỷ niệm");
-      const json = await res.json();
-      return json.data ?? [];
+      const res = await loveApi.getMilestones({ connectionId });
+      return res.data ?? [];
     },
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
@@ -100,19 +93,12 @@ export function useLoveMutation() {
 
   // 1. Cập nhật ngày kỷ niệm
   const updateAnniversaryMutation = useMutation({
-    mutationFn: async ({ connectionId, anniversaryDate }: { connectionId: string; anniversaryDate: string }) => {
-      const res = await fetch("/api/love/update-anniversary", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ connectionId, anniversaryDate }),
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || "Không thể cập nhật ngày kỷ niệm");
-      return json;
+    mutationFn: async ({ connectionId, anniversaryDate }: UpdateAnniversaryPayload) => {
+      return loveApi.updateAnniversary({ connectionId, anniversaryDate });
     },
     onSuccess: (data) => {
       toast.success(data.message || "Cập nhật ngày kỷ niệm thành công!");
-      queryClient.invalidateQueries({ queryKey: ["my-love-connection"] });
+      queryClient.invalidateQueries({ queryKey: loveKeys.connection() });
     },
     onError: (err: Error) => {
       toast.error(err.message);
@@ -121,27 +107,13 @@ export function useLoveMutation() {
 
   // 2. Tạo cột mốc mới
   const createMilestoneMutation = useMutation({
-    mutationFn: async (milestone: {
-      connectionId: string;
-      title: string;
-      description?: string | null;
-      milestoneDate: string;
-      icon?: string;
-      imageUrl?: string | null;
-    }) => {
-      const res = await fetch("/api/love/milestones", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(milestone),
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || "Không thể tạo cột mốc kỷ niệm");
-      return json;
+    mutationFn: async (milestone: CreateMilestonePayload) => {
+      return loveApi.createMilestone(milestone);
     },
     onSuccess: (data) => {
       toast.success(data.message || "Đã lưu một kỷ niệm mới!");
-      queryClient.invalidateQueries({ queryKey: ["love-milestones"] });
-      queryClient.invalidateQueries({ queryKey: ["love-milestones-infinite"] });
+      queryClient.invalidateQueries({ queryKey: loveKeys.milestones() });
+      queryClient.invalidateQueries({ queryKey: loveKeys.milestonesInfinite() });
     },
     onError: (err: Error) => {
       toast.error(err.message);
@@ -166,25 +138,18 @@ export function useLoveMutation() {
       icon?: string;
       imageUrl?: string | null;
     }) => {
-      const res = await fetch(`/api/love/milestones/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title,
-          description,
-          milestoneDate,
-          icon,
-          imageUrl,
-        }),
+      return loveApi.updateMilestone(id, {
+        title,
+        description,
+        milestoneDate,
+        icon,
+        imageUrl,
       });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || "Không thể sửa cột mốc kỷ niệm");
-      return json;
     },
     onSuccess: (data) => {
       toast.success(data.message || "Kỷ niệm đã được cập nhật!");
-      queryClient.invalidateQueries({ queryKey: ["love-milestones"] });
-      queryClient.invalidateQueries({ queryKey: ["love-milestones-infinite"] });
+      queryClient.invalidateQueries({ queryKey: loveKeys.milestones() });
+      queryClient.invalidateQueries({ queryKey: loveKeys.milestonesInfinite() });
     },
     onError: (err: Error) => {
       toast.error(err.message);
@@ -194,17 +159,12 @@ export function useLoveMutation() {
   // 4. Xóa cột mốc
   const deleteMilestoneMutation = useMutation({
     mutationFn: async ({ id }: { id: string; connectionId?: string }) => {
-      const res = await fetch(`/api/love/milestones/${id}`, {
-        method: "DELETE",
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || "Không thể xóa cột mốc");
-      return json;
+      return loveApi.deleteMilestone(id);
     },
     onSuccess: (data) => {
       toast.success(data.message || "Đã xóa kỷ niệm.");
-      queryClient.invalidateQueries({ queryKey: ["love-milestones"] });
-      queryClient.invalidateQueries({ queryKey: ["love-milestones-infinite"] });
+      queryClient.invalidateQueries({ queryKey: loveKeys.milestones() });
+      queryClient.invalidateQueries({ queryKey: loveKeys.milestonesInfinite() });
     },
     onError: (err: Error) => {
       toast.error(err.message);
@@ -213,29 +173,12 @@ export function useLoveMutation() {
 
   // 5. Cập nhật URL ảnh tùy chỉnh
   const updateLoveCustomizeMutation = useMutation({
-    mutationFn: async (payload: {
-      connectionId: string;
-      user1AvatarUrl?: string | null;
-      user2AvatarUrl?: string | null;
-      backgroundUrl?: string | null;
-      user1Nickname?: string | null;
-      user2Nickname?: string | null;
-      user1Birthdate?: string | null;
-      user2Birthdate?: string | null;
-      theme?: string | null;
-    }) => {
-      const res = await fetch("/api/love/customize", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || "Không thể cập nhật cấu hình giao diện");
-      return json;
+    mutationFn: async (payload: UpdateLoveCustomizePayload) => {
+      return loveApi.updateCustomize(payload);
     },
     onSuccess: (data) => {
       toast.success(data.message || "Cập nhật giao diện thành công!");
-      queryClient.invalidateQueries({ queryKey: ["my-love-connection"] });
+      queryClient.invalidateQueries({ queryKey: loveKeys.connection() });
     },
     onError: (err: Error) => {
       toast.error(err.message);
@@ -252,20 +195,11 @@ export function useLoveMutation() {
       onProgress?: (percent: number) => void;
     }) => {
       // 1. Lấy Signature từ backend Next.js
-      const sigRes = await fetch("/api/love/upload", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          type: payload.type,
-          connectionId: payload.connectionId,
-          milestoneTitle: payload.milestoneTitle,
-        }),
+      const sigJson = await loveApi.getUploadSignature({
+        type: payload.type,
+        connectionId: payload.connectionId,
+        milestoneTitle: payload.milestoneTitle,
       });
-
-      const sigJson = await sigRes.json();
-      if (!sigRes.ok) {
-        throw new Error(sigJson.error || "Không thể khởi tạo phiên tải lên.");
-      }
 
       const { signature, timestamp, folder, public_id, apiKey, cloudName } = sigJson;
 

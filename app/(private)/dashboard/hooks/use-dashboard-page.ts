@@ -25,6 +25,7 @@ import { useWorkspaces } from '@/hooks/use-workspaces';
 import { useDraggable } from '@/hooks/use-draggable';
 import type { TransactionWithCategory } from '@/types/database';
 import { getTransactionSystemImpact } from '@/lib/utils';
+import { transactionsApi, transactionKeys } from '@/lib/api/transactions';
 
 // Helper tính toán năm hiện hành, tháng hiện hành của chu kỳ trước đó
 const getPreviousPeriodDates = (
@@ -122,71 +123,83 @@ export function useDashboardPage() {
 
   // 7. Query fetch giao dịch chu kỳ hiện tại (lấy toàn bộ không phân trang)
   const { data: currentTransactions = [], isLoading: isCurrentLoading } = useQuery<TransactionWithCategory[]>({
-    queryKey: ['transactions-report', activeWorkspaceId, timeRange, currentPeriod.start?.toISOString(), currentPeriod.end?.toISOString()],
+    queryKey: transactionKeys.report(
+      activeWorkspaceId,
+      timeRange,
+      currentPeriod.start?.toISOString(),
+      currentPeriod.end?.toISOString()
+    ),
     queryFn: async () => {
       if (!activeWorkspaceId) return [];
-      let url = `/api/transactions?workspace_id=${activeWorkspaceId}&limit=all`;
-      if (timeRange !== 'all' && currentPeriod.start && currentPeriod.end) {
-        url += `&start_date=${currentPeriod.start.toISOString()}&end_date=${currentPeriod.end.toISOString()}`;
-      } else {
-        url += `&month=all`;
-      }
-      const res = await fetch(url);
-      if (!res.ok) throw new Error('Không thể tải giao dịch hiện tại');
-      const json = await res.json();
-      return json.data || [];
+      const isAll = timeRange === 'all' || !currentPeriod.start || !currentPeriod.end;
+      const res = await transactionsApi.list({
+        workspace_id: activeWorkspaceId,
+        limit: 'all',
+        ...(isAll
+          ? { month: 'all' }
+          : {
+              start_date: currentPeriod.start?.toISOString(),
+              end_date: currentPeriod.end?.toISOString(),
+            }),
+      });
+      return res.data || [];
     },
     enabled: !!activeWorkspaceId,
   });
 
   // 8. Query fetch giao dịch chu kỳ trước (lấy toàn bộ không phân trang)
   const { data: prevTransactions = [], isLoading: isPrevLoading } = useQuery<TransactionWithCategory[]>({
-    queryKey: ['transactions-report-prev', activeWorkspaceId, timeRange, previousPeriod.start?.toISOString(), previousPeriod.end?.toISOString()],
+    queryKey: transactionKeys.reportPrev(
+      activeWorkspaceId,
+      timeRange,
+      previousPeriod.start?.toISOString(),
+      previousPeriod.end?.toISOString()
+    ),
     queryFn: async () => {
       if (!activeWorkspaceId || timeRange === 'all' || !previousPeriod.start || !previousPeriod.end) return [];
-      const url = `/api/transactions?workspace_id=${activeWorkspaceId}&start_date=${previousPeriod.start.toISOString()}&end_date=${previousPeriod.end.toISOString()}&limit=all`;
-      const res = await fetch(url);
-      if (!res.ok) throw new Error('Không thể tải giao dịch chu kỳ trước');
-      const json = await res.json();
-      return json.data || [];
+      const res = await transactionsApi.list({
+        workspace_id: activeWorkspaceId,
+        start_date: previousPeriod.start.toISOString(),
+        end_date: previousPeriod.end.toISOString(),
+        limit: 'all',
+      });
+      return res.data || [];
     },
     enabled: !!activeWorkspaceId && timeRange !== 'all' && !!previousPeriod.start && !!previousPeriod.end,
   });
 
   // 8.5. Query fetch giao dịch ngày hôm nay độc lập với filter thời gian
   const { data: todayTransactionsRaw = [], isLoading: isTodayLoading } = useQuery<TransactionWithCategory[]>({
-    queryKey: ['transactions-today', activeWorkspaceId],
+    queryKey: transactionKeys.today(activeWorkspaceId),
     queryFn: async () => {
       if (!activeWorkspaceId) return [];
       const today = new Date();
       const start = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0);
       const end = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
-      const url = `/api/transactions?workspace_id=${activeWorkspaceId}&start_date=${start.toISOString()}&end_date=${end.toISOString()}&limit=all`;
-      const res = await fetch(url);
-      if (!res.ok) throw new Error('Không thể tải giao dịch hôm nay');
-      const json = await res.json();
-      return json.data || [];
+      const res = await transactionsApi.list({
+        workspace_id: activeWorkspaceId,
+        start_date: start.toISOString(),
+        end_date: end.toISOString(),
+        limit: 'all',
+      });
+      return res.data || [];
     },
     enabled: !!activeWorkspaceId,
   });
 
   // Callback làm mới dữ liệu sau CRUD
   const handleMutationSuccess = React.useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: ['transactions-report', activeWorkspaceId] });
-    queryClient.invalidateQueries({ queryKey: ['transactions-report-prev', activeWorkspaceId] });
-    queryClient.invalidateQueries({ queryKey: ['transactions-today', activeWorkspaceId] });
-    queryClient.invalidateQueries({ queryKey: ['transactions', activeWorkspaceId] });
+    queryClient.invalidateQueries({ queryKey: transactionKeys.report(activeWorkspaceId) });
+    queryClient.invalidateQueries({ queryKey: transactionKeys.reportPrev(activeWorkspaceId) });
+    queryClient.invalidateQueries({ queryKey: transactionKeys.today(activeWorkspaceId) });
+    queryClient.invalidateQueries({ queryKey: transactionKeys.workspace(activeWorkspaceId) });
     queryClient.invalidateQueries({ queryKey: ['accounts', activeWorkspaceId] });
   }, [queryClient, activeWorkspaceId]);
 
   // Hành động xóa giao dịch
   const handleDeleteTransaction = async (id: string) => {
     try {
-      const res = await fetch(`/api/transactions/${id}`, { method: 'DELETE' });
-      if (!res.ok) {
-        const json = await res.json();
-        throw new Error(json.error || 'Xóa thất bại');
-      }
+      await transactionsApi.delete(id);
       handleMutationSuccess();
     } catch (err: unknown) {
       console.error(err);

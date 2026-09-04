@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { useMutation } from '@tanstack/react-query';
+import { aiApi } from '@/lib/api/ai';
 import {
   SparklesIcon,
   BrainIcon,
@@ -127,17 +128,10 @@ export function AiInsightsTab({ activeWorkspaceId }: AiInsightsTabProps) {
   const insightsMutation = useMutation({
     mutationFn: async () => {
       if (!activeWorkspaceId) throw new Error('Không tìm thấy ID workspace.');
-      const res = await fetch('/api/ai/insights', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ workspace_id: activeWorkspaceId, months }),
+      return aiApi.getInsights<AIInsightsResponse>({
+        workspace_id: activeWorkspaceId,
+        months,
       });
-      if (!res.ok) {
-        const err = await res.json().catch(() => null);
-        throw new Error(err?.error || 'Có lỗi xảy ra khi gọi AI');
-      }
-      const json = await res.json();
-      return json.data as AIInsightsResponse;
     },
     onSuccess: (data) => {
       if (data && activeWorkspaceId) {
@@ -156,17 +150,10 @@ export function AiInsightsTab({ activeWorkspaceId }: AiInsightsTabProps) {
   const chatMutation = useMutation({
     mutationFn: async (updatedMessages: Message[]) => {
       if (!activeWorkspaceId) throw new Error('Không tìm thấy ID workspace.');
-      const res = await fetch('/api/ai/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ workspace_id: activeWorkspaceId, messages: updatedMessages }),
+      return aiApi.chat({
+        workspace_id: activeWorkspaceId,
+        messages: updatedMessages,
       });
-      if (!res.ok) {
-        const err = await res.json().catch(() => null);
-        throw new Error(err?.error || 'Trợ lý AI bận, vui lòng thử lại sau.');
-      }
-      const json = await res.json();
-      return json.data as string;
     },
     onSuccess: (reply) => {
       setMessages((prev) => [...prev, { role: 'assistant', content: reply }]);

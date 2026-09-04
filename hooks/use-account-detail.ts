@@ -3,20 +3,18 @@
 import { useQuery } from '@tanstack/react-query';
 import type { AccountRow, TransactionWithCategory } from '@/types/database';
 import { useWorkspaceStore } from './use-workspace';
+import { transactionsApi, transactionKeys } from '@/lib/api/transactions';
+import { accountsApi, accountKeys } from '@/lib/api/accounts';
 
 /**
  * Hook fetch thông tin chi tiết một tài khoản
  */
 export function useAccountDetail(id: string) {
   const { data: account, isLoading, error, refetch } = useQuery<AccountRow>({
-    queryKey: ['account', id],
+    queryKey: accountKeys.detail(id),
     queryFn: async () => {
       if (!id) throw new Error('Thiếu id tài khoản');
-      const res = await fetch(`/api/accounts/${id}`);
-      if (!res.ok) throw new Error('Không thể tải thông tin tài khoản');
-      const json = await res.json();
-      if (!json.success) throw new Error(json.message || 'Lỗi tải thông tin');
-      return json.data;
+      return accountsApi.get(id);
     },
     enabled: !!id,
   });
@@ -44,20 +42,18 @@ export function useAccountTransactions({
   const { activeWorkspaceId } = useWorkspaceStore();
 
   const { data: transactions = [], isLoading, error, refetch } = useQuery<TransactionWithCategory[]>({
-    queryKey: ['account-transactions', accountId, activeWorkspaceId, startDate, endDate],
+    queryKey: transactionKeys.accountTransactions(accountId, activeWorkspaceId, startDate, endDate),
     queryFn: async () => {
       if (!activeWorkspaceId || !accountId) return [];
-      let url = `/api/transactions?workspace_id=${activeWorkspaceId}&account_id=${accountId}&month=all&limit=all`;
-      if (startDate) {
-        url += `&start_date=${encodeURIComponent(startDate)}`;
-      }
-      if (endDate) {
-        url += `&end_date=${encodeURIComponent(endDate)}`;
-      }
-      const res = await fetch(url);
-      if (!res.ok) throw new Error('Không thể tải danh sách giao dịch của tài khoản');
-      const json = await res.json();
-      return json.data ?? [];
+      const res = await transactionsApi.list({
+        workspace_id: activeWorkspaceId,
+        account_id: accountId,
+        month: 'all',
+        limit: 'all',
+        start_date: startDate,
+        end_date: endDate,
+      });
+      return res.data ?? [];
     },
     enabled: !!activeWorkspaceId && !!accountId,
   });

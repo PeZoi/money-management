@@ -3,6 +3,13 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import type { AccountRow, AccountType } from '@/types/database';
 import { useWorkspaceStore } from './use-workspace';
+import {
+  accountsApi,
+  accountKeys,
+  type CreateAccountPayload,
+  type UpdateAccountPayload,
+} from '@/lib/api/accounts';
+import { transactionKeys } from '@/lib/api/transactions';
 
 /**
  * Hook fetch và quản lý danh sách tài khoản
@@ -11,13 +18,10 @@ export function useAccounts() {
   const { activeWorkspaceId } = useWorkspaceStore();
 
   const { data: accounts = [], isLoading, refetch } = useQuery<AccountRow[]>({
-    queryKey: ['accounts', activeWorkspaceId],
+    queryKey: accountKeys.workspace(activeWorkspaceId),
     queryFn: async () => {
       if (!activeWorkspaceId) return [];
-      const res = await fetch(`/api/accounts?workspace_id=${activeWorkspaceId}`);
-      if (!res.ok) throw new Error('Không thể tải danh sách tài khoản');
-      const json = await res.json();
-      return json.data ?? [];
+      return accountsApi.list(activeWorkspaceId);
     },
     enabled: !!activeWorkspaceId,
   });
@@ -41,24 +45,9 @@ export function useAccountMutation() {
   const queryClient = useQueryClient();
 
   const createMutation = useMutation({
-    mutationFn: async (payload: {
-      name: string;
-      type: string;
-      balance?: number;
-      currency?: string;
-      icon?: string;
-      color?: string;
-      is_system?: boolean;
-    }) => {
+    mutationFn: async (payload: Omit<CreateAccountPayload, 'workspace_id'>) => {
       if (!activeWorkspaceId) throw new Error('Không xác định được workspace.');
-      const res = await fetch('/api/accounts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...payload, workspace_id: activeWorkspaceId }),
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.message || 'Tạo thất bại');
-      return json;
+      return accountsApi.create({ ...payload, workspace_id: activeWorkspaceId });
     },
     onMutate: async (newAccountPayload) => {
       // Hủy mọi query đang chạy của accounts để tránh ghi đè dữ liệu cũ
@@ -106,22 +95,15 @@ export function useAccountMutation() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, payload }: { id: string; payload: Record<string, unknown> }) => {
-      const res = await fetch(`/api/accounts/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.message || 'Cập nhật thất bại');
-      return json;
+    mutationFn: async ({ id, payload }: { id: string; payload: UpdateAccountPayload }) => {
+      return accountsApi.update(id, payload);
     },
     onMutate: async ({ id, payload }) => {
-      await queryClient.cancelQueries({ queryKey: ['accounts', activeWorkspaceId] });
-      const previousAccounts = queryClient.getQueryData<AccountRow[]>(['accounts', activeWorkspaceId]);
+      await queryClient.cancelQueries({ queryKey: accountKeys.workspace(activeWorkspaceId) });
+      const previousAccounts = queryClient.getQueryData<AccountRow[]>(accountKeys.workspace(activeWorkspaceId));
 
       // Cập nhật lạc quan thông tin tài khoản trong cache
-      queryClient.setQueryData<AccountRow[]>(['accounts', activeWorkspaceId], (old) => {
+      queryClient.setQueryData<AccountRow[]>(accountKeys.workspace(activeWorkspaceId), (old) => {
         if (!old) return [];
         return old.map((acc) => (acc.id === id ? { ...acc, ...payload } : acc));
       });
@@ -130,37 +112,35 @@ export function useAccountMutation() {
     },
     onError: (err: Error, variables, context) => {
       if (context?.previousAccounts) {
-        queryClient.setQueryData(['accounts', activeWorkspaceId], context.previousAccounts);
+        queryClient.setQueryData(accountKeys.workspace(activeWorkspaceId), context.previousAccounts);
       }
       toast.error(err.message || 'Không thể cập nhật tài khoản');
     },
     onSuccess: () => {
       toast.success('Đã cập nhật tài khoản');
     },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['accounts', activeWorkspaceId] });
-      queryClient.invalidateQueries({ queryKey: ['transactions-report', activeWorkspaceId] });
-      queryClient.invalidateQueries({ queryKey: ['transactions-report-prev', activeWorkspaceId] });
-      queryClient.invalidateQueries({ queryKey: ['transactions-today', activeWorkspaceId] });
-      queryClient.invalidateQueries({ queryKey: ['transactions', activeWorkspaceId] });
+    onSettled: (_data, _error, variables) => {
+      queryClient.invalidateQueries({ queryKey: accountKeys.workspace(activeWorkspaceId) });
+      if (variables?.id) {
+        queryClient.invalidateQueries({ queryKey: accountKeys.detail(variables.id) });
+      }
+      queryClient.invalidateQueries({ queryKey: transactionKeys.report(activeWorkspaceId) });
+      queryClient.invalidateQueries({ queryKey: transactionKeys.reportPrev(activeWorkspaceId) });
+      queryClient.invalidateQueries({ queryKey: transactionKeys.today(activeWorkspaceId) });
+      queryClient.invalidateQueries({ queryKey: transactionKeys.workspace(activeWorkspaceId) });
     }
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const res = await fetch(`/api/accounts/${id}`, { method: 'DELETE' });
-      if (!res.ok) {
-        const json = await res.json();
-        throw new Error(json.message || 'Xóa thất bại');
-      }
-      return true;
+      return accountsApi.delete(id);
     },
     onMutate: async (id) => {
-      await queryClient.cancelQueries({ queryKey: ['accounts', activeWorkspaceId] });
-      const previousAccounts = queryClient.getQueryData<AccountRow[]>(['accounts', activeWorkspaceId]);
+      await queryClient.cancelQueries({ queryKey: accountKeys.workspace(activeWorkspaceId) });
+      const previousAccounts = queryClient.getQueryData<AccountRow[]>(accountKeys.workspace(activeWorkspaceId));
 
       // Xóa lạc quan tài khoản khỏi cache
-      queryClient.setQueryData<AccountRow[]>(['accounts', activeWorkspaceId], (old) => {
+      queryClient.setQueryData<AccountRow[]>(accountKeys.workspace(activeWorkspaceId), (old) => {
         if (!old) return [];
         return old.filter((acc) => acc.id !== id);
       });
@@ -169,35 +149,35 @@ export function useAccountMutation() {
     },
     onError: (err: Error, id, context) => {
       if (context?.previousAccounts) {
-        queryClient.setQueryData(['accounts', activeWorkspaceId], context.previousAccounts);
+        queryClient.setQueryData(accountKeys.workspace(activeWorkspaceId), context.previousAccounts);
       }
       toast.error(err.message || 'Không thể xóa tài khoản');
     },
     onSuccess: () => {
       toast.success('Đã xóa tài khoản');
     },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['accounts', activeWorkspaceId] });
-      queryClient.invalidateQueries({ queryKey: ['transactions-report', activeWorkspaceId] });
-      queryClient.invalidateQueries({ queryKey: ['transactions-report-prev', activeWorkspaceId] });
-      queryClient.invalidateQueries({ queryKey: ['transactions-today', activeWorkspaceId] });
-      queryClient.invalidateQueries({ queryKey: ['transactions', activeWorkspaceId] });
+    onSettled: (_data, _error, id) => {
+      queryClient.invalidateQueries({ queryKey: accountKeys.workspace(activeWorkspaceId) });
+      if (id) {
+        queryClient.invalidateQueries({ queryKey: accountKeys.detail(id) });
+      }
+      queryClient.invalidateQueries({ queryKey: transactionKeys.report(activeWorkspaceId) });
+      queryClient.invalidateQueries({ queryKey: transactionKeys.reportPrev(activeWorkspaceId) });
+      queryClient.invalidateQueries({ queryKey: transactionKeys.today(activeWorkspaceId) });
+      queryClient.invalidateQueries({ queryKey: transactionKeys.workspace(activeWorkspaceId) });
     }
   });
 
   const activateMutation = useMutation({
     mutationFn: async (id: string) => {
-      const res = await fetch(`/api/accounts/${id}/activate`, { method: 'POST' });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.message || 'Kích hoạt thất bại');
-      return json;
+      return accountsApi.activate(id);
     },
     onMutate: async (id) => {
-      await queryClient.cancelQueries({ queryKey: ['accounts', activeWorkspaceId] });
-      const previousAccounts = queryClient.getQueryData<AccountRow[]>(['accounts', activeWorkspaceId]);
+      await queryClient.cancelQueries({ queryKey: accountKeys.workspace(activeWorkspaceId) });
+      const previousAccounts = queryClient.getQueryData<AccountRow[]>(accountKeys.workspace(activeWorkspaceId));
 
       // Kích hoạt lạc quan trên cache (chuyển tất cả về false và chỉ kích hoạt tài khoản được chọn)
-      queryClient.setQueryData<AccountRow[]>(['accounts', activeWorkspaceId], (old) => {
+      queryClient.setQueryData<AccountRow[]>(accountKeys.workspace(activeWorkspaceId), (old) => {
         if (!old) return [];
         return old.map((acc) => ({ ...acc, is_active: acc.id === id }));
       });
@@ -206,7 +186,7 @@ export function useAccountMutation() {
     },
     onError: (err: Error, id, context) => {
       if (context?.previousAccounts) {
-        queryClient.setQueryData(['accounts', activeWorkspaceId], context.previousAccounts);
+        queryClient.setQueryData(accountKeys.workspace(activeWorkspaceId), context.previousAccounts);
       }
       toast.error(err.message || 'Không thể kích hoạt tài khoản');
     },
@@ -214,24 +194,16 @@ export function useAccountMutation() {
       toast.success('Đã chọn tài khoản active');
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['accounts', activeWorkspaceId] });
-      queryClient.invalidateQueries({ queryKey: ['transactions-report', activeWorkspaceId] });
-      queryClient.invalidateQueries({ queryKey: ['transactions-report-prev', activeWorkspaceId] });
-      queryClient.invalidateQueries({ queryKey: ['transactions-today', activeWorkspaceId] });
-      queryClient.invalidateQueries({ queryKey: ['transactions', activeWorkspaceId] });
+      queryClient.invalidateQueries({ queryKey: accountKeys.workspace(activeWorkspaceId) });
+      queryClient.invalidateQueries({ queryKey: transactionKeys.report(activeWorkspaceId) });
+      queryClient.invalidateQueries({ queryKey: transactionKeys.reportPrev(activeWorkspaceId) });
+      queryClient.invalidateQueries({ queryKey: transactionKeys.today(activeWorkspaceId) });
+      queryClient.invalidateQueries({ queryKey: transactionKeys.workspace(activeWorkspaceId) });
     }
   });
 
   const createAccount = async (
-    payload: {
-      name: string;
-      type: string;
-      balance?: number;
-      currency?: string;
-      icon?: string;
-      color?: string;
-      is_system?: boolean;
-    },
+    payload: Omit<CreateAccountPayload, 'workspace_id'>,
     options?: { onSuccess?: () => void }
   ) => {
     try {
@@ -245,15 +217,7 @@ export function useAccountMutation() {
 
   const updateAccount = async (
     id: string,
-    payload: {
-      name?: string;
-      type?: string;
-      balance?: number;
-      currency?: string;
-      icon?: string;
-      color?: string;
-      is_system?: boolean;
-    },
+    payload: UpdateAccountPayload,
     options?: { onSuccess?: () => void }
   ) => {
     try {

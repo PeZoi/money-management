@@ -12,6 +12,12 @@ import {
 import { DebtRow } from "@/types/database";
 import { useWorkspaceStore } from "./use-workspace";
 import { formatAmountInput, parseAmount } from "@/lib/validations/transaction-schema";
+import {
+  debtsApi,
+  debtKeys,
+  type CreateDebtPayload,
+  type UpdateDebtPayload,
+} from "@/lib/api/debts";
 
 /**
  * Hook chuyên xử lý việc lấy danh sách người nợ (GET)
@@ -20,13 +26,10 @@ export function useDebts() {
   const { activeWorkspaceId } = useWorkspaceStore();
 
   const { data: debts = [], isLoading, refetch } = useQuery<DebtRow[]>({
-    queryKey: ["debts", activeWorkspaceId],
+    queryKey: debtKeys.workspace(activeWorkspaceId),
     queryFn: async () => {
       if (!activeWorkspaceId) return [];
-      const res = await fetch(`/api/debts?workspace_id=${activeWorkspaceId}`);
-      if (!res.ok) throw new Error("Không thể tải danh sách người nợ");
-      const json = await res.json();
-      return json.data || [];
+      return debtsApi.list(activeWorkspaceId);
     },
     enabled: !!activeWorkspaceId,
   });
@@ -66,26 +69,14 @@ export function useDebtMutation() {
         throw new Error("Lỗi hệ thống: Không xác định được workspace đang hoạt động.");
       }
 
-      const url = isUpdate ? `/api/debts/${debtId}` : "/api/debts";
-      const method = isUpdate ? "PATCH" : "POST";
-
-      const finalPayload = { ...payload };
-      if (!isUpdate) {
-        finalPayload.workspace_id = finalWorkspaceId;
+      if (isUpdate && debtId) {
+        return debtsApi.update(debtId, payload as UpdateDebtPayload);
       }
 
-      const response = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(finalPayload),
-      });
-
-      const result = await response.json();
-      if (!response.ok) {
-        throw new Error(result.error || "Đã có lỗi xảy ra");
-      }
-
-      return result;
+      return debtsApi.create({
+        ...payload,
+        workspace_id: finalWorkspaceId!,
+      } as CreateDebtPayload);
     },
     onMutate: async (variables) => {
       const { payload, options } = variables;
@@ -94,14 +85,14 @@ export function useDebtMutation() {
       const finalWorkspaceId = options?.workspaceId || activeWorkspaceId;
 
       // Hủy các query fetch debts đang chạy
-      await queryClient.cancelQueries({ queryKey: ["debts", finalWorkspaceId] });
+      await queryClient.cancelQueries({ queryKey: debtKeys.workspace(finalWorkspaceId) });
 
       // Chụp snapshot cache cũ
-      const previousDebts = queryClient.getQueryData<DebtRow[]>(["debts", finalWorkspaceId]);
+      const previousDebts = queryClient.getQueryData<DebtRow[]>(debtKeys.workspace(finalWorkspaceId));
 
       if (isUpdate && debtId) {
         // Cập nhật lạc quan phần tử cũ
-        queryClient.setQueryData<DebtRow[]>(["debts", finalWorkspaceId], (old) => {
+        queryClient.setQueryData<DebtRow[]>(debtKeys.workspace(finalWorkspaceId), (old) => {
           if (!old) return [];
           return old.map((debt) => (debt.id === debtId ? { ...debt, ...payload } : debt));
         });
@@ -121,7 +112,7 @@ export function useDebtMutation() {
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         };
-        queryClient.setQueryData<DebtRow[]>(["debts", finalWorkspaceId], (old) => {
+        queryClient.setQueryData<DebtRow[]>(debtKeys.workspace(finalWorkspaceId), (old) => {
           return old ? [...old, optimisticDebt] : [optimisticDebt];
         });
       }
@@ -135,7 +126,7 @@ export function useDebtMutation() {
     },
     onError: (error: Error, variables, context) => {
       if (context?.previousDebts) {
-        queryClient.setQueryData(["debts", context.finalWorkspaceId], context.previousDebts);
+        queryClient.setQueryData(debtKeys.workspace(context.finalWorkspaceId), context.previousDebts);
       }
       const message = error.message || "Không thể lưu thông tin";
       toast.error(message);
@@ -144,26 +135,21 @@ export function useDebtMutation() {
     onSettled: (data, error, variables, context) => {
       const finalWorkspaceId = context?.finalWorkspaceId || variables.options?.workspaceId || activeWorkspaceId;
       queryClient.invalidateQueries({
-        queryKey: ["debts", finalWorkspaceId],
+        queryKey: debtKeys.workspace(finalWorkspaceId),
       });
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const res = await fetch(`/api/debts/${id}`, { method: "DELETE" });
-      if (!res.ok) {
-        const json = await res.json();
-        throw new Error(json.error || "Xóa thất bại");
-      }
-      return true;
+      return debtsApi.delete(id);
     },
     onMutate: async (id) => {
-      await queryClient.cancelQueries({ queryKey: ["debts", activeWorkspaceId] });
-      const previousDebts = queryClient.getQueryData<DebtRow[]>(["debts", activeWorkspaceId]);
+      await queryClient.cancelQueries({ queryKey: debtKeys.workspace(activeWorkspaceId) });
+      const previousDebts = queryClient.getQueryData<DebtRow[]>(debtKeys.workspace(activeWorkspaceId));
 
       // Xóa lạc quan khỏi cache
-      queryClient.setQueryData<DebtRow[]>(["debts", activeWorkspaceId], (old) => {
+      queryClient.setQueryData<DebtRow[]>(debtKeys.workspace(activeWorkspaceId), (old) => {
         if (!old) return [];
         return old.filter((d) => d.id !== id);
       });
@@ -172,7 +158,7 @@ export function useDebtMutation() {
     },
     onError: (err: Error, id, context) => {
       if (context?.previousDebts) {
-        queryClient.setQueryData(["debts", activeWorkspaceId], context.previousDebts);
+        queryClient.setQueryData(debtKeys.workspace(activeWorkspaceId), context.previousDebts);
       }
       toast.error(err.message || "Không thể xóa thông tin người nợ");
     },
@@ -181,7 +167,7 @@ export function useDebtMutation() {
     },
     onSettled: () => {
       queryClient.invalidateQueries({
-        queryKey: ["debts", activeWorkspaceId],
+        queryKey: debtKeys.workspace(activeWorkspaceId),
       });
     },
   });

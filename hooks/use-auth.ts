@@ -5,6 +5,7 @@ import { mapSupabaseUserToSnapshot } from "@/lib/auth/map-supabase-user";
 import { createClient } from "@/lib/supabase/browser";
 import type { CurrentUserSnapshot } from "@/types/user";
 import { create } from "zustand";
+import { authApi } from "@/lib/api/auth";
 
 export type AuthStatus = "idle" | "loading" | "authenticated" | "unauthenticated";
 
@@ -38,11 +39,10 @@ export const useAuthStore = create<AuthState>((set) => ({
       return;
     } else {
       try {
-        const response = await fetch('/api/user/get-current-user');
-        const result = await response.json();
-        if (response.ok && result.data) {
-          set({ user: result.data, status: "authenticated" });
-          localStorageFn.setLocalStorageItem(localStorageFn.AUTH_KEY.USER, JSON.stringify(result.data));
+        const userData = await authApi.getCurrentUser();
+        if (userData) {
+          set({ user: userData, status: "authenticated" });
+          localStorageFn.setLocalStorageItem(localStorageFn.AUTH_KEY.USER, JSON.stringify(userData));
         } else {
           set({ user: null, status: "unauthenticated" });
           localStorageFn.removeLocalStorageItem(localStorageFn.AUTH_KEY.USER);
@@ -93,11 +93,10 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   refreshUser: async () => {
     try {
-      const response = await fetch('/api/user/get-current-user');
-      const result = await response.json();
-      if (response.ok && result.data) {
-        set({ user: result.data, status: "authenticated" });
-        localStorageFn.setLocalStorageItem(localStorageFn.AUTH_KEY.USER, JSON.stringify(result.data));
+      const userData = await authApi.getCurrentUser();
+      if (userData) {
+        set({ user: userData, status: "authenticated" });
+        localStorageFn.setLocalStorageItem(localStorageFn.AUTH_KEY.USER, JSON.stringify(userData));
       }
     } catch (error) {
       console.error("Failed to refresh user:", error);

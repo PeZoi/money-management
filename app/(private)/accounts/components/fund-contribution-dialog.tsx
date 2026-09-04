@@ -14,6 +14,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
+import {
+  transactionsApi,
+  transactionKeys,
+  type FundContributionPayload,
+} from '@/lib/api/transactions';
+import { accountsApi, accountKeys } from '@/lib/api/accounts';
 
 type FundContributionDialogProps = {
   open: boolean;
@@ -45,26 +51,20 @@ export default function FundContributionDialog({ open, onOpenChange, onSuccess }
 
   // 2. Fetch danh sách tài khoản cá nhân (nguồn)
   const { data: personalAccounts = [], isLoading: isLoadingPersonal } = useQuery<AccountRow[]>({
-    queryKey: ['accounts', personalWorkspace?.id],
+    queryKey: accountKeys.workspace(personalWorkspace?.id),
     queryFn: async () => {
       if (!personalWorkspace?.id) return [];
-      const res = await fetch(`/api/accounts?workspace_id=${personalWorkspace.id}`);
-      if (!res.ok) throw new Error('Không thể tải tài khoản cá nhân');
-      const json = await res.json();
-      return json.data ?? [];
+      return accountsApi.list(personalWorkspace.id);
     },
     enabled: !!personalWorkspace?.id && open,
   });
 
   // 3. Fetch danh sách tài khoản nhóm (đích)
   const { data: groupAccounts = [], isLoading: isLoadingGroup } = useQuery<AccountRow[]>({
-    queryKey: ['accounts', activeWorkspaceId],
+    queryKey: accountKeys.workspace(activeWorkspaceId),
     queryFn: async () => {
       if (!activeWorkspaceId) return [];
-      const res = await fetch(`/api/accounts?workspace_id=${activeWorkspaceId}`);
-      if (!res.ok) throw new Error('Không thể tải tài khoản nhóm');
-      const json = await res.json();
-      return json.data ?? [];
+      return accountsApi.list(activeWorkspaceId);
     },
     enabled: !!activeWorkspaceId && open,
   });
@@ -106,28 +106,14 @@ export default function FundContributionDialog({ open, onOpenChange, onSuccess }
 
   // Mutation gửi yêu cầu đóng quỹ
   const contributionMutation = useMutation({
-    mutationFn: async (payload: {
-      personal_workspace_id: string;
-      personal_account_id: string;
-      group_workspace_id: string;
-      group_account_id: string;
-      amount: number;
-      note: string;
-    }) => {
-      const res = await fetch('/api/transactions/fund-contribution', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || 'Nộp quỹ thất bại');
-      return json;
+    mutationFn: async (payload: FundContributionPayload) => {
+      return transactionsApi.contributeFund(payload);
     },
     onSuccess: () => {
       toast.success('Nộp quỹ nhóm thành công!');
       // Invalidate các query liên quan để cập nhật lại số dư và lịch sử giao dịch
       queryClient.invalidateQueries({ queryKey: ['accounts'] });
-      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: transactionKeys.all });
       
       onOpenChange(false);
       onSuccess?.();

@@ -5,10 +5,14 @@ import { useCallback, useRef, useMemo } from 'react';
 import { toast } from 'sonner';
 
 import type {
-  ReportConfigRow,
   ReportTable,
 } from '@/types/report';
 import { useWorkspaceStore } from '@/hooks/use-workspace';
+import {
+  reportsApi,
+  reportKeys,
+  type GetReportConfigResponse,
+} from '@/lib/api/reports';
 
 // ─── Fetch cấu hình báo cáo ──────────────────────────
 
@@ -21,18 +25,11 @@ export function useReportConfig(month: string) {
     isLoading,
     isSuccess,
     refetch,
-  } = useQuery<{
-    data: ReportConfigRow | null;
-    cloned: boolean;
-  }>({
-    queryKey: ['report-config', activeWorkspaceId, month],
+  } = useQuery<GetReportConfigResponse>({
+    queryKey: reportKeys.config(activeWorkspaceId, month),
     queryFn: async () => {
       if (!activeWorkspaceId || !month) return { data: null, cloned: false };
-      const res = await fetch(
-        `/api/reports/config?workspace_id=${activeWorkspaceId}&month=${month}`,
-      );
-      if (!res.ok) throw new Error('Không thể tải cấu hình báo cáo');
-      return res.json();
+      return reportsApi.getConfig(activeWorkspaceId, month);
     },
     enabled: !!activeWorkspaceId && !!month,
   });
@@ -42,28 +39,21 @@ export function useReportConfig(month: string) {
   const saveMutation = useMutation({
     mutationFn: async (tables: ReportTable[]) => {
       if (!activeWorkspaceId) throw new Error('Không xác định workspace');
-      const res = await fetch('/api/reports/config', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          workspace_id: activeWorkspaceId,
-          month,
-          tables,
-        }),
+      return reportsApi.saveConfig({
+        workspace_id: activeWorkspaceId,
+        month,
+        tables,
       });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || 'Lưu cấu hình thất bại');
-      return json;
     },
     onSuccess: (json) => {
       // Cập nhật cache React Query ngay lập tức với dữ liệu mới từ server
-      queryClient.setQueryData(['report-config', activeWorkspaceId, month], {
+      queryClient.setQueryData(reportKeys.config(activeWorkspaceId, month), {
         data: json.data,
         cloned: false
       });
       // Invalidate query để đảm bảo đồng bộ ngầm
       queryClient.invalidateQueries({
-        queryKey: ['report-config', activeWorkspaceId, month],
+        queryKey: reportKeys.config(activeWorkspaceId, month),
       });
       toast.success('Đã lưu cấu hình báo cáo thành công');
     },

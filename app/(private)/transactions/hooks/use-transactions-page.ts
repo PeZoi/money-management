@@ -10,6 +10,7 @@ import { useMemo, useState } from 'react';
 import { normalizeText, typeLabel } from '../transaction-ui';
 import { useAccounts } from '@/hooks/use-accounts';
 import { getTransactionSystemImpact } from '@/lib/utils';
+import { transactionsApi, transactionKeys } from '@/lib/api/transactions';
 
 export type FilterType = 'all' | TransactionType;
 export type SortOption = 'newest' | 'oldest' | 'amount_desc' | 'amount_asc';
@@ -25,13 +26,15 @@ export function useTransactionsPage() {
 
   // Query lấy toàn bộ giao dịch của tháng (không phân trang) để thẻ thống kê luôn chính xác 100%
   const { data: monthStatsTransactions = [], isLoading: isStatsLoading } = useQuery<TransactionWithCategory[]>({
-    queryKey: ['transactions-month-stats', activeWorkspaceId, month],
+    queryKey: transactionKeys.monthStats(activeWorkspaceId, month),
     queryFn: async () => {
       if (!activeWorkspaceId || !month) return [];
-      const res = await fetch(`/api/transactions?workspace_id=${activeWorkspaceId}&month=${month}&limit=all`);
-      if (!res.ok) throw new Error('Không thể tải thống kê giao dịch tháng');
-      const json = await res.json();
-      return json.data || [];
+      const res = await transactionsApi.list({
+        workspace_id: activeWorkspaceId,
+        month,
+        limit: 'all',
+      });
+      return res.data || [];
     },
     enabled: !!activeWorkspaceId && !!month,
     staleTime: 60 * 1000,

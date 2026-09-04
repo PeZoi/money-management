@@ -7,6 +7,8 @@ import { useAuth } from "@/hooks/use-auth";
 import { useAccounts } from "@/hooks/use-accounts";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { accountsApi, accountKeys } from "@/lib/api/accounts";
+import { categoriesApi, categoryKeys } from "@/lib/api/categories";
 import {
   Dialog,
   DialogContent,
@@ -34,6 +36,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import IconPreview from "@/components/icons/icon-preview";
+import type { AccountType } from "@/types/database";
 
 import {
   DEFAULT_EXPENSE_CATEGORIES,
@@ -42,7 +45,7 @@ import {
 
 const LOCAL_STORAGE_KEY = "money-setup-dismissed";
 
-const ACCOUNT_PRESETS = [
+const ACCOUNT_PRESETS: { name: string; type: AccountType; icon: string; color: string }[] = [
   { name: "Tiền mặt", type: "cash", icon: "💵", color: "#10b981" },
   { name: "Tài khoản ngân hàng", type: "bank", icon: "🏦", color: "#3b82f6" },
   { name: "Quỹ chung nhóm", type: "cash", icon: "💰", color: "#f59e0b" },
@@ -71,7 +74,7 @@ export function WorkspaceSetupDialog() {
   // Form states cho Account
   const [accountName, setAccountName] = React.useState("");
   const [accountBalance, setAccountBalance] = React.useState("0");
-  const [accountType, setAccountType] = React.useState("cash");
+  const [accountType, setAccountType] = React.useState<AccountType>("cash");
   const [accountIcon, setAccountIcon] = React.useState("💵");
   const [accountColor, setAccountColor] = React.useState("#10b981");
 
@@ -178,25 +181,16 @@ export function WorkspaceSetupDialog() {
     try {
       // 1. Tạo tài khoản mặc định
       const numBalance = Number(accountBalance.replace(/[^0-9-]/g, "")) || 0;
-      const accountRes = await fetch("/api/accounts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          workspace_id: activeWorkspaceId,
-          name: accountName.trim(),
-          type: accountType,
-          balance: numBalance,
-          currency: "VND",
-          icon: accountIcon,
-          color: accountColor,
-          is_active: true,
-        }),
+      await accountsApi.create({
+        workspace_id: activeWorkspaceId,
+        name: accountName.trim(),
+        type: accountType,
+        balance: numBalance,
+        currency: "VND",
+        icon: accountIcon,
+        color: accountColor,
+        is_active: true,
       });
-
-      if (!accountRes.ok) {
-        const errJson = await accountRes.json();
-        throw new Error(errJson.message || "Tạo tài khoản thất bại");
-      }
 
       // 2. Lọc danh sách danh mục được chọn
       const categoriesToCreate = [
@@ -211,22 +205,13 @@ export function WorkspaceSetupDialog() {
 
       // 3. Gọi API bulk insert categories
       if (categoriesToCreate.length > 0) {
-        const categoryRes = await fetch("/api/categories", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(categoriesToCreate),
-        });
-
-        if (!categoryRes.ok) {
-          const errJson = await categoryRes.json();
-          throw new Error(errJson.error || "Tạo danh mục mẫu thất bại");
-        }
+        await categoriesApi.createBulk(categoriesToCreate);
       }
 
       // 4. Invalidate queries & đóng popup
       toast.success("Thiết lập workspace thành công!");
-      queryClient.invalidateQueries({ queryKey: ["accounts", activeWorkspaceId] });
-      queryClient.invalidateQueries({ queryKey: ["categories", activeWorkspaceId] });
+      queryClient.invalidateQueries({ queryKey: accountKeys.workspace(activeWorkspaceId) });
+      queryClient.invalidateQueries({ queryKey: categoryKeys.workspace(activeWorkspaceId) });
 
       // Lưu dismissed để không bao giờ hiển thị lại
       handleDismiss();
@@ -324,14 +309,17 @@ export function WorkspaceSetupDialog() {
 
               <div className="space-y-1.5">
                 <Label className="text-xs font-semibold text-muted-foreground">Loại tài khoản</Label>
-                <Select value={accountType} onValueChange={setAccountType}>
+                <Select value={accountType} onValueChange={(v) => setAccountType(v as AccountType)}>
                   <SelectTrigger className="w-full h-10 rounded-lg border-input bg-background text-sm">
                     <SelectValue placeholder="Chọn loại tài khoản" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="cash">Tiền mặt (Cash)</SelectItem>
                     <SelectItem value="bank">Tài khoản ngân hàng (Bank)</SelectItem>
-                    <SelectItem value="credit">Thẻ tín dụng (Credit Card)</SelectItem>
+                    <SelectItem value="e_wallet">Ví điện tử (E-Wallet)</SelectItem>
+                    <SelectItem value="savings">Sổ tiết kiệm (Savings)</SelectItem>
+                    <SelectItem value="investment">Đầu tư (Investment)</SelectItem>
+                    <SelectItem value="other">Khác (Other)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

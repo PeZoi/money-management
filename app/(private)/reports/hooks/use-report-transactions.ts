@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 
 import type { TransactionWithCategory } from '@/types/database';
 import { useWorkspaceStore } from '@/hooks/use-workspace';
+import { transactionsApi, transactionKeys } from '@/lib/api/transactions';
 
 /**
  * Hook fetch giao dịch cho trang báo cáo.
@@ -14,14 +15,15 @@ export function useReportTransactions(month: string) {
   const { activeWorkspaceId } = useWorkspaceStore();
 
   const { data: transactions = [], isLoading } = useQuery<TransactionWithCategory[]>({
-    queryKey: ['report-transactions', activeWorkspaceId, month],
+    queryKey: transactionKeys.reportMonth(activeWorkspaceId, month),
     queryFn: async () => {
       if (!activeWorkspaceId || !month) return [];
-      const url = `/api/transactions?workspace_id=${activeWorkspaceId}&month=${month}&limit=all`;
-      const res = await fetch(url);
-      if (!res.ok) throw new Error('Không thể tải danh sách giao dịch');
-      const json = await res.json();
-      return json.data || [];
+      const res = await transactionsApi.list({
+        workspace_id: activeWorkspaceId,
+        month,
+        limit: 'all',
+      });
+      return res.data || [];
     },
     enabled: !!activeWorkspaceId && !!month,
   });

@@ -11,7 +11,12 @@ import {
 } from '@/lib/validations/category-schema';
 import { CategoryType, CategoryUi } from '@/types/category';
 import { useWorkspaceStore } from './use-workspace';
-
+import {
+  categoriesApi,
+  categoryKeys,
+  type CreateCategoryPayload,
+  type UpdateCategoryPayload,
+} from '@/lib/api/categories';
 
 /**
  * Hook chuyên xử lý việc lấy danh sách danh mục (GET)
@@ -20,14 +25,10 @@ export function useCategories() {
   const { activeWorkspaceId } = useWorkspaceStore();
 
   const { data: categories = [], isLoading, refetch } = useQuery<CategoryUi[]>({
-    queryKey: ['categories', activeWorkspaceId],
+    queryKey: categoryKeys.workspace(activeWorkspaceId),
     queryFn: async () => {
       if (!activeWorkspaceId) return [];
-      const res = await fetch(`/api/categories?workspace_id=${activeWorkspaceId}`);
-      if (!res.ok) throw new Error('Không thể tải danh mục');
-      const json = await res.json();
-
-      return json.data || [];
+      return categoriesApi.list(activeWorkspaceId);
     },
     enabled: !!activeWorkspaceId,
   });
@@ -67,26 +68,14 @@ export function useCategoryMutation() {
         throw new Error('Lỗi hệ thống: Không xác định được workspace đang hoạt động.');
       }
 
-      const url = isUpdate ? `/api/categories/${categoryId}` : '/api/categories';
-      const method = isUpdate ? 'PATCH' : 'POST';
-
-      const finalPayload = { ...payload };
-      if (!isUpdate) {
-        finalPayload.workspace_id = finalWorkspaceId;
+      if (isUpdate && categoryId) {
+        return categoriesApi.update(categoryId, payload as UpdateCategoryPayload);
       }
 
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(finalPayload),
-      });
-
-      const result = await response.json();
-      if (!response.ok) {
-        throw new Error(result.error || 'Đã có lỗi xảy ra');
-      }
-
-      return result;
+      return categoriesApi.create({
+        ...payload,
+        workspace_id: finalWorkspaceId!,
+      } as CreateCategoryPayload);
     },
     onMutate: async (variables) => {
       const { payload, options } = variables;
@@ -95,14 +84,14 @@ export function useCategoryMutation() {
       const finalWorkspaceId = options?.workspaceId || activeWorkspaceId;
 
       // Hủy các query fetch categories đang chạy
-      await queryClient.cancelQueries({ queryKey: ['categories', finalWorkspaceId] });
+      await queryClient.cancelQueries({ queryKey: categoryKeys.workspace(finalWorkspaceId) });
 
       // Chụp snapshot cache cũ
-      const previousCategories = queryClient.getQueryData<CategoryUi[]>(['categories', finalWorkspaceId]);
+      const previousCategories = queryClient.getQueryData<CategoryUi[]>(categoryKeys.workspace(finalWorkspaceId));
 
       if (isUpdate && categoryId) {
         // Cập nhật lạc quan phần tử cũ
-        queryClient.setQueryData<CategoryUi[]>(['categories', finalWorkspaceId], (old) => {
+        queryClient.setQueryData<CategoryUi[]>(categoryKeys.workspace(finalWorkspaceId), (old) => {
           if (!old) return [];
           return old.map((cat) => (cat.id === categoryId ? { ...cat, ...payload } : cat));
         });
@@ -116,7 +105,7 @@ export function useCategoryMutation() {
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         };
-        queryClient.setQueryData<CategoryUi[]>(['categories', finalWorkspaceId], (old) => {
+        queryClient.setQueryData<CategoryUi[]>(categoryKeys.workspace(finalWorkspaceId), (old) => {
           return old ? [...old, optimisticCategory] : [optimisticCategory];
         });
       }
@@ -130,7 +119,7 @@ export function useCategoryMutation() {
     },
     onError: (error: Error, variables, context) => {
       if (context?.previousCategories) {
-        queryClient.setQueryData(['categories', context.finalWorkspaceId], context.previousCategories);
+        queryClient.setQueryData(categoryKeys.workspace(context.finalWorkspaceId), context.previousCategories);
       }
       const message = error.message || 'Không thể lưu danh mục';
       toast.error(message);
@@ -139,26 +128,21 @@ export function useCategoryMutation() {
     onSettled: (data, error, variables, context) => {
       const finalWorkspaceId = context?.finalWorkspaceId || variables.options?.workspaceId || activeWorkspaceId;
       queryClient.invalidateQueries({
-        queryKey: ['categories', finalWorkspaceId],
+        queryKey: categoryKeys.workspace(finalWorkspaceId),
       });
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const res = await fetch(`/api/categories/${id}`, { method: 'DELETE' });
-      if (!res.ok) {
-        const json = await res.json();
-        throw new Error(json.error || 'Xóa thất bại');
-      }
-      return true;
+      return categoriesApi.delete(id);
     },
     onMutate: async (id) => {
-      await queryClient.cancelQueries({ queryKey: ['categories', activeWorkspaceId] });
-      const previousCategories = queryClient.getQueryData<CategoryUi[]>(['categories', activeWorkspaceId]);
+      await queryClient.cancelQueries({ queryKey: categoryKeys.workspace(activeWorkspaceId) });
+      const previousCategories = queryClient.getQueryData<CategoryUi[]>(categoryKeys.workspace(activeWorkspaceId));
 
       // Xóa lạc quan danh mục khỏi cache
-      queryClient.setQueryData<CategoryUi[]>(['categories', activeWorkspaceId], (old) => {
+      queryClient.setQueryData<CategoryUi[]>(categoryKeys.workspace(activeWorkspaceId), (old) => {
         if (!old) return [];
         return old.filter((cat) => cat.id !== id);
       });
@@ -167,7 +151,7 @@ export function useCategoryMutation() {
     },
     onError: (err: Error, id, context) => {
       if (context?.previousCategories) {
-        queryClient.setQueryData(['categories', activeWorkspaceId], context.previousCategories);
+        queryClient.setQueryData(categoryKeys.workspace(activeWorkspaceId), context.previousCategories);
       }
       toast.error(err.message || 'Không thể xóa danh mục');
     },
@@ -176,7 +160,7 @@ export function useCategoryMutation() {
     },
     onSettled: () => {
       queryClient.invalidateQueries({
-        queryKey: ['categories', activeWorkspaceId],
+        queryKey: categoryKeys.workspace(activeWorkspaceId),
       });
     },
   });

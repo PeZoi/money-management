@@ -16,6 +16,8 @@ import {
   useWorkspaceInvitations,
   useWorkspaceInvitationMutation,
 } from "@/hooks/use-workspace-invitations";
+import { transactionsApi, transactionKeys } from "@/lib/api/transactions";
+import { accountsApi } from "@/lib/api/accounts";
 
 export interface WorkspaceMember {
   id: string;
@@ -115,32 +117,23 @@ export function useSettings() {
 
     setIsResetting(true);
     try {
-      const res = await fetch("/api/transactions/reset", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          workspace_id: activeWorkspaceId,
-          range: resetRange,
-          value: resetValue,
-          keep_balance: keepBalance,
-        }),
+      const result = await transactionsApi.reset({
+        workspace_id: activeWorkspaceId,
+        range: resetRange,
+        value: resetValue,
+        keep_balance: keepBalance,
       });
-
-      const result = await res.json();
-      if (!res.ok) {
-        throw new Error(result.error || "Không thể dọn dẹp giao dịch");
-      }
 
       toast.success(`Đã xóa vĩnh viễn ${result.deleted_count || 0} giao dịch thành công.`);
       setOpenResetDialog(false);
       setConfirmKeyword("");
       
       // Invalidate queries
-      queryClient.invalidateQueries({ queryKey: ["transactions", activeWorkspaceId] });
+      queryClient.invalidateQueries({ queryKey: transactionKeys.all });
       queryClient.invalidateQueries({ queryKey: ["accounts", activeWorkspaceId] });
-      queryClient.invalidateQueries({ queryKey: ["transactions-today", activeWorkspaceId] });
-      queryClient.invalidateQueries({ queryKey: ["transactions-report", activeWorkspaceId] });
-      queryClient.invalidateQueries({ queryKey: ["transactions-report-prev", activeWorkspaceId] });
+      queryClient.invalidateQueries({ queryKey: transactionKeys.today(activeWorkspaceId) });
+      queryClient.invalidateQueries({ queryKey: transactionKeys.report(activeWorkspaceId) });
+      queryClient.invalidateQueries({ queryKey: transactionKeys.reportPrev(activeWorkspaceId) });
     } catch (err: any) {
       toast.error(err.message || "Đã xảy ra lỗi trong quá trình reset.");
     } finally {
@@ -182,11 +175,8 @@ export function useSettings() {
     if (!activeWorkspaceId) return;
     setAccountsLoading(true);
     try {
-      const res = await fetch(`/api/accounts?workspace_id=${activeWorkspaceId}`);
-      const result = await res.json();
-      if (res.ok && result.data) {
-        setAccounts(result.data);
-      }
+      const data = await accountsApi.list(activeWorkspaceId);
+      setAccounts(data);
     } catch (err) {
       console.error("Fetch accounts error:", err);
     } finally {
