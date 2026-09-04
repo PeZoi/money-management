@@ -218,9 +218,6 @@ export function AiInsightsTab({ activeWorkspaceId }: AiInsightsTabProps) {
           <div className="space-y-1">
             <h2 className="text-xl font-extrabold tracking-tight text-foreground flex flex-wrap items-center gap-2.5">
               Trợ lý Phân tích Tài chính AI
-              <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 border border-primary/20 px-2.5 py-0.5 text-[10px] font-bold text-primary tracking-wider uppercase">
-                <SparklesIcon className="size-3 animate-bounce" /> Llama 3.3
-              </span>
             </h2>
             <p className="text-xs sm:text-sm text-muted-foreground/80 max-w-xl leading-relaxed">
               Phân tích thói quen tiêu dùng trong quá khứ, phát hiện các giao dịch bất thường và cung cấp các lời khuyên tiết kiệm tài chính cá nhân hóa dành riêng cho bạn.

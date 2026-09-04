@@ -96,7 +96,7 @@ export function useWorkspaceHistory(workspaceId: string | null) {
     queryKey: ["workspace-history", workspaceId],
     queryFn: async () => {
       if (!workspaceId) return [];
-      const res = await fetch(`/api/transactions?workspace_id=${workspaceId}&month=all`);
+      const res = await fetch(`/api/transactions?workspace_id=${workspaceId}&month=all&limit=all`);
       if (!res.ok) throw new Error("Không thể tải lịch sử giao dịch");
       const json = await res.json();
       return json.data ?? [];

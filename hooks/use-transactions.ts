@@ -146,6 +146,7 @@ export function useTransactionMutation() {
     queryClient.invalidateQueries({ queryKey: ['transactions-today', activeWorkspaceId] });
     queryClient.invalidateQueries({ queryKey: ['transactions-report', activeWorkspaceId] });
     queryClient.invalidateQueries({ queryKey: ['transactions-report-prev', activeWorkspaceId] });
+    queryClient.invalidateQueries({ queryKey: ['transactions-month-stats', activeWorkspaceId] });
     queryClient.invalidateQueries({ queryKey: ['report-transactions', activeWorkspaceId] });
     queryClient.invalidateQueries({ queryKey: ['report-config', activeWorkspaceId] });
     queryClient.invalidateQueries({ queryKey: ['accounts', activeWorkspaceId] });
@@ -584,7 +585,7 @@ export function useTransactionSuggestions() {
     queryKey: ['transaction-suggestions', activeWorkspaceId],
     queryFn: async () => {
       if (!activeWorkspaceId) return [];
-      const res = await fetch(`/api/transactions?workspace_id=${activeWorkspaceId}&month=all`);
+      const res = await fetch(`/api/transactions?workspace_id=${activeWorkspaceId}&month=all&limit=all`);
       if (!res.ok) throw new Error('Không thể tải lịch sử giao dịch để gợi ý');
       const json = await res.json();
       const list: TransactionWithCategory[] = json.data || [];

@@ -117,15 +117,15 @@ export function useDashboardPage() {
 
   // 6. Fetch dữ liệu tài khoản và mutation active
   const { accounts = [], isLoading: isAccountsLoading } = useAccounts();
-  const safeAccounts = accounts || [];
+  const safeAccounts = React.useMemo(() => accounts || [], [accounts]);
   const { activateAccount } = useAccountMutation();
 
-  // 7. Query fetch giao dịch chu kỳ hiện tại
+  // 7. Query fetch giao dịch chu kỳ hiện tại (lấy toàn bộ không phân trang)
   const { data: currentTransactions = [], isLoading: isCurrentLoading } = useQuery<TransactionWithCategory[]>({
     queryKey: ['transactions-report', activeWorkspaceId, timeRange, currentPeriod.start?.toISOString(), currentPeriod.end?.toISOString()],
     queryFn: async () => {
       if (!activeWorkspaceId) return [];
-      let url = `/api/transactions?workspace_id=${activeWorkspaceId}`;
+      let url = `/api/transactions?workspace_id=${activeWorkspaceId}&limit=all`;
       if (timeRange !== 'all' && currentPeriod.start && currentPeriod.end) {
         url += `&start_date=${currentPeriod.start.toISOString()}&end_date=${currentPeriod.end.toISOString()}`;
       } else {
@@ -139,12 +139,12 @@ export function useDashboardPage() {
     enabled: !!activeWorkspaceId,
   });
 
-  // 8. Query fetch giao dịch chu kỳ trước
+  // 8. Query fetch giao dịch chu kỳ trước (lấy toàn bộ không phân trang)
   const { data: prevTransactions = [], isLoading: isPrevLoading } = useQuery<TransactionWithCategory[]>({
     queryKey: ['transactions-report-prev', activeWorkspaceId, timeRange, previousPeriod.start?.toISOString(), previousPeriod.end?.toISOString()],
     queryFn: async () => {
       if (!activeWorkspaceId || timeRange === 'all' || !previousPeriod.start || !previousPeriod.end) return [];
-      const url = `/api/transactions?workspace_id=${activeWorkspaceId}&start_date=${previousPeriod.start.toISOString()}&end_date=${previousPeriod.end.toISOString()}`;
+      const url = `/api/transactions?workspace_id=${activeWorkspaceId}&start_date=${previousPeriod.start.toISOString()}&end_date=${previousPeriod.end.toISOString()}&limit=all`;
       const res = await fetch(url);
       if (!res.ok) throw new Error('Không thể tải giao dịch chu kỳ trước');
       const json = await res.json();
@@ -161,7 +161,7 @@ export function useDashboardPage() {
       const today = new Date();
       const start = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0);
       const end = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
-      const url = `/api/transactions?workspace_id=${activeWorkspaceId}&start_date=${start.toISOString()}&end_date=${end.toISOString()}`;
+      const url = `/api/transactions?workspace_id=${activeWorkspaceId}&start_date=${start.toISOString()}&end_date=${end.toISOString()}&limit=all`;
       const res = await fetch(url);
       if (!res.ok) throw new Error('Không thể tải giao dịch hôm nay');
       const json = await res.json();
@@ -253,7 +253,7 @@ export function useDashboardPage() {
       incomePercent,
       expensePercent,
     };
-  }, [accounts, currentTransactions, prevTransactions, includeSavings]);
+  }, [safeAccounts, currentTransactions, prevTransactions, includeSavings]);
 
   // 10. Gom nhóm dữ liệu biểu đồ Area
   const trendData = React.useMemo(() => {
@@ -348,7 +348,6 @@ export function useDashboardPage() {
       if (!t || !t.created_at) return;
       const d = new Date(t.created_at);
       if (isNaN(d.getTime())) return;
-      const key = `${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
       if (t.type === 'income' || t.type === 'expense' || t.type === 'transfer') {
         const impact = getTransactionSystemImpact(t, safeAccounts);
         if (impact.type !== 'none') {
@@ -369,7 +368,7 @@ export function useDashboardPage() {
         return { key, sortVal: y * 12 + m };
       })
       .sort((a, b) => a.sortVal - b.sortVal)
-      .slice(-6); // hiển thị tối đa 6 tháng phát sinh gần nhất
+      .slice(-12); // hiển thị tối đa 12 tháng phát sinh gần nhất trong lịch sử
 
     return sortedMonths.map((item) => ({
       time: item.key,
@@ -377,7 +376,7 @@ export function useDashboardPage() {
       expense: monthMap[item.key].expense,
       transactions: monthMap[item.key].transactions,
     }));
-  }, [currentTransactions, timeRange, referenceDate, currentPeriod]);
+  }, [currentTransactions, timeRange, referenceDate, currentPeriod, safeAccounts]);
 
   // 11. Chuẩn bị dữ liệu so sánh cho Bar Chart
   const comparisonData = React.useMemo(() => {
@@ -415,7 +414,7 @@ export function useDashboardPage() {
       current: { label: currentLabel, income: currentIncome, expense: currentExpense },
       previous: { label: previousLabel, income: previousIncome, expense: previousExpense },
     };
-  }, [timeRange, stats, prevTransactions]);
+  }, [timeRange, stats, prevTransactions, safeAccounts]);
 
   // 12. Giao dịch hôm nay độc lập với filter thời gian
   const todayTransactions = todayTransactionsRaw;

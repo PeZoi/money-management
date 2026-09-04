@@ -1,5 +1,7 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
+import { useWorkspaceStore } from '@/hooks/use-workspace';
 import { useConfirm } from '@/hooks/use-confirm';
 import { useDraggable } from '@/hooks/use-draggable';
 import { useTransactionMutation, useInfiniteTransactions } from '@/hooks/use-transactions';
@@ -13,6 +15,7 @@ export type FilterType = 'all' | TransactionType;
 export type SortOption = 'newest' | 'oldest' | 'amount_desc' | 'amount_asc';
 
 export function useTransactionsPage() {
+  const { activeWorkspaceId } = useWorkspaceStore();
   const [month, setMonth] = useState<string>(() => {
     const now = new Date();
     const y = now.getFullYear();
@@ -20,7 +23,21 @@ export function useTransactionsPage() {
     return `${y}-${m}`;
   });
 
-  // Sử dụng hook Infinite Query với phân trang Cursor-based
+  // Query lấy toàn bộ giao dịch của tháng (không phân trang) để thẻ thống kê luôn chính xác 100%
+  const { data: monthStatsTransactions = [], isLoading: isStatsLoading } = useQuery<TransactionWithCategory[]>({
+    queryKey: ['transactions-month-stats', activeWorkspaceId, month],
+    queryFn: async () => {
+      if (!activeWorkspaceId || !month) return [];
+      const res = await fetch(`/api/transactions?workspace_id=${activeWorkspaceId}&month=${month}&limit=all`);
+      if (!res.ok) throw new Error('Không thể tải thống kê giao dịch tháng');
+      const json = await res.json();
+      return json.data || [];
+    },
+    enabled: !!activeWorkspaceId && !!month,
+    staleTime: 60 * 1000,
+  });
+
+  // Sử dụng hook Infinite Query với phân trang Cursor-based cho danh sách cuộn
   const {
     transactions,
     totalCount,
@@ -96,6 +113,8 @@ export function useTransactionsPage() {
 
   return {
     transactions,
+    monthStatsTransactions,
+    isStatsLoading,
     totalCount,
     isLoading,
     isFetching,

@@ -72,7 +72,9 @@ export function useAccountDetailPage(id: string) {
   // Xác định ngày bắt đầu lấy dữ liệu (để tính ngược số dư lũy kế từ số dư hiện tại)
   const startDateStr = useMemo(() => {
     if (filterType === 'month') {
+      if (month === 'all') return undefined;
       const [y, m] = month.split('-').map(Number);
+      if (isNaN(y) || isNaN(m)) return undefined;
       return new Date(y, m - 1, 1, 0, 0, 0, 0).toISOString();
     } else {
       return new Date(year, 0, 1, 0, 0, 0, 0).toISOString();
@@ -130,20 +132,61 @@ export function useAccountDetailPage(id: string) {
     }[] = [];
 
     if (filterType === 'month') {
-      const [y, m] = month.split('-').map(Number);
-      const days = getDaysInMonth(y, m - 1, true); // Giới hạn đến ngày hiện tại
-      timeBuckets = days.map((day) => {
-        const dStr = String(day.getDate()).padStart(2, '0');
-        const mStr = String(day.getMonth() + 1).padStart(2, '0');
-        const start = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 0, 0, 0, 0);
-        const end = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 23, 59, 59, 999);
-        return {
-          label: `${dStr}/${mStr}`,
-          key: `${day.getFullYear()}-${mStr}-${dStr}`,
-          startDate: start,
-          endDate: end,
-        };
-      });
+      if (month === 'all') {
+        // Gom các buckets theo từng tháng từ giao dịch sớm nhất (hoặc ngày tạo tài khoản) đến hiện tại
+        let earliestDate = new Date(account.created_at);
+        if (isNaN(earliestDate.getTime())) {
+          earliestDate = new Date();
+        }
+        transactions.forEach((t) => {
+          if (t.created_at) {
+            const td = new Date(t.created_at);
+            if (!isNaN(td.getTime()) && td < earliestDate) {
+              earliestDate = td;
+            }
+          }
+        });
+
+        const now = new Date();
+        let curY = earliestDate.getFullYear();
+        let curM = earliestDate.getMonth();
+        const endY = now.getFullYear();
+        const endM = now.getMonth();
+
+        const buckets = [];
+        while (curY < endY || (curY === endY && curM <= endM)) {
+          const mStr = String(curM + 1).padStart(2, '0');
+          const start = new Date(curY, curM, 1, 0, 0, 0, 0);
+          const end = new Date(curY, curM + 1, 0, 23, 59, 59, 999);
+          buckets.push({
+            label: `Thg ${mStr}/${curY}`,
+            key: `${curY}-${mStr}`,
+            startDate: start,
+            endDate: end,
+          });
+          curM++;
+          if (curM > 11) {
+            curM = 0;
+            curY++;
+          }
+        }
+        timeBuckets = buckets;
+      } else {
+        const [y, m] = month.split('-').map(Number);
+        const days = getDaysInMonth(y, m - 1, true); // Giới hạn đến ngày hiện tại
+        timeBuckets = days.map((day) => {
+          const dStr = String(day.getDate()).padStart(2, '0');
+          const mStr = String(day.getMonth() + 1).padStart(2, '0');
+          const start = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 0, 0, 0, 0);
+          const end = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 23, 59, 59, 999);
+          return {
+            label: `${dStr}/${mStr}`,
+            key: `${day.getFullYear()}-${mStr}-${dStr}`,
+            startDate: start,
+            endDate: end,
+          };
+        });
+      }
     } else {
       const months = getMonthsInYear(year, true); // Giới hạn đến tháng hiện tại
       timeBuckets = months.map((mDate) => {
@@ -242,7 +285,11 @@ export function useAccountDetailPage(id: string) {
   // Lọc transactions của tài khoản chỉ nằm trong chu kỳ được lọc để hiển thị ở Tab Chi tiết
   const filteredPeriodTransactions = useMemo(() => {
     if (filterType === 'month') {
+      if (month === 'all') {
+        return transactions;
+      }
       const [y, m] = month.split('-').map(Number);
+      if (isNaN(y) || isNaN(m)) return transactions;
       const start = new Date(y, m - 1, 1, 0, 0, 0, 0);
       const end = new Date(y, m, 0, 23, 59, 59, 999);
       return transactions.filter(t => {

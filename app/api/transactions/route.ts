@@ -44,9 +44,12 @@ export async function GET(req: Request) {
   const startDateParam = searchParams.get("start_date");
   const endDateParam = searchParams.get("end_date");
   const cursor = searchParams.get("cursor"); // ISO string của giao dịch cuối cùng để phân trang Keyset
-  const limitParam = parseInt(searchParams.get("limit") || "50", 10);
-  // Giảm giới hạn tối đa mỗi lần fetch xuống 100 để đảm bảo render mượt mà
-  const limit = Math.min(Math.max(1, isNaN(limitParam) ? 50 : limitParam), 100);
+  const limitQuery = searchParams.get("limit");
+  const paginateQuery = searchParams.get("paginate");
+  const isAll = limitQuery === "all" || paginateQuery === "false";
+  const limitParam = parseInt(limitQuery || "50", 10);
+  // Nếu ở chế độ phân trang, cho phép limit từ 1 đến 500 (mặc định 50)
+  const limit = Math.min(Math.max(1, isNaN(limitParam) ? 50 : limitParam), 500);
 
   if (!isUuid(workspaceId)) {
     return NextResponse.json(
@@ -147,9 +150,15 @@ export async function GET(req: Request) {
     }
   }
 
-  // Chạy truy vấn lấy danh sách (limit + 1) song song với truy vấn đếm tổng số
+  // Khi ở chế độ lấy toàn bộ (isAll = true cho báo cáo / dashboard), bỏ qua phân trang Keyset và lấy tối đa 10,000 bản ghi
+  const queryOrder = query.order("created_at", { ascending: false });
+  const listQueryPromise = isAll
+    ? queryOrder.limit(10000)
+    : queryOrder.limit(limit + 1);
+
+  // Chạy truy vấn lấy danh sách song song với truy vấn đếm tổng số
   const [listResult, countResult] = await Promise.all([
-    query.order("created_at", { ascending: false }).limit(limit + 1),
+    listQueryPromise,
     countQuery ? countQuery : Promise.resolve({ count: null, error: null }),
   ]);
 
@@ -158,7 +167,7 @@ export async function GET(req: Request) {
   }
 
   const rawRows = listResult.data ?? [];
-  const hasMore = rawRows.length > limit;
+  const hasMore = isAll ? false : rawRows.length > limit;
   const pageRows = hasMore ? rawRows.slice(0, limit) : rawRows;
 
   // Đính kèm thông tin người tạo giao dịch
@@ -174,7 +183,7 @@ export async function GET(req: Request) {
     };
   });
 
-  const nextCursor = hasMore && mappedData.length > 0
+  const nextCursor = !isAll && hasMore && mappedData.length > 0
     ? mappedData[mappedData.length - 1].created_at
     : null;
 
@@ -182,7 +191,7 @@ export async function GET(req: Request) {
     data: mappedData,
     next_cursor: nextCursor,
     has_more: hasMore,
-    total_count: countResult.count ?? null,
+    total_count: countResult.count ?? mappedData.length,
   });
 }
 

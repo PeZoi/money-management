@@ -132,8 +132,8 @@ export function AnalysisTab({
                     const dataPoint = chartData[index];
                     if (dataPoint.transactions && dataPoint.transactions.length > 0) {
                       const formattedLabel = filterType === 'month'
-                        ? `Giao dịch ngày ${dataPoint.time}/${year}`
-                        : `Giao dịch tháng ${dataPoint.time}/${year}`;
+                        ? (dataPoint.time.startsWith('Thg') ? `Giao dịch ${dataPoint.time}` : `Giao dịch ngày ${dataPoint.time}/${year}`)
+                        : `Giao dịch ${dataPoint.time}/${year}`;
                       
                       onSelectBucket({
                         label: formattedLabel,

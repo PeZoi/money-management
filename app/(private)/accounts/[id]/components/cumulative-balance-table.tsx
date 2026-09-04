@@ -100,7 +100,9 @@ export function CumulativeBalanceTable({
                     onClick={() => {
                       if (hasTransactions) {
                         onSelectBucket({
-                          label: filterType === 'month' ? `Giao dịch ngày ${item.label}/${year}` : `Giao dịch tháng ${item.label}/${year}`,
+                          label: filterType === 'month' 
+                            ? (item.label.startsWith('Thg') ? `Giao dịch ${item.label}` : `Giao dịch ngày ${item.label}/${year}`) 
+                            : `Giao dịch ${item.label}/${year}`,
                           transactions: item.transactions,
                         });
                       }

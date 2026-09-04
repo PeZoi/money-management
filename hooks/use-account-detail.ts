@@ -47,7 +47,7 @@ export function useAccountTransactions({
     queryKey: ['account-transactions', accountId, activeWorkspaceId, startDate, endDate],
     queryFn: async () => {
       if (!activeWorkspaceId || !accountId) return [];
-      let url = `/api/transactions?workspace_id=${activeWorkspaceId}&account_id=${accountId}&month=all`;
+      let url = `/api/transactions?workspace_id=${activeWorkspaceId}&account_id=${accountId}&month=all&limit=all`;
       if (startDate) {
         url += `&start_date=${encodeURIComponent(startDate)}`;
       }

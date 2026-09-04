@@ -29,7 +29,8 @@ const SORT_OPTIONS = [
 
 export default function TransactionsPage() {
   const {
-    transactions,
+    monthStatsTransactions,
+    isStatsLoading,
     totalCount,
     isLoading,
     hasNextPage,
@@ -75,8 +76,8 @@ export default function TransactionsPage() {
         {/* Stats summary cards */}
         <div className="mt-5">
           <TransactionStatsCards
-            transactions={transactions}
-            isLoading={isLoading}
+            transactions={monthStatsTransactions}
+            isLoading={isStatsLoading}
             activeFilter={typeFilter}
             onFilterType={setTypeFilter}
           />

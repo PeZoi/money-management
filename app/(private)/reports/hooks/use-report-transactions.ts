@@ -17,7 +17,7 @@ export function useReportTransactions(month: string) {
     queryKey: ['report-transactions', activeWorkspaceId, month],
     queryFn: async () => {
       if (!activeWorkspaceId || !month) return [];
-      const url = `/api/transactions?workspace_id=${activeWorkspaceId}&month=${month}`;
+      const url = `/api/transactions?workspace_id=${activeWorkspaceId}&month=${month}&limit=all`;
       const res = await fetch(url);
       if (!res.ok) throw new Error('Không thể tải danh sách giao dịch');
       const json = await res.json();
