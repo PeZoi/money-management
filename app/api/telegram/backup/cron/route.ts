@@ -1,6 +1,40 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
+// Tăng thời gian chạy tối đa cho Serverless Function trên Vercel để tránh timeout
+export const dynamic = "force-dynamic";
+export const maxDuration = 60;
+
+/**
+ * Helper thực thi một tác vụ bất đồng bộ với cơ chế tự động thử lại (Retry with exponential backoff).
+ * Khắc phục triệt để lỗi "Gateway Timeout" (504) và chập chờn kết nối từ Supabase/Cloudflare khi Cold Start.
+ */
+async function withRetry<T>(
+  operation: () => Promise<T>,
+  options: { retries?: number; delayMs?: number; description?: string } = {}
+): Promise<T> {
+  const { retries = 3, delayMs = 1500, description = "Tác vụ" } = options;
+  let lastError: unknown;
+
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      return await operation();
+    } catch (err) {
+      lastError = err;
+      const errMsg = err instanceof Error ? err.message : String(err);
+      console.warn(
+        `[Backup Cron Retry] ${description} thất bại lần ${attempt}/${retries}: ${errMsg}`
+      );
+      if (attempt < retries) {
+        // Đợi với thời gian tăng dần (1.5s, 3s...) để backend Supabase kịp phục hồi
+        await new Promise((resolve) => setTimeout(resolve, delayMs * attempt));
+      }
+    }
+  }
+
+  throw lastError;
+}
+
 // Hàm xử lý chính cho việc chạy Backup Cron Job
 async function runBackupCron(req: Request) {
   const authHeader = req.headers.get("authorization");
@@ -36,7 +70,6 @@ async function runBackupCron(req: Request) {
     const supabaseAdmin = createAdminClient();
 
     // 1. Xác định thời gian hiện tại theo múi giờ Việt Nam (GMT+7)
-    // now.getTime() trả về Epoch ms (UTC), ta cộng thêm 7 tiếng
     const dateInGmt7 = new Date(new Date().getTime() + 7 * 60 * 60 * 1000);
     const currentHour = dateInGmt7.getUTCHours(); // 0 - 23
     const currentDayOfMonth = dateInGmt7.getUTCDate(); // 1 - 31
@@ -48,20 +81,25 @@ async function runBackupCron(req: Request) {
         `Ngày trong tháng: ${currentDayOfMonth}, Ngày trong tuần: ${currentDayOfWeek}`
     );
 
-    // 2. Lấy danh sách cấu hình auto backup khớp với giờ hiện tại
-    const { data: connections, error: queryError } = await supabaseAdmin
-      .from("user_telegram_connections")
-      .select("user_id, telegram_chat_id, telegram_username, backup_interval, backup_day")
-      .eq("is_auto_backup", true)
-      .eq("backup_hour", currentHour)
-      .not("telegram_chat_id", "is", null);
+    // 2. Lấy danh sách cấu hình auto backup khớp với giờ hiện tại (kèm Retry chống Gateway Timeout)
+    const connections = await withRetry(
+      async () => {
+        const { data, error } = await supabaseAdmin
+          .from("user_telegram_connections")
+          .select("user_id, telegram_chat_id, telegram_username, backup_interval, backup_day")
+          .eq("is_auto_backup", true)
+          .eq("backup_hour", currentHour)
+          .not("telegram_chat_id", "is", null);
 
-    if (queryError) {
-      console.error("[Backup Cron] Lỗi truy vấn database:", queryError);
-      return NextResponse.json({ success: false, message: queryError.message }, { status: 500 });
-    }
+        if (error) {
+          throw new Error(`Database error: ${error.message}`);
+        }
+        return data || [];
+      },
+      { retries: 3, delayMs: 1500, description: "Truy vấn danh sách lịch trình sao lưu" }
+    );
 
-    if (!connections || connections.length === 0) {
+    if (connections.length === 0) {
       return NextResponse.json({
         success: true,
         message: `Không có cấu hình sao lưu nào trùng với khung giờ ${currentHour}:00 hiện tại.`,
@@ -84,7 +122,7 @@ async function runBackupCron(req: Request) {
     }
 
     console.log(`[Backup Cron] Bắt đầu xử lý sao lưu cho ${targetUsers.length} tài khoản...`);
-    const results = [];
+    const results: Array<{ userId: string; status: string; reason?: string; error?: string }> = [];
 
     // 4. Lặp qua từng user để tạo file sao lưu và gửi Telegram
     for (const target of targetUsers) {
@@ -97,17 +135,23 @@ async function runBackupCron(req: Request) {
           ? `${target.telegram_username}@telegram.org`
           : "auto-backup@moneyplus.local";
 
-        // Lấy workspace cá nhân của user
-        const { data: personalWorkspace, error: wsError } = await supabaseAdmin
-          .from("workspaces")
-          .select("*")
-          .eq("created_by", userId)
-          .eq("is_personal", true)
-          .maybeSingle();
+        // Lấy workspace cá nhân của user (kèm retry)
+        const personalWorkspace = await withRetry(
+          async () => {
+            const { data, error } = await supabaseAdmin
+              .from("workspaces")
+              .select("*")
+              .eq("created_by", userId)
+              .eq("is_personal", true)
+              .maybeSingle();
 
-        if (wsError) {
-          throw new Error(`Lấy workspace cá nhân thất bại: ${wsError.message}`);
-        }
+            if (error) {
+              throw new Error(`Lấy workspace cá nhân thất bại: ${error.message}`);
+            }
+            return data;
+          },
+          { retries: 2, delayMs: 1000, description: `Truy vấn workspace cá nhân cho user ${userId}` }
+        );
 
         if (!personalWorkspace) {
           // Gửi tin nhắn thông báo tài khoản không có workspace cá nhân để sao lưu
@@ -119,6 +163,7 @@ async function runBackupCron(req: Request) {
               text: `⚠️ <b>Thông báo sao lưu tự động Money+</b>\n\nKhông thể tiến hành sao lưu tự động vì không tìm thấy dữ liệu workspace cá nhân của bạn.`,
               parse_mode: "HTML",
             }),
+            signal: AbortSignal.timeout(15000),
           });
           results.push({ userId, status: "skipped", reason: "No personal workspace" });
           continue;
@@ -126,16 +171,23 @@ async function runBackupCron(req: Request) {
 
         const workspaceId = personalWorkspace.id;
 
-        // Lấy chi tiết dữ liệu từ các bảng liên quan đến workspace cá nhân
-        const [
-          { data: accounts },
-          { data: categories },
-          { data: transactions },
-        ] = await Promise.all([
-          supabaseAdmin.from("accounts").select("*").eq("workspace_id", workspaceId),
-          supabaseAdmin.from("categories").select("*").eq("workspace_id", workspaceId),
-          supabaseAdmin.from("transactions").select("*").eq("workspace_id", workspaceId),
-        ]);
+        // Lấy chi tiết dữ liệu từ các bảng liên quan đến workspace cá nhân (kèm retry)
+        const [accounts, categories, transactions] = await withRetry(
+          async () => {
+            const [accRes, catRes, txRes] = await Promise.all([
+              supabaseAdmin.from("accounts").select("*").eq("workspace_id", workspaceId),
+              supabaseAdmin.from("categories").select("*").eq("workspace_id", workspaceId),
+              supabaseAdmin.from("transactions").select("*").eq("workspace_id", workspaceId),
+            ]);
+
+            if (accRes.error) throw new Error(`Lấy tài khoản thất bại: ${accRes.error.message}`);
+            if (catRes.error) throw new Error(`Lấy danh mục thất bại: ${catRes.error.message}`);
+            if (txRes.error) throw new Error(`Lấy giao dịch thất bại: ${txRes.error.message}`);
+
+            return [accRes.data || [], catRes.data || [], txRes.data || []] as const;
+          },
+          { retries: 2, delayMs: 1000, description: `Truy vấn dữ liệu sao lưu cho user ${userId}` }
+        );
 
         // Tạo dữ liệu payload backup JSON
         const backupData = {
@@ -147,9 +199,9 @@ async function runBackupCron(req: Request) {
             email: userEmail,
           },
           workspace: personalWorkspace,
-          accounts: accounts || [],
-          categories: categories || [],
-          transactions: transactions || [],
+          accounts,
+          categories,
+          transactions,
         };
 
         const fileName = `money_backup_${new Date().toISOString().split("T")[0]}.json`;
@@ -157,7 +209,12 @@ async function runBackupCron(req: Request) {
         const blob = new Blob([backupStr], { type: "application/json" });
 
         const fileSizeKb = (blob.size / 1024).toFixed(2);
-        const intervalText = target.backup_interval === "daily" ? "Hằng ngày" : target.backup_interval === "weekly" ? "Hằng tuần" : "Hằng tháng";
+        const intervalText =
+          target.backup_interval === "daily"
+            ? "Hằng ngày"
+            : target.backup_interval === "weekly"
+              ? "Hằng tuần"
+              : "Hằng tháng";
 
         const formData = new FormData();
         formData.append("chat_id", telegramChatId.toString());
@@ -174,9 +231,9 @@ async function runBackupCron(req: Request) {
             `🔒 <b>Bảo mật:</b> 🛡️ Mã hóa cá nhân\n\n` +
             `📊 <b>THỐNG KÊ CHI TIẾT BẢN SAO LƯU:</b>\n` +
             `┌─────────────────────────\n` +
-            `├─ 💳 <b>Tài khoản & Ví:</b> <code>${(accounts?.length || 0).toLocaleString("vi-VN")}</code> ví hoạt động\n` +
-            `├─ 📂 <b>Danh mục thu chi:</b> <code>${(categories?.length || 0).toLocaleString("vi-VN")}</code> nhóm phân loại\n` +
-            `└─ 📝 <b>Nhật ký giao dịch:</b> <code>${(transactions?.length || 0).toLocaleString("vi-VN")}</code> bản ghi phát sinh\n` +
+            `├─ 💳 <b>Tài khoản & Ví:</b> <code>${accounts.length.toLocaleString("vi-VN")}</code> ví hoạt động\n` +
+            `├─ 📂 <b>Danh mục thu chi:</b> <code>${categories.length.toLocaleString("vi-VN")}</code> nhóm phân loại\n` +
+            `└─ 📝 <b>Nhật ký giao dịch:</b> <code>${transactions.length.toLocaleString("vi-VN")}</code> bản ghi phát sinh\n` +
             `└─────────────────────────\n\n` +
             `💡 <b>HƯỚNG DẪN KHÔI PHỤC DỮ LIỆU:</b>\n` +
             `1️⃣ Tải file đính kèm này về thiết bị của bạn.\n` +
@@ -187,16 +244,24 @@ async function runBackupCron(req: Request) {
         );
         formData.append("parse_mode", "HTML");
 
-        const telegramUrl = `https://api.telegram.org/bot${botToken}/sendDocument`;
-        const telegramRes = await fetch(telegramUrl, {
-          method: "POST",
-          body: formData,
-        });
+        // Gửi file qua Telegram API có retry và timeout bảo vệ
+        await withRetry(
+          async () => {
+            const telegramUrl = `https://api.telegram.org/bot${botToken}/sendDocument`;
+            const telegramRes = await fetch(telegramUrl, {
+              method: "POST",
+              body: formData,
+              signal: AbortSignal.timeout(25000), // Timeout 25s
+            });
 
-        if (!telegramRes.ok) {
-          const errText = await telegramRes.text();
-          throw new Error(`Telegram API Error: ${errText}`);
-        }
+            if (!telegramRes.ok) {
+              const errText = await telegramRes.text();
+              throw new Error(`Telegram API Error: ${errText}`);
+            }
+            return true;
+          },
+          { retries: 2, delayMs: 2000, description: `Gửi tài liệu Telegram cho user ${userId}` }
+        );
 
         results.push({ userId, status: "success" });
       } catch (userErr: unknown) {

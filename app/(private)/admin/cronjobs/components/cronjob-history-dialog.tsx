@@ -173,32 +173,40 @@ export default function CronJobHistoryDialog({
                       return (
                         <div
                           key={`hist-${item.identifier || item.jobLogId || idx}-${idx}`}
-                          className="flex flex-col md:flex-row md:items-center justify-between p-3.5 rounded-xl border border-muted/40 hover:border-muted-foreground/25 bg-muted/5 hover:bg-muted/15 transition-all duration-200 gap-3"
+                          className="flex flex-col p-3.5 rounded-xl border border-muted/40 hover:border-muted-foreground/25 bg-muted/5 hover:bg-muted/15 transition-all duration-200 gap-2.5"
                         >
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-bold text-foreground">
-                                {format(execDate, "HH:mm:ss dd/MM/yyyy", { locale: vi })}
-                              </span>
-                              {getStatusBadge(item.status, item.httpStatus ?? 0)}
+                          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-bold text-foreground">
+                                  {format(execDate, "HH:mm:ss dd/MM/yyyy", { locale: vi })}
+                                </span>
+                                {getStatusBadge(item.status, item.httpStatus ?? 0)}
+                              </div>
+                              <div className="text-[11px] text-muted-foreground flex items-center gap-3">
+                                <span>
+                                  URL: <code className="text-muted-foreground/80 break-all">{item.url}</code>
+                                </span>
+                              </div>
                             </div>
-                            <div className="text-[11px] text-muted-foreground flex items-center gap-3">
-                              <span>
-                                URL: <code className="text-muted-foreground/80 break-all">{item.url}</code>
+
+                            <div className="flex md:flex-col items-start md:items-end justify-between md:justify-center border-t md:border-t-0 pt-2 md:pt-0 border-muted/45 gap-1 shrink-0">
+                              <span className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
+                                <Clock className="size-3" /> {durationMs} ms
                               </span>
+                              {item.statusText && item.statusText !== "OK" && (
+                                <span className="text-[10px] text-rose-500/80 font-bold max-w-[200px] truncate">
+                                  {item.statusText}
+                                </span>
+                              )}
                             </div>
                           </div>
 
-                          <div className="flex md:flex-col items-start md:items-end justify-between md:justify-center border-t md:border-t-0 pt-2 md:pt-0 border-muted/45 gap-1 shrink-0">
-                            <span className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
-                              <Clock className="size-3" /> {durationMs} ms
-                            </span>
-                            {item.statusText && item.statusText !== "OK" && (
-                              <span className="text-[10px] text-rose-500/80 font-bold max-w-[200px] truncate">
-                                {item.statusText}
-                              </span>
-                            )}
-                          </div>
+                          {item.body && (
+                            <div className="text-[11px] font-mono bg-background/90 p-2 rounded-lg border border-muted/50 text-muted-foreground break-all max-h-24 overflow-y-auto">
+                              {item.body}
+                            </div>
+                          )}
                         </div>
                       );
                     })}

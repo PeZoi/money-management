@@ -24,6 +24,12 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Bỏ qua các đường dẫn công khai (Cron job, Webhook, Health check, Auth callback)
+  // ngay từ đầu để tránh gọi Supabase Auth không cần thiết và giảm latency cho Edge Runtime
+  if (PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
+    return NextResponse.next();
+  }
+
   const response = NextResponse.next();
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -75,10 +81,6 @@ export async function middleware(request: NextRequest) {
       const next = request.nextUrl.searchParams.get("next") ?? "/dashboard";
       return NextResponse.redirect(new URL(next, request.url));
     }
-    return response;
-  }
-
-  if (PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
     return response;
   }
 

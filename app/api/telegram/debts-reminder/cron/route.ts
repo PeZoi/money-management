@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
+export const dynamic = "force-dynamic";
+export const maxDuration = 60;
+
 // Hàm helper format tiền tệ VND
 function formatVnd(amount: number | string) {
   const numeric = Number(amount);
@@ -21,9 +24,8 @@ function formatDate(dateStr: string) {
 // Hàm tính số ngày trễ hoặc số ngày còn lại đến hạn
 function getDueDaysText(dueAtStr: string) {
   const now = new Date();
-  // Đặt về 0h 0m 0s để tính toán chính xác số ngày
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  
+
   const due = new Date(dueAtStr);
   const dueDate = new Date(due.getFullYear(), due.getMonth(), due.getDate());
 
@@ -37,6 +39,34 @@ function getDueDaysText(dueAtStr: string) {
   } else {
     return `Còn ${diffDays} ngày nữa ⏳`;
   }
+}
+
+/**
+ * Helper thực thi một tác vụ bất đồng bộ với cơ chế tự động thử lại (Retry with exponential backoff).
+ */
+async function withRetry<T>(
+  operation: () => Promise<T>,
+  options: { retries?: number; delayMs?: number; description?: string } = {}
+): Promise<T> {
+  const { retries = 3, delayMs = 1500, description = "Tác vụ" } = options;
+  let lastError: unknown;
+
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      return await operation();
+    } catch (err) {
+      lastError = err;
+      const errMsg = err instanceof Error ? err.message : String(err);
+      console.warn(
+        `[Debts Cron Retry] ${description} thất bại lần ${attempt}/${retries}: ${errMsg}`
+      );
+      if (attempt < retries) {
+        await new Promise((resolve) => setTimeout(resolve, delayMs * attempt));
+      }
+    }
+  }
+
+  throw lastError;
 }
 
 async function runDebtsReminderCron(req: Request) {
@@ -72,20 +102,25 @@ async function runDebtsReminderCron(req: Request) {
     const supabaseAdmin = createAdminClient();
 
     // 1. Quét các khoản nợ có trạng thái chưa trả (pending), đã đến hạn/quá hạn (due_at <= ngày hiện tại)
-    // Và chưa được gửi thông báo (notified = false)
-    const { data: debts, error: debtsError } = await supabaseAdmin
-      .from("debts")
-      .select("*")
-      .eq("status", "pending")
-      .eq("notified", false)
-      .lte("due_at", new Date().toISOString());
+    // Và chưa được gửi thông báo (notified = false) - kèm retry chống Gateway Timeout
+    const debts = await withRetry(
+      async () => {
+        const { data, error } = await supabaseAdmin
+          .from("debts")
+          .select("*")
+          .eq("status", "pending")
+          .eq("notified", false)
+          .lte("due_at", new Date().toISOString());
 
-    if (debtsError) {
-      console.error("[Debts Reminder Cron] Lỗi truy vấn nợ:", debtsError);
-      return NextResponse.json({ success: false, message: debtsError.message }, { status: 500 });
-    }
+        if (error) {
+          throw new Error(`Truy vấn danh sách nợ thất bại: ${error.message}`);
+        }
+        return data || [];
+      },
+      { retries: 3, delayMs: 1500, description: "Quét danh sách nợ đến hạn" }
+    );
 
-    if (!debts || debts.length === 0) {
+    if (debts.length === 0) {
       return NextResponse.json({
         success: true,
         message: "Không có khoản nợ nào cần gửi thông báo nhắc nhở.",
@@ -104,28 +139,37 @@ async function runDebtsReminderCron(req: Request) {
       debtsByUser[userId].push(debt);
     }
 
-    const results = [];
+    const results: Array<{
+      userId: string;
+      status: string;
+      reason?: string;
+      error?: string;
+      count?: number;
+    }> = [];
 
     // 3. Với mỗi user, kiểm tra kết nối Telegram và gửi tin nhắn
     for (const userId of Object.keys(debtsByUser)) {
       const userDebts = debtsByUser[userId];
 
-      // Lấy thông tin Telegram Connection của user
-      const { data: conn, error: connError } = await supabaseAdmin
-        .from("user_telegram_connections")
-        .select("telegram_chat_id, telegram_username")
-        .eq("user_id", userId)
-        .not("telegram_chat_id", "is", null)
-        .maybeSingle();
+      // Lấy thông tin Telegram Connection của user (kèm retry)
+      const conn = await withRetry(
+        async () => {
+          const { data, error } = await supabaseAdmin
+            .from("user_telegram_connections")
+            .select("telegram_chat_id, telegram_username")
+            .eq("user_id", userId)
+            .not("telegram_chat_id", "is", null)
+            .maybeSingle();
 
-      if (connError) {
-        console.error(`[Debts Reminder Cron] Lỗi truy vấn telegram connection cho user ${userId}:`, connError);
-        results.push({ userId, status: "failed", error: connError.message });
-        continue;
-      }
+          if (error) {
+            throw new Error(`Truy vấn kết nối Telegram thất bại: ${error.message}`);
+          }
+          return data;
+        },
+        { retries: 2, delayMs: 1000, description: `Lấy thông tin Telegram cho user ${userId}` }
+      );
 
       if (!conn || !conn.telegram_chat_id) {
-        // Người dùng chưa kết nối Telegram, bỏ qua và không gửi thông báo
         results.push({ userId, status: "skipped", reason: "Chưa kết nối Telegram" });
         continue;
       }
@@ -155,20 +199,27 @@ async function runDebtsReminderCron(req: Request) {
 
       // 4. Gửi tin nhắn qua Telegram Bot
       try {
-        const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            chat_id: telegramChatId.toString(),
-            text: message,
-            parse_mode: "HTML",
-          }),
-        });
+        await withRetry(
+          async () => {
+            const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                chat_id: telegramChatId.toString(),
+                text: message,
+                parse_mode: "HTML",
+              }),
+              signal: AbortSignal.timeout(15000),
+            });
 
-        if (!response.ok) {
-          const errText = await response.text();
-          throw new Error(`Telegram API Error: ${errText}`);
-        }
+            if (!response.ok) {
+              const errText = await response.text();
+              throw new Error(`Telegram API Error: ${errText}`);
+            }
+            return true;
+          },
+          { retries: 2, delayMs: 1500, description: `Gửi thông báo Telegram cho user ${userId}` }
+        );
 
         // 5. Cập nhật notified = true trong database cho các khoản nợ của user này
         const debtIds = userDebts.map((d) => d.id);
@@ -178,8 +229,15 @@ async function runDebtsReminderCron(req: Request) {
           .in("id", debtIds);
 
         if (updateError) {
-          console.error(`[Debts Reminder Cron] Lỗi cập nhật trạng thái notified cho user ${userId}:`, updateError);
-          results.push({ userId, status: "partial_success", error: `Không thể đánh dấu đã thông báo: ${updateError.message}` });
+          console.error(
+            `[Debts Reminder Cron] Lỗi cập nhật trạng thái notified cho user ${userId}:`,
+            updateError
+          );
+          results.push({
+            userId,
+            status: "partial_success",
+            error: `Không thể đánh dấu đã thông báo: ${updateError.message}`,
+          });
         } else {
           results.push({ userId, status: "success", count: userDebts.length });
         }
