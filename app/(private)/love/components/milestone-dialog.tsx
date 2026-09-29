@@ -6,6 +6,7 @@ import { format } from 'date-fns';
 import { cn, isMediaVideo } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
@@ -16,7 +17,7 @@ import {
   DialogTitle
 } from '@/components/ui/dialog';
 import dynamic from 'next/dynamic';
-import { Heart, Calendar as CalendarIcon, Upload, Camera, Video } from 'lucide-react';
+import { Heart, Calendar as CalendarIcon, Upload, Camera, Video, Link2, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { LoveMilestoneRow } from '@/types/database';
@@ -24,6 +25,7 @@ import { MILESTONE_ICONS, LoveTheme, LoveConnection } from '../constants';
 import { useMilestoneDialog } from '../hooks/use-milestone-dialog';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { extractUrls } from './linkified-text';
 
 const EmojiPicker = dynamic(() => import('emoji-picker-react'), {
   ssr: false,
@@ -81,6 +83,9 @@ export function MilestoneDialog({
     isOpen,
     setIsOpen,
   });
+
+  // Tự động nhận biết các liên kết URL khi người dùng dán hoặc nhập vào mô tả
+  const detectedUrls = React.useMemo(() => extractUrls(milestoneDesc), [milestoneDesc]);
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -142,13 +147,53 @@ export function MilestoneDialog({
 
           {/* Description */}
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-muted-foreground/80 tracking-wider uppercase block">Kể lại kỷ niệm (Mô tả)</label>
-            <Input
-              placeholder="Bạn muốn lưu lại cảm xúc gì vào thời khắc đó?..."
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-muted-foreground/80 tracking-wider uppercase block">
+                Kể lại kỷ niệm (Mô tả)
+              </label>
+              {detectedUrls.length > 0 && (
+                <span className="text-[11px] text-muted-foreground font-medium">
+                  {detectedUrls.length} liên kết
+                </span>
+              )}
+            </div>
+            <Textarea
+              placeholder="Bạn muốn lưu lại cảm xúc gì vào thời khắc đó? Có thể dán liên kết web, nhạc, video..."
               value={milestoneDesc}
               onChange={(e) => setMilestoneDesc(e.target.value)}
-              className={cn("rounded-2xl h-11", theme.ringFocus)}
+              rows={3}
+              className={cn("rounded-2xl min-h-[76px] text-sm py-2.5 resize-none leading-relaxed", theme.ringFocus)}
             />
+            {/* Tự động nhận diện và cho phép click mở thử liên kết khi dán vào mô tả */}
+            {detectedUrls.length > 0 && (
+              <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                <span className="text-[11px] font-medium text-muted-foreground flex items-center gap-1">
+                  <Link2 className="size-3 text-primary shrink-0" /> Đã nhận diện liên kết:
+                </span>
+                {detectedUrls.map((url, i) => {
+                  const href = url.toLowerCase().startsWith('www.') ? `https://${url}` : url;
+                  return (
+                    <a
+                      key={i}
+                      href={href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={cn(
+                        "inline-flex items-center gap-1 text-[11px] px-2.5 py-0.5 rounded-full border transition-all cursor-pointer font-medium max-w-[240px] truncate shadow-2xs",
+                        theme.bgLight,
+                        theme.text,
+                        theme.border,
+                        "hover:opacity-85 hover:scale-[1.02]"
+                      )}
+                      title={`Nhấn để mở liên kết trong tab mới: ${href}`}
+                    >
+                      <span className="truncate">{url}</span>
+                      <ExternalLink className="size-2.5 shrink-0 ml-0.5" />
+                    </a>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {/* Image & Video (Link or Upload) */}

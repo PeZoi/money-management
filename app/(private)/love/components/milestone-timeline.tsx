@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Heart, Sparkles, Plus, Edit3, Trash2, ArrowUp, ArrowDown, Play, RefreshCw } from 'lucide-react';
 import type { LoveMilestoneRow } from '@/types/database';
 import { OLD_ICON_MAP, LoveTheme } from '../constants';
+import { LinkifiedText } from './linkified-text';
 
 interface MilestoneTimelineProps {
   milestones: LoveMilestoneRow[];
@@ -163,7 +164,10 @@ const MilestoneCardItem = React.memo(function MilestoneCardItem({
         {/* Description */}
         {m.description && (
           <p className="text-sm text-muted-foreground/90 whitespace-pre-wrap leading-relaxed mb-3">
-            {m.description}
+            <LinkifiedText
+              text={m.description}
+              linkClassName={cn("font-medium hover:underline", theme.textRoseColor)}
+            />
           </p>
         )}
 
