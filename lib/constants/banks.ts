@@ -25,7 +25,7 @@ export const POPULAR_BANKS: BankInfo[] = [
     bin: 'momo',
     shortName: 'Ví MoMo',
     name: 'Ví điện tử MoMo',
-    logo: 'https://upload.wikimedia.org/wikipedia/vi/f/fe/MoMo_Logo.png',
+    logo: '/momo.png',
     scheme: 'momo://',
     vietQrAppId: 'momo',
     hasAutofill: false,

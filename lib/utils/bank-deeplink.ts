@@ -39,45 +39,67 @@ export function buildBankDeeplinkUrl(options: PayDeeplinkOptions): string {
 }
 
 /**
- * Sao chép số tài khoản vào clipboard
+ * Sao chép văn bản vào clipboard, tương thích cả Secure Context (HTTPS/localhost)
+ * lẫn Insecure Context (HTTP qua IP mạng LAN trên mobile) và các trình duyệt di động
  */
 export async function copyToClipboard(text: string): Promise<boolean> {
-  try {
-    if (navigator?.clipboard?.writeText) {
+  if (typeof window === 'undefined' || !text) return false;
+
+  // 1. Thử modern API trước nếu trong secure context
+  if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText && window.isSecureContext) {
+    try {
       await navigator.clipboard.writeText(text);
       return true;
-    }
-  } catch {
-    // Fallback nếu clipboard API bị hạn chế quyền
-    try {
-      const textArea = document.createElement('textarea');
-      textArea.value = text;
-      textArea.style.position = 'fixed';
-      textArea.style.opacity = '0';
-      document.body.appendChild(textArea);
-      textArea.focus();
-      textArea.select();
-      const success = document.execCommand('copy');
-      document.body.removeChild(textArea);
-      return success;
     } catch {
-      return false;
+      // Bị lỗi permission hoặc focus, chuyển tiếp xuống execCommand fallback
     }
   }
-  return false;
+
+  // 2. Fallback execCommand tương thích mọi trình duyệt và mạng LAN
+  try {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.top = '0';
+    textArea.style.left = '0';
+    textArea.style.width = '2em';
+    textArea.style.height = '2em';
+    textArea.style.padding = '0';
+    textArea.style.border = 'none';
+    textArea.style.outline = 'none';
+    textArea.style.boxShadow = 'none';
+    textArea.style.background = 'transparent';
+    textArea.setAttribute('readonly', '');
+
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    textArea.setSelectionRange(0, text.length);
+
+    const success = document.execCommand('copy');
+    document.body.removeChild(textArea);
+    return success;
+  } catch {
+    return false;
+  }
 }
 
 /**
  * Tạo ảnh QR và sao chép thẳng vào Clipboard bộ nhớ tạm (PNG Blob)
- * Dành cho MoMo hoặc các app hỗ trợ dán ảnh QR từ clipboard
+ * Tương thích cả Chromium (nhận trực tiếp Blob) lẫn Safari WebKit (nhận Promise<Blob>)
  */
 export async function copyQrImageToClipboard(qrContent: string): Promise<boolean> {
-  try {
-    if (typeof window === 'undefined') return false;
+  if (typeof window === 'undefined') return false;
 
+  // Kiểm tra hỗ trợ ClipboardItem và navigator.clipboard
+  if (!navigator?.clipboard?.write || typeof ClipboardItem === 'undefined') {
+    return false;
+  }
+
+  try {
     const canvas = document.createElement('canvas');
     await QRCode.toCanvas(canvas, qrContent, {
-      width: 480,
+      width: 512,
       margin: 2,
       errorCorrectionLevel: 'M',
       color: {
@@ -92,18 +114,26 @@ export async function copyQrImageToClipboard(qrContent: string): Promise<boolean
 
     if (!blob) return false;
 
-    // Trên iOS Safari / WebKit, ClipboardItem yêu cầu Promise resolving to Blob
-    if (typeof ClipboardItem !== 'undefined' && navigator.clipboard?.write) {
-      const clipboardItem = new ClipboardItem({
+    // Hỗ trợ cả 2 cơ chế:
+    // - Chromium yêu cầu Blob: new ClipboardItem({ 'image/png': blob })
+    // - Safari WebKit yêu cầu Promise<Blob>: new ClipboardItem({ 'image/png': Promise.resolve(blob) })
+    let clipboardItem: ClipboardItem;
+    try {
+      clipboardItem = new ClipboardItem({
+        'image/png': blob,
+      });
+    } catch {
+      clipboardItem = new ClipboardItem({
         'image/png': Promise.resolve(blob),
       });
-      await navigator.clipboard.write([clipboardItem]);
-      return true;
     }
+
+    await navigator.clipboard.write([clipboardItem]);
+    return true;
   } catch (err) {
     console.warn('Không thể sao chép ảnh vào clipboard:', err);
+    return false;
   }
-  return false;
 }
 
 /**

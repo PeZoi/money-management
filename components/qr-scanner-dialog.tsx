@@ -7,7 +7,7 @@ import { Html5Qrcode } from 'html5-qrcode';
 import {
   AlertCircleIcon,
   CalendarIcon,
-  CheckIcon,
+  ChevronsUpDown,
   ChevronRightIcon,
   CopyIcon,
   CreditCardIcon,
@@ -30,6 +30,11 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import { useAccounts } from '@/hooks/use-accounts';
 import { useCategories } from '@/hooks/use-categories';
 import { useTransactionMutation } from '@/hooks/use-transactions';
@@ -42,9 +47,11 @@ import {
   buildBankDeeplinkUrl,
   copyQrImageToClipboard,
   copyToClipboard,
+  downloadQrImage,
   openBankApp,
 } from '@/lib/utils/bank-deeplink';
 import { cn } from '@/lib/utils';
+import { formatVnd } from '@/app/(private)/transactions/transaction-ui';
 import { formatAmountInput, parseAmount } from '@/lib/validations/transaction-schema';
 import { parseVietQr, updateVietQrAmount, type ParsedVietQr } from '@/lib/utils/vietqr-parser';
 
@@ -78,6 +85,8 @@ export function QrScannerDialog({
   const [note, setNote] = React.useState('');
   const [selectedCategoryId, setSelectedCategoryId] = React.useState('');
   const [selectedAccountId, setSelectedAccountId] = React.useState('');
+  const [accountPopoverOpen, setAccountPopoverOpen] = React.useState(false);
+
   const [selectedBank, setSelectedBank] = React.useState<BankInfo>(() => {
     try {
       const saved = typeof window !== 'undefined' ? localStorage.getItem('preferred_pay_bank') : null;
@@ -98,9 +107,24 @@ export function QrScannerDialog({
     [categories],
   );
 
-  // Derive giá trị mặc định theo chuẩn React không cần useEffect setState
   const accountId = selectedAccountId || activeAccount?.id || accounts[0]?.id || '';
   const categoryId = selectedCategoryId || expenseCategories[0]?.id || '';
+  const selectedAccount = accounts.find((a) => a.id === accountId);
+  const numAmount = React.useMemo(() => parseAmount(amountStr) || 0, [amountStr]);
+
+  // Helper lấy class CSS danh mục đồng bộ với form tạo giao dịch
+  const getCategoryClasses = (isSelected: boolean) => {
+    if (!isSelected) {
+      return {
+        button: 'border-border bg-card hover:bg-muted/50 text-muted-foreground',
+        iconSpan: 'border-border bg-muted/40 text-muted-foreground group-hover:bg-muted',
+      };
+    }
+    return {
+      button: 'border-rose-500 bg-rose-500/5 text-rose-600 dark:text-rose-400 shadow-sm ring-1 ring-rose-500/20',
+      iconSpan: 'border-rose-500/20 bg-rose-500/10 text-rose-600 dark:text-rose-400',
+    };
+  };
 
   // Hàm dừng camera an toàn
   const stopCamera = React.useCallback(async () => {
@@ -109,7 +133,7 @@ export function QrScannerDialog({
         if (scannerRef.current.isScanning) {
           await scannerRef.current.stop();
         }
-        await scannerRef.current.clear();
+        scannerRef.current.clear();
       } catch {
         // Bỏ qua lỗi dừng camera nếu component đã unmount
       }
@@ -136,33 +160,42 @@ export function QrScannerDialog({
       setAmountStr('');
     }
 
-    // Điền trước nội dung nếu có
-    if (parsed.note) {
-      setNote(parsed.note);
-    } else {
-      setNote('');
-    }
+    // Ghi chú giao dịch luôn để trống theo yêu cầu người dùng
+    setNote('');
 
     // Chuyển sang màn hình preview
     setStep('preview');
   }, [stopCamera]);
 
-  // Khởi động camera
+  // Khởi động camera - tối ưu độ nhạy cao với Native Barcode Detector và 25 fps
   const startCamera = React.useCallback(async () => {
     const container = document.getElementById('qr-reader-container');
     if (!container) return;
 
     try {
       await stopCamera();
-      const scanner = new Html5Qrcode('qr-reader-container');
+      // Bật tính năng BarcodeDetector của hệ điều hành nếu trình duyệt hỗ trợ để quét siêu nhạy
+      const scanner = new Html5Qrcode('qr-reader-container', {
+        experimentalFeatures: {
+          useBarCodeDetectorIfSupported: true,
+        },
+        verbose: false,
+      });
       scannerRef.current = scanner;
 
       setCameraError(null);
       await scanner.start(
         { facingMode: 'environment' },
         {
-          fps: 10,
-          qrbox: { width: 240, height: 240 },
+          fps: 25, // Tăng fps lên 25 để bắt khung hình nhanh gấp 2.5 lần
+          qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
+            const min = Math.min(viewfinderWidth, viewfinderHeight);
+            return {
+              width: Math.floor(min * 0.85),
+              height: Math.floor(min * 0.85),
+            };
+          },
+          aspectRatio: 1.0,
         },
         (decodedText) => {
           handleScanSuccess(decodedText);
@@ -187,7 +220,7 @@ export function QrScannerDialog({
 
     const timer = setTimeout(() => {
       void startCamera();
-    }, 250);
+    }, 200);
 
     return () => {
       clearTimeout(timer);
@@ -212,7 +245,12 @@ export function QrScannerDialog({
 
     try {
       await stopCamera();
-      const html5QrCode = new Html5Qrcode('qr-reader-container');
+      const html5QrCode = new Html5Qrcode('qr-reader-container', {
+        experimentalFeatures: {
+          useBarCodeDetectorIfSupported: true,
+        },
+        verbose: false,
+      });
       const decodedText = await html5QrCode.scanFile(file, true);
       try {
         html5QrCode.clear();
@@ -248,11 +286,16 @@ export function QrScannerDialog({
       const isMoMo = selectedBank.id === 'momo';
       const updatedQrContent = updateVietQrAmount(parsedData.rawContent, numAmount);
 
-      // 1. Sao chép vào bộ nhớ tạm NGAY LẬP TỨC để đảm bảo user gesture trên iOS Safari không bị hết hạn
+      // 1. Xử lý sao chép vào bộ nhớ tạm
+      let isImageCopied = false;
       if (isMoMo) {
-        // Tự động sao chép ảnh QR vào clipboard để sang MoMo người dùng có thể Dán ảnh trực tiếp
-        await copyQrImageToClipboard(updatedQrContent);
-        await copyToClipboard(parsedData.accountNumber);
+        // Tự động sao chép ảnh QR vào clipboard để sang MoMo dán trực tiếp
+        isImageCopied = await copyQrImageToClipboard(updatedQrContent);
+        if (!isImageCopied) {
+          // Trình duyệt không hỗ trợ copy ảnh vào clipboard (ví dụ chạy qua HTTP mạng LAN), tự động tải ảnh về máy & copy STK
+          await downloadQrImage(updatedQrContent, 'vietqr-momo.png');
+          await copyToClipboard(parsedData.accountNumber);
+        }
       } else {
         // Sao chép số tài khoản thụ hưởng vào clipboard
         await copyToClipboard(parsedData.accountNumber);
@@ -264,16 +307,23 @@ export function QrScannerDialog({
         type: 'expense',
         category_id: categoryId || null,
         account_id: accountId,
-        note: note.trim() || parsedData.note || 'Thanh toán QR',
+        note: note.trim() || 'Thanh toán QR',
         created_at: new Date().toISOString(),
       });
 
       // 3. Hiển thị thông báo hướng dẫn
       if (isMoMo) {
-        toast.success(
-          `Đã sao chép ảnh QR & lưu giao dịch. Đang mở ${selectedBank.shortName}...`,
-          { duration: 4000 },
-        );
+        if (isImageCopied) {
+          toast.success(
+            `Đã sao chép ảnh QR & lưu giao dịch. Đang mở ${selectedBank.shortName}...`,
+            { duration: 4000 },
+          );
+        } else {
+          toast.info(
+            `Đã tải ảnh QR về máy & copy STK. Trong MoMo, bạn hãy chọn ảnh từ Thư viện nhé!`,
+            { duration: 5000 },
+          );
+        }
       } else {
         toast.success(
           `Đã lưu giao dịch và copy STK (${parsedData.accountNumber}). Đang mở ${selectedBank.shortName}...`,
@@ -406,7 +456,7 @@ export function QrScannerDialog({
           {/* ================= STEP 2: PREVIEW ================= */}
           {step === 'preview' && parsedData && (
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              {/* Thẻ người thụ hưởng (Beneficiary Card) */}
+              {/* 1. Thẻ người thụ hưởng (Beneficiary Card) */}
               <div className="rounded-2xl border border-primary/20 bg-primary/5 p-3.5 space-y-2.5">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5 min-w-0">
@@ -441,9 +491,13 @@ export function QrScannerDialog({
                     <span>{parsedData.accountNumber}</span>
                     <button
                       type="button"
-                      onClick={() => {
-                        void copyToClipboard(parsedData.accountNumber);
-                        toast.success('Đã sao chép số tài khoản');
+                      onClick={async () => {
+                        const ok = await copyToClipboard(parsedData.accountNumber);
+                        if (ok) {
+                          toast.success('Đã sao chép số tài khoản');
+                        } else {
+                          toast.error('Không thể sao chép số tài khoản. Vui lòng thử lại.');
+                        }
                       }}
                       className="p-1 hover:bg-primary/10 rounded-md text-muted-foreground hover:text-foreground transition-colors"
                       title="Sao chép STK"
@@ -464,17 +518,30 @@ export function QrScannerDialog({
                 )}
               </div>
 
-              {/* Ô nhập số tiền */}
-              <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">Số tiền thanh toán</Label>
+              {/* 2. GHI CHÚ GIAO DỊCH (Đưa lên đầu trước số tiền, mặc định rỗng) */}
+              <div className="grid gap-2">
+                <Label htmlFor="tx-qr-note">Ghi chú giao dịch</Label>
+                <Input
+                  id="tx-qr-note"
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  placeholder="Nhập tên hoặc ghi chú giao dịch..."
+                  className="h-11 rounded-xl bg-card border-border text-sm"
+                />
+              </div>
+
+              {/* 3. SỐ TIỀN THANH TOÁN */}
+              <div className="grid gap-2">
+                <Label htmlFor="tx-qr-amount">Số tiền thanh toán</Label>
                 <div className="relative">
                   <Input
+                    id="tx-qr-amount"
                     type="text"
                     inputMode="numeric"
                     value={amountStr}
                     onChange={(e) => setAmountStr(formatAmountInput(e.target.value))}
                     placeholder="0"
-                    className="h-12 text-xl font-bold tracking-tight pr-12 rounded-2xl bg-muted/30 focus:bg-background"
+                    className="h-12 text-xl font-bold tracking-tight pr-12 rounded-2xl bg-card border-border focus:bg-background"
                   />
                   <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-sm font-semibold text-muted-foreground">
                     ₫
@@ -482,7 +549,7 @@ export function QrScannerDialog({
                 </div>
               </div>
 
-              {/* Hàng thông tin cố định: Loại giao dịch & Ngày */}
+              {/* 4. Hàng thông tin cố định: Loại giao dịch & Ngày */}
               <div className="grid grid-cols-2 gap-2.5">
                 <div className="rounded-xl border p-2.5 bg-muted/20">
                   <span className="text-[11px] text-muted-foreground block">Loại giao dịch</span>
@@ -500,28 +567,32 @@ export function QrScannerDialog({
                 </div>
               </div>
 
-              {/* Chọn danh mục chi tiêu */}
-              <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">Danh mục chi tiêu</Label>
-                <div className="grid grid-cols-4 gap-1.5 max-h-36 overflow-y-auto p-1 border rounded-2xl bg-muted/10">
+              {/* 5. DANH MỤC CHI TIÊU (Style đồng bộ 100% với form tạo giao dịch) */}
+              <div className="grid gap-2">
+                <Label>Danh mục</Label>
+                <div className="grid grid-cols-4 gap-2 sm:grid-cols-5 max-h-[220px] overflow-y-auto pr-1">
                   {expenseCategories.map((c) => {
                     const isSelected = c.id === categoryId;
+                    const classes = getCategoryClasses(isSelected);
                     return (
                       <button
                         key={c.id}
                         type="button"
                         onClick={() => setSelectedCategoryId(c.id)}
                         className={cn(
-                          'flex flex-col items-center justify-center p-2 rounded-xl text-center transition-all',
-                          isSelected
-                            ? 'bg-primary/10 border border-primary/30 text-primary font-semibold shadow-2xs'
-                            : 'hover:bg-muted/60 text-muted-foreground',
+                          'group flex flex-col items-center justify-center gap-1.5 rounded-2xl border p-2.5 aspect-square text-center transition-all outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+                          classes.button,
                         )}
                       >
-                        <div className="size-7 flex items-center justify-center mb-1">
-                          <IconPreview name={c.icon} className="size-4" />
-                        </div>
-                        <span className="text-[10px] leading-tight line-clamp-1 truncate w-full">
+                        <span
+                          className={cn(
+                            'flex size-9 shrink-0 items-center justify-center rounded-xl border transition-colors',
+                            classes.iconSpan,
+                          )}
+                        >
+                          <IconPreview name={c.icon} className="size-4.5" />
+                        </span>
+                        <span className="text-[11px] font-semibold truncate max-w-full">
                           {c.name}
                         </span>
                       </button>
@@ -530,49 +601,98 @@ export function QrScannerDialog({
                 </div>
               </div>
 
-              {/* Chọn tài khoản nguồn (Ví trong app) */}
-              <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">Tài khoản nguồn (Ví trừ tiền)</Label>
-                <div className="grid grid-cols-2 gap-2">
-                  {accounts.map((acc) => {
-                    const isSelected = acc.id === accountId;
-                    return (
-                      <button
-                        key={acc.id}
-                        type="button"
-                        onClick={() => setSelectedAccountId(acc.id)}
-                        className={cn(
-                          'flex items-center gap-2 p-2.5 rounded-xl border text-left transition-all',
-                          isSelected
-                            ? 'border-primary/40 bg-primary/5 text-foreground ring-1 ring-primary/20'
-                            : 'border-border/60 hover:bg-muted/40 text-muted-foreground',
+              {/* 6. TÀI KHOẢN NGUỒN (Style đồng bộ 100% với AccountSelector trong form tạo giao dịch) */}
+              <div className="grid gap-2">
+                <Label htmlFor="tx-qr-account">Tài khoản nguồn</Label>
+                <Popover open={accountPopoverOpen} onOpenChange={setAccountPopoverOpen} modal={true}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      id="tx-qr-account"
+                      variant="outline"
+                      className={cn(
+                        'h-11 justify-between text-left font-normal rounded-xl border-border bg-card hover:bg-muted/50',
+                        !accountId && 'text-muted-foreground',
+                      )}
+                    >
+                      <div className="flex items-center gap-2">
+                        <WalletIcon className="size-4 text-muted-foreground" />
+                        {selectedAccount ? (
+                          <span className="font-medium text-foreground">
+                            {selectedAccount.icon} {selectedAccount.name}
+                          </span>
+                        ) : (
+                          <span>Chọn tài khoản nguồn</span>
                         )}
-                      >
-                        <div className="size-7 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                          <WalletIcon className="size-4 text-primary" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs font-medium text-foreground truncate">{acc.name}</p>
-                        </div>
-                        {isSelected && <CheckIcon className="size-3.5 text-primary shrink-0" />}
-                      </button>
-                    );
-                  })}
-                </div>
+                      </div>
+                      <ChevronsUpDown className="size-4 opacity-50 shrink-0" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-1" align="start">
+                    <div className="max-h-[200px] overflow-y-auto space-y-1">
+                      {accounts.length === 0 ? (
+                        <p className="text-xs text-muted-foreground p-2 text-center">
+                          Không có tài khoản nào.
+                        </p>
+                      ) : (
+                        accounts.map((acc) => {
+                          const isSelected = accountId === acc.id;
+                          return (
+                            <button
+                              key={acc.id}
+                              type="button"
+                              onClick={() => {
+                                setSelectedAccountId(acc.id);
+                                setAccountPopoverOpen(false);
+                              }}
+                              className={cn(
+                                'flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-sm transition-colors hover:bg-muted text-left',
+                                isSelected && 'bg-primary/5 text-primary font-medium',
+                              )}
+                            >
+                              <span className="text-base select-none">{acc.icon}</span>
+                              <span className="flex-1 truncate">{acc.name}</span>
+                              {/* Badge ưu tiên: Mặc định > Ngoài hệ thống */}
+                              {acc.id === activeAccount?.id ? (
+                                <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium shrink-0">
+                                  Mặc định
+                                </span>
+                              ) : acc.is_system === false ? (
+                                <span className="text-[10px] bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 px-1.5 py-0.5 rounded-full font-medium shrink-0">
+                                  Ngoài hệ thống
+                                </span>
+                              ) : null}
+                            </button>
+                          );
+                        })
+                      )}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+                {selectedAccount && (
+                  <p className="mt-0.5 text-xs text-muted-foreground/80 flex items-center gap-1">
+                    <span>Số dư:</span>
+                    <span className="font-semibold text-foreground">{formatVnd(selectedAccount.balance)}</span>
+                    {numAmount > 0 && (
+                      <>
+                        <span className="text-muted-foreground/50">→</span>
+                        <span>Dự kiến:</span>
+                        <span
+                          className={cn(
+                            'font-semibold',
+                            Number(selectedAccount.balance) - numAmount >= 0
+                              ? 'text-emerald-600 dark:text-emerald-400'
+                              : 'text-rose-600 dark:text-rose-400',
+                          )}
+                        >
+                          {formatVnd(Number(selectedAccount.balance) - numAmount)}
+                        </span>
+                      </>
+                    )}
+                  </p>
+                )}
               </div>
 
-              {/* Ghi chú */}
-              <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">Ghi chú giao dịch</Label>
-                <Input
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                  placeholder="Ví dụ: Ăn trưa, Cà phê..."
-                  className="h-10 rounded-xl bg-muted/30 text-sm"
-                />
-              </div>
-
-              {/* Chọn app ngân hàng để thanh toán */}
+              {/* 7. CHỌN ỨNG DỤNG THANH TOÁN (MoMo, Vietcombank, MB...) */}
               <div className="space-y-1.5 pt-1">
                 <Label className="text-xs text-muted-foreground">Ứng dụng thanh toán</Label>
                 <button
@@ -604,7 +724,7 @@ export function QrScannerDialog({
                 </button>
               </div>
 
-              {/* DUY NHẤT 1 NÚT BẤM: "Thanh toán" */}
+              {/* 8. DUY NHẤT 1 NÚT BẤM: "Thanh toán" */}
               <div className="pt-2 pb-1">
                 <Button
                   type="button"
