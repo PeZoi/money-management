@@ -37,6 +37,7 @@
 | 💳 **Quản lý đa tài khoản**  | Tiền mặt, ngân hàng, ví điện tử, tiết kiệm, đầu tư — theo dõi số dư từng tài khoản   |
 | 📁 **Danh mục tùy chỉnh**    | Tạo danh mục thu/chi riêng với emoji tùy chọn cho từng workspace                     |
 | 🔄 **Giao dịch thông minh**  | Hỗ trợ nhập tự động bằng AI hoặc thủ công — 3 loại: Chi tiêu, Thu nhập, Chuyển khoản |
+| 📷 **Quét QR Thanh toán**    | Quét VietQR camera/ảnh, tự bóc tách STK/tiền, lưu giao dịch & mở app VCB, MB, MoMo...|
 | 📈 **Báo cáo chi tiết**      | Bảng báo cáo tài chính tùy biến, phân tích theo danh mục/giao dịch, xuất Excel       |
 | 👥 **Workspace chia sẻ**     | Workspace cá nhân + nhóm, phân quyền Owner/Admin/Member                              |
 | 💸 **Quản lý công nợ**       | Theo dõi nợ cho vay/đi vay, nhắc nhở tự động qua Telegram                            |
@@ -70,6 +71,8 @@
   <img src="https://img.shields.io/badge/Recharts-22B5BF?logo=chart.js&logoColor=white" alt="Recharts" />
   <img src="https://img.shields.io/badge/Framer_Motion-0055FF?logo=framer&logoColor=white" alt="Framer Motion" />
   <img src="https://img.shields.io/badge/Lucide_Icons-F56040" alt="Lucide" />
+  <img src="https://img.shields.io/badge/HTML5_QR_Code-339933" alt="HTML5 QR Code" />
+  <img src="https://img.shields.io/badge/VietQR-EMVCo-005BAA" alt="VietQR" />
 </td>
 </tr>
 <tr>
@@ -144,6 +147,17 @@ Hai chế độ nhập: **Tự động** (AI nhận dạng mô tả tự nhiên)
   <img src="https://github.com/user-attachments/assets/5eaa68c3-6d0b-4eb2-bf87-bf3d68ec2bf5" alt="Add Transaction - Auto" width="49%" />
   <img src="https://github.com/user-attachments/assets/34ec547f-9f3b-4864-82fb-8d08b327272b" alt="Add Transaction - Manual" width="49%" />
 </p>
+
+---
+
+### 📷 Quét mã QR thanh toán ngân hàng & Ví MoMo
+
+Luồng trải nghiệm **"Log-first, Pay-immediately"** giải quyết triệt để vấn đề quên ghi chép chi tiêu:
+- ⚡ **Quét trực tiếp hoặc chọn ảnh:** Hỗ trợ quét nhanh từ Camera sau hoặc tải ảnh chụp màn hình mã QR từ Thư viện ảnh.
+- 🔍 **Giải mã EMVCo TLV cục bộ:** Tự động nhận diện Mã ngân hàng thụ hưởng, Số tài khoản, Số tiền (nếu là QR động), và Nội dung thanh toán trong `< 2ms` mà không cần gọi API máy chủ. Tự động ẩn tên nếu mã QR không có.
+- 🔄 **Chuyển đổi QR tĩnh thành động:** Tự động nhúng số tiền bạn nhập và tính lại mã kiểm tra CRC-16 chuẩn quốc tế.
+- 📱 **1 nút "Thanh toán" duy nhất:** Lưu giao dịch vào Database $\rightarrow$ Tự động copy STK/ảnh QR vào bộ nhớ tạm $\rightarrow$ Mở thẳng app ngân hàng (Vietcombank, MB Bank, Techcombank, ACB, BIDV, VPBank...) hoặc **Ví MoMo** (sang MoMo chỉ cần bấm *Quét mã → Dán ảnh* là hoàn tất chuyển khoản).
+- 📍 **Nút truy cập nhanh trên Mobile:** Nút Quét QR tích hợp sẵn ở Header trên mọi trang và nút Nổi (Floating Action Button) riêng biệt (ẩn hoàn toàn trên Desktop).
 
 ---
 

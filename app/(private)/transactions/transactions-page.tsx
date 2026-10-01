@@ -12,13 +12,14 @@ import {
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
-import { ArrowLeftRightIcon, CalendarIcon, ChevronDownIcon, PlusIcon, SearchIcon } from 'lucide-react';
+import { ArrowLeftRightIcon, CalendarIcon, ChevronDownIcon, PlusIcon, QrCodeIcon, SearchIcon } from 'lucide-react';
 
 import CreateTransactionDialog from './components/create-transaction-dialog';
 import TransactionStatsCards from './components/transaction-stats-cards';
 import TransactionsList from './components/transactions-list';
 import UpdateTransactionDialog from './components/update-transaction-dialog';
 import { useTransactionsPage } from './hooks/use-transactions-page';
+import { useQrScannerStore } from '@/hooks/use-qr-scanner-store';
 
 const SORT_OPTIONS = [
   { value: 'newest', label: 'Mới nhất' },
@@ -230,6 +231,16 @@ export default function TransactionsPage() {
           />
         </div>
       </PrivatePageShell>
+
+      {/* Nút Quét QR nổi riêng ngoài màn hình trên di động (ẩn trên desktop) */}
+      <button
+        type="button"
+        onClick={() => useQrScannerStore.getState().openScanner()}
+        className="fixed bottom-41 right-6 z-40 flex size-12 items-center justify-center rounded-full bg-card/95 text-primary shadow-lg shadow-black/10 backdrop-blur-md md:hidden border border-primary/20 hover:bg-card active:scale-95 transition-transform"
+        aria-label="Quét QR thanh toán"
+      >
+        <QrCodeIcon className="size-5" />
+      </button>
 
       {/* Floating Action Button (FAB) trên di động - Có thể kéo thả (Draggable) */}
       <button
