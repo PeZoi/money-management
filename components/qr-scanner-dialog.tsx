@@ -47,7 +47,6 @@ import {
   buildBankDeeplinkUrl,
   copyQrImageToClipboard,
   copyToClipboard,
-  downloadQrImage,
   openBankApp,
 } from '@/lib/utils/bank-deeplink';
 import { cn } from '@/lib/utils';
@@ -292,8 +291,7 @@ export function QrScannerDialog({
         // Tự động sao chép ảnh QR vào clipboard để sang MoMo dán trực tiếp
         isImageCopied = await copyQrImageToClipboard(updatedQrContent);
         if (!isImageCopied) {
-          // Trình duyệt không hỗ trợ copy ảnh vào clipboard (ví dụ chạy qua HTTP mạng LAN), tự động tải ảnh về máy & copy STK
-          await downloadQrImage(updatedQrContent, 'vietqr-momo.png');
+          // Trình duyệt không hỗ trợ copy ảnh vào clipboard (ví dụ chạy qua HTTP mạng LAN), tự động sao chép số tài khoản
           await copyToClipboard(parsedData.accountNumber);
         }
       } else {
@@ -319,9 +317,9 @@ export function QrScannerDialog({
             { duration: 4000 },
           );
         } else {
-          toast.info(
-            `Đã tải ảnh QR về máy & copy STK. Trong MoMo, bạn hãy chọn ảnh từ Thư viện nhé!`,
-            { duration: 5000 },
+          toast.success(
+            `Đã lưu giao dịch và copy STK (${parsedData.accountNumber}). Đang mở ${selectedBank.shortName}...`,
+            { duration: 4000 },
           );
         }
       } else {

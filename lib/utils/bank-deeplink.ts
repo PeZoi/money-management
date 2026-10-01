@@ -86,7 +86,7 @@ export async function copyToClipboard(text: string): Promise<boolean> {
 
 /**
  * Tạo ảnh QR và sao chép thẳng vào Clipboard bộ nhớ tạm (PNG Blob)
- * Tương thích cả Chromium (nhận trực tiếp Blob) lẫn Safari WebKit (nhận Promise<Blob>)
+ * Tương thích chuẩn Safari WebKit (Promise<Blob>) và Chromium
  */
 export async function copyQrImageToClipboard(qrContent: string): Promise<boolean> {
   if (typeof window === 'undefined') return false;
@@ -97,34 +97,46 @@ export async function copyQrImageToClipboard(qrContent: string): Promise<boolean
   }
 
   try {
-    const canvas = document.createElement('canvas');
-    await QRCode.toCanvas(canvas, qrContent, {
-      width: 512,
-      margin: 2,
-      errorCorrectionLevel: 'M',
-      color: {
-        dark: '#000000',
-        light: '#ffffff',
-      },
+    // Safari WebKit yêu cầu truyền Promise<Blob> trực tiếp vào ClipboardItem
+    // để không làm mất User Gesture Token trong các thao tác canvas bất đồng bộ
+    const blobPromise = new Promise<Blob>((resolve, reject) => {
+      const canvas = document.createElement('canvas');
+      QRCode.toCanvas(
+        canvas,
+        qrContent,
+        {
+          width: 512,
+          margin: 2,
+          errorCorrectionLevel: 'M',
+          color: {
+            dark: '#000000',
+            light: '#ffffff',
+          },
+        },
+        (err) => {
+          if (err) {
+            reject(err);
+            return;
+          }
+          canvas.toBlob((b) => {
+            if (b) resolve(b);
+            else reject(new Error('Canvas toBlob failed'));
+          }, 'image/png');
+        },
+      );
     });
 
-    const blob = await new Promise<Blob | null>((resolve) => {
-      canvas.toBlob((b) => resolve(b), 'image/png');
-    });
-
-    if (!blob) return false;
-
-    // Hỗ trợ cả 2 cơ chế:
-    // - Chromium yêu cầu Blob: new ClipboardItem({ 'image/png': blob })
-    // - Safari WebKit yêu cầu Promise<Blob>: new ClipboardItem({ 'image/png': Promise.resolve(blob) })
     let clipboardItem: ClipboardItem;
     try {
+      // Chuẩn Safari WebKit: nhận Promise<Blob>
       clipboardItem = new ClipboardItem({
-        'image/png': blob,
+        'image/png': blobPromise,
       });
     } catch {
+      // Chromium cũ nếu không nhận Promise thì await blob rồi tạo
+      const resolvedBlob = await blobPromise;
       clipboardItem = new ClipboardItem({
-        'image/png': Promise.resolve(blob),
+        'image/png': resolvedBlob,
       });
     }
 
