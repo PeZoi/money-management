@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
  * Regex nhận diện liên kết web (hỗ trợ https://, http://, www.)
  * Tự động loại trừ các dấu câu như chấm, phẩy, ngoặc ở cuối câu tiếng Việt.
  */
-export const URL_REGEX = /((?:https?:\/\/|www\.)[^\s<>"'()]*?(?:\([^\s<>"']+\)|[^\s`!()\[\]{};:'".,<>?«»“”‘’]))/gi;
+export const URL_REGEX = /((?:https?:\/\/|www\.)(?:[^\s<>"'()]|\([^\s<>"']*\))*(?:\([^\s<>"']+\)|[^\s`!()\[\]{};:'".,<>?«»“”‘’]))/gi;
 
 /**
  * Trích xuất danh sách tất cả các URL duy nhất từ một chuỗi văn bản.
