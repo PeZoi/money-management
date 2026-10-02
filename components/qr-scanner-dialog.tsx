@@ -3,7 +3,7 @@
 import * as React from 'react';
 import Image from 'next/image';
 import { format } from 'date-fns';
-import { Html5Qrcode } from 'html5-qrcode';
+import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 import {
   AlertCircleIcon,
   CalendarIcon,
@@ -16,6 +16,7 @@ import {
   RotateCcwIcon,
   UploadIcon,
   WalletIcon,
+  ZapIcon,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -75,6 +76,12 @@ export function QrScannerDialog({
   const [cameraError, setCameraError] = React.useState<string | null>(null);
   const scannerRef = React.useRef<Html5Qrcode | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+
+  // Tính năng Zoom & Đèn Flash (như Zalo / Camera iOS)
+  const [zoomSupported, setZoomSupported] = React.useState(false);
+  const [zoomLevel, setZoomLevel] = React.useState(1);
+  const [torchSupported, setTorchSupported] = React.useState(false);
+  const [torchOn, setTorchOn] = React.useState(false);
 
   // Dữ liệu giải mã từ QR
   const [parsedData, setParsedData] = React.useState<ParsedVietQr | null>(null);
@@ -139,6 +146,8 @@ export function QrScannerDialog({
       scannerRef.current = null;
     }
     setCameraActive(false);
+    setTorchOn(false);
+    setZoomLevel(1);
   }, []);
 
   // Xử lý khi quét mã thành công
@@ -166,15 +175,21 @@ export function QrScannerDialog({
     setStep('preview');
   }, [stopCamera]);
 
-  // Khởi động camera - tối ưu độ nhạy cao với Native Barcode Detector và 25 fps
+  // Khởi động camera - tối ưu Full HD 1080p, chỉ quét QR, 12 fps chống nghẽn CPU
   const startCamera = React.useCallback(async () => {
     const container = document.getElementById('qr-reader-container');
     if (!container) return;
 
     try {
       await stopCamera();
-      // Bật tính năng BarcodeDetector của hệ điều hành nếu trình duyệt hỗ trợ để quét siêu nhạy
+      setZoomSupported(false);
+      setZoomLevel(1);
+      setTorchSupported(false);
+      setTorchOn(false);
+
+      // 1. Chỉ định DUY NHẤT format QR_CODE để loại bỏ hơn 10 thuật toán decode thừa, giải phóng CPU
       const scanner = new Html5Qrcode('qr-reader-container', {
+        formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
         experimentalFeatures: {
           useBarCodeDetectorIfSupported: true,
         },
@@ -183,18 +198,31 @@ export function QrScannerDialog({
       scannerRef.current = scanner;
 
       setCameraError(null);
+
+      // 2. Yêu cầu camera Full HD (1080p) + Lấy nét liên tục:
+      // Giúp mã QR ở khoảng cách xa (50cm - 1m) vẫn giữ nguyên độ nét từng pixel,
+      // không bị mờ nhạt như độ phân giải mặc định 640x480 và không bắt buộc người dùng phải dí sát camera vào QR
+      const cameraConstraints: MediaTrackConstraints = {
+        facingMode: { ideal: 'environment' },
+        width: { min: 1024, ideal: 1920, max: 1920 },
+        height: { min: 720, ideal: 1080, max: 1080 },
+        advanced: [{ focusMode: 'continuous' } as MediaTrackConstraintSet],
+      };
+
       await scanner.start(
-        { facingMode: 'environment' },
+        cameraConstraints,
         {
-          fps: 25, // Tăng fps lên 25 để bắt khung hình nhanh gấp 2.5 lần
+          fps: 12, // Tần số vàng 12 fps: tránh nghẽn CPU trên iOS WebKit, không bị delay hàng đợi frame
           qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
             const min = Math.min(viewfinderWidth, viewfinderHeight);
+            const edge = Math.floor(min * 0.82);
             return {
-              width: Math.floor(min * 0.85),
-              height: Math.floor(min * 0.85),
+              width: edge,
+              height: edge,
             };
           },
           aspectRatio: 1.0,
+          disableFlip: true, // Tiết kiệm xử lý lật gương không cần thiết cho camera sau
         },
         (decodedText) => {
           handleScanSuccess(decodedText);
@@ -203,15 +231,86 @@ export function QrScannerDialog({
           // Bỏ qua các frame rỗng khi quét
         },
       );
+
+      // 3. Kiểm tra tính năng Zoom & Đèn Flash sau khi camera đã sẵn sàng
+      try {
+        const caps = scanner.getRunningTrackCameraCapabilities();
+        const zoomFeature = caps.zoomFeature();
+        if (zoomFeature?.isSupported()) {
+          setZoomSupported(true);
+        }
+        const torchFeature = caps.torchFeature();
+        if (torchFeature?.isSupported()) {
+          setTorchSupported(true);
+        }
+      } catch {
+        // Trình duyệt không hỗ trợ các tính năng nâng cao này
+      }
+
       setCameraActive(true);
     } catch (err: unknown) {
       console.warn('Camera start error:', err);
-      setCameraError(
-        'Không thể truy cập camera. Vui lòng cấp quyền trong Cài đặt Safari hoặc tải ảnh QR từ máy.',
-      );
-      setCameraActive(false);
+      // Fallback nếu camera Full HD bị thiết bị cũ từ chối: thử lại với facingMode cơ bản
+      try {
+        const fallbackScanner = new Html5Qrcode('qr-reader-container', {
+          formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
+          verbose: false,
+        });
+        scannerRef.current = fallbackScanner;
+        await fallbackScanner.start(
+          { facingMode: 'environment' },
+          {
+            fps: 12,
+            qrbox: 250,
+            aspectRatio: 1.0,
+            disableFlip: true,
+          },
+          (decodedText) => {
+            handleScanSuccess(decodedText);
+          },
+          () => {},
+        );
+        setCameraActive(true);
+      } catch {
+        setCameraError(
+          'Không thể truy cập camera. Vui lòng cấp quyền trong Cài đặt Safari hoặc tải ảnh QR từ máy.',
+        );
+        setCameraActive(false);
+      }
     }
   }, [stopCamera, handleScanSuccess]);
+
+  // Điều khiển Zoom 1x / 2x
+  const handleToggleZoom = async () => {
+    if (!scannerRef.current) return;
+    try {
+      const caps = scannerRef.current.getRunningTrackCameraCapabilities();
+      const zoom = caps.zoomFeature();
+      if (zoom?.isSupported()) {
+        const nextZoom = zoomLevel === 1 ? Math.min(2, zoom.max()) : 1;
+        await zoom.apply(nextZoom);
+        setZoomLevel(nextZoom);
+      }
+    } catch {
+      // ignore
+    }
+  };
+
+  // Điều khiển Bật/Tắt Đèn pin (Torch)
+  const handleToggleTorch = async () => {
+    if (!scannerRef.current) return;
+    try {
+      const caps = scannerRef.current.getRunningTrackCameraCapabilities();
+      const torch = caps.torchFeature();
+      if (torch?.isSupported()) {
+        const nextTorch = !torchOn;
+        await torch.apply(nextTorch);
+        setTorchOn(nextTorch);
+      }
+    } catch {
+      // ignore
+    }
+  };
 
   // Effect kích hoạt camera khi ở bước scanning
   React.useEffect(() => {
@@ -237,7 +336,7 @@ export function QrScannerDialog({
     };
   }, [open, step, startCamera]);
 
-  // Xử lý quét từ file ảnh tải lên
+  // Xử lý quét từ file ảnh tải lên - tối ưu với QR_CODE duy nhất
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -245,6 +344,7 @@ export function QrScannerDialog({
     try {
       await stopCamera();
       const html5QrCode = new Html5Qrcode('qr-reader-container', {
+        formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
         experimentalFeatures: {
           useBarCodeDetectorIfSupported: true,
         },
@@ -408,9 +508,39 @@ export function QrScannerDialog({
                   </div>
                 )}
 
+                {/* Nút điều khiển Zoom và Flash (nếu camera hỗ trợ) - trải nghiệm như Zalo/Camera iOS */}
+                {cameraActive && (zoomSupported || torchSupported) && (
+                  <div className="absolute bottom-3 left-0 right-0 flex items-center justify-center gap-2.5 z-10 pointer-events-auto">
+                    {zoomSupported && (
+                      <button
+                        type="button"
+                        onClick={handleToggleZoom}
+                        className="h-8 px-3 rounded-full bg-black/65 backdrop-blur-md text-white text-xs font-bold border border-white/25 hover:bg-black/85 transition-all shadow-md active:scale-95"
+                      >
+                        {zoomLevel === 1 ? '1x' : `${zoomLevel.toFixed(1)}x`}
+                      </button>
+                    )}
+                    {torchSupported && (
+                      <button
+                        type="button"
+                        onClick={handleToggleTorch}
+                        className={cn(
+                          'size-8 flex items-center justify-center rounded-full backdrop-blur-md text-white border transition-all shadow-md active:scale-95',
+                          torchOn
+                            ? 'bg-amber-500/85 border-amber-400 text-amber-100'
+                            : 'bg-black/65 border-white/25 hover:bg-black/85',
+                        )}
+                        title={torchOn ? 'Tắt đèn pin' : 'Bật đèn pin'}
+                      >
+                        <ZapIcon className={cn('size-3.5', torchOn && 'fill-amber-300 text-amber-300')} />
+                      </button>
+                    )}
+                  </div>
+                )}
+
                 {/* Thông báo lỗi nếu không mở được camera */}
                 {cameraError && (
-                  <div className="absolute inset-0 bg-background/95 p-6 flex flex-col items-center justify-center text-center gap-3">
+                  <div className="absolute inset-0 bg-background/95 p-6 flex flex-col items-center justify-center text-center gap-3 z-20">
                     <AlertCircleIcon className="size-10 text-destructive" />
                     <p className="text-xs text-muted-foreground">{cameraError}</p>
                     <Button
