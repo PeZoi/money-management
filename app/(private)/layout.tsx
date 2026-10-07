@@ -8,8 +8,6 @@ import Link from 'next/link';
 import { BottomNav } from '@/components/bottom-nav';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { WorkspaceSetupDialog } from '@/components/workspace-setup-dialog';
-import { MobileHeaderQrButton } from '@/components/mobile-header-qr-button';
-import { GlobalQrScannerDialog } from '@/components/global-qr-scanner-dialog';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -35,8 +33,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 />
               </Link>
             </div>
-            {/* Nút quét QR riêng ngoài màn hình trên mobile (ẩn trên desktop) */}
-            <MobileHeaderQrButton />
           </header>
           {children}
         </SidebarInset>
@@ -44,7 +40,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <BottomNav />
       <ConfirmDialog />
       <WorkspaceSetupDialog />
-      <GlobalQrScannerDialog />
     </>
   );
 }

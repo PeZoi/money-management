@@ -4,10 +4,8 @@ import * as React from 'react';
 import {
   LayoutDashboardIcon,
   PlusIcon,
-  QrCodeIcon,
   SparklesIcon
 } from 'lucide-react';
-import { useQrScannerStore } from '@/hooks/use-qr-scanner-store';
 
 import { PrivatePageShell } from '@/components/private-page-shell';
 import { Button } from '@/components/ui/button';
@@ -233,16 +231,6 @@ export default function DashboardPage() {
         )}
 
       </PrivatePageShell>
-
-      {/* Nút Quét QR nổi riêng ngoài màn hình trên di động (ẩn trên desktop) */}
-      <button
-        type="button"
-        onClick={() => useQrScannerStore.getState().openScanner()}
-        className="fixed bottom-41 right-6 z-40 flex size-12 items-center justify-center rounded-full bg-card/95 text-primary shadow-lg shadow-black/10 backdrop-blur-md md:hidden border border-primary/20 hover:bg-card active:scale-95 transition-transform"
-        aria-label="Quét QR thanh toán"
-      >
-        <QrCodeIcon className="size-5" />
-      </button>
 
       {/* Floating Action Button (FAB) trên di động - Có thể kéo thả (Draggable) */}
       <button

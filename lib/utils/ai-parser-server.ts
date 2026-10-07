@@ -104,7 +104,7 @@ Yêu cầu phân tích:
    - Nếu là Email biên lai chuyển tiền (Payment Receipt): tìm trường "Số tiền" / "Amount" (ví dụ: "Số tiền 2,000 VND" -> 2000). Bỏ qua số tiền phí nếu có (ví dụ phí 0 VND).
    - Bỏ dấu trừ và ký hiệu tiền tệ. Nếu không tìm thấy số tiền hợp lệ, trả về 0.
 2. "type": Luôn luôn là "expense".
-3. "category_suggestion": Dựa vào ghi chú người dùng (ưu tiên cao nhất) hoặc nội dung chuyển tiền, đơn vị thụ hưởng trong SMS/Email để chọn danh mục khớp nhất từ danh sách trên. Nếu không có danh mục phù hợp, trả về "Khác".
+3. "category_suggestion": Dựa vào ghi chú người dùng. Nếu không có danh mục phù hợp, trả về "Khác".
 4. "clean_note": 
    - Nếu người dùng có nhập ghi chú, sử dụng ghi chú đó (chuẩn hoá viết hoa chữ cái đầu).
    - Nếu người dùng không nhập ghi chú: trích xuất ngắn gọn nội dung chuyển tiền / đơn vị thụ hưởng từ SMS hoặc Email (ví dụ: "Chuyển tiền cho PHAM NGOC VIEN DONG" hoặc nội dung chi tiêu cụ thể, bỏ bớt các mã số lệnh, số thẻ rác).
