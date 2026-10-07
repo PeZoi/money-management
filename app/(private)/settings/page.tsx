@@ -38,6 +38,7 @@ import {
   LogOutIcon,
   MailIcon,
   SettingsIcon,
+  SmartphoneIcon,
   TrashIcon,
   UserPlusIcon,
   UsersIcon,
@@ -45,6 +46,7 @@ import {
 import * as React from 'react';
 import ArchivedTransactionsList from './components/archived-transactions-list';
 import TelegramBackupSection from './components/telegram-backup-section';
+import IosShortcutsSection from './components/ios-shortcuts-section';
 import { MonthPicker } from '@/components/month-picker';
 import { useSettings } from './hooks/use-settings';
 import { useAuth } from '@/hooks/use-auth';
@@ -212,6 +214,18 @@ export default function SettingsPage() {
           >
             <CloudIcon className="size-4" />
             Sao lưu & Khôi phục
+          </button>
+          <button
+            onClick={() => setActiveTab('shortcuts')}
+            className={cn(
+              'pb-4 text-sm font-semibold border-b-2 transition-colors relative flex items-center gap-2 whitespace-nowrap cursor-pointer',
+              activeTab === 'shortcuts'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground',
+            )}
+          >
+            <SmartphoneIcon className="size-4" />
+            Phím tắt iOS
           </button>
         </div>
       </div>
@@ -1019,6 +1033,11 @@ export default function SettingsPage() {
         {/* Tab 5: Backup & Telegram */}
         {activeTab === 'backup' && (
           <TelegramBackupSection />
+        )}
+
+        {/* Tab 6: Phím tắt iOS */}
+        {activeTab === 'shortcuts' && (
+          <IosShortcutsSection />
         )}
       </div>
 
