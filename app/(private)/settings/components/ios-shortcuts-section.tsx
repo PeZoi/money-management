@@ -11,10 +11,10 @@ import {
   RefreshCwIcon,
   SparklesIcon,
   LayersIcon,
-  MailIcon,
   CheckCircle2Icon,
-  InfoIcon,
   Loader2Icon,
+  LightbulbIcon,
+  ZapIcon,
 } from 'lucide-react';
 import { useShortcuts } from '../hooks/use-shortcuts';
 import { toast } from 'sonner';
@@ -72,8 +72,8 @@ export default function IosShortcutsSection() {
   - Khóa: x-api-key
   - Giá trị: ${apiKey || 'CHƯA_TẠO_KEY'}
 • Request Body (JSON):
-  - sms: (Biến Shortcut Input -> chọn thuộc tính Content)
-  - note: (Biến Provided Input từ bước hỏi ghi chú)`;
+  - sms: (Biến Text from Image từ bước Extract text)
+  - note: (Biến Provided Input từ bước Ask for Input)`;
 
   return (
     <div className="space-y-6">
@@ -84,10 +84,10 @@ export default function IosShortcutsSection() {
           <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10">
             <SmartphoneIcon className="size-4 text-primary" />
           </div>
-          <h2 className="text-base font-semibold">Tự động hoá ghi chép qua Email Vietcombank</h2>
+          <h2 className="text-base font-semibold">Tự động ghi chép qua Gõ mặt lưng iPhone (Back Tap)</h2>
         </div>
         <p className="text-xs text-muted-foreground max-w-2xl leading-relaxed">
-          Mỗi khi bạn chuyển tiền xong trên Vietcombank và nhận email biên lai, iPhone sẽ tự động kích hoạt phím tắt hiển thị form ghi chú nhanh và AI tự động phân tích số tiền, danh mục, trừ vào tài khoản đang kích hoạt.
+          Ngay sau khi chuyển khoản thành công trên bất kỳ app ngân hàng nào (Vietcombank, Techcombank, MB, Momo...), chỉ cần <b>gõ 2 lần vào mặt lưng iPhone</b>: máy sẽ tự chụp màn hình biên lai, trích xuất chữ (OCR) và hiện ô nhập nhanh ghi chú. AI sẽ tự động phân tích số tiền, danh mục và lưu chi tiêu tức thì!
         </p>
       </section>
 
@@ -159,7 +159,7 @@ export default function IosShortcutsSection() {
               </div>
             )}
             <p className="text-[11px] text-muted-foreground">
-              Mã xác thực độc nhất giúp iPhone đồng bộ dữ liệu an toàn mà không cần đăng nhập.
+              Mã xác thực bảo mật giúp iPhone gửi giao dịch an toàn vào tài khoản của bạn.
             </p>
           </div>
 
@@ -200,10 +200,10 @@ export default function IosShortcutsSection() {
             </div>
             <div>
               <h3 className="text-sm font-bold text-foreground">
-                Thông số cài đặt tác vụ &quot;Get Contents of URL&quot; (Copy nhanh)
+                Thông số tác vụ &quot;Get Contents of URL&quot; (Copy nhanh)
               </h3>
               <p className="text-[11px] text-muted-foreground">
-                Mở tác vụ <b>Get Contents of URL (Lấy nội dung từ URL)</b> và điền theo thông số dưới:
+                Mở tác vụ <b>Get Contents of URL (Lấy nội dung từ URL)</b> và cấu hình chuẩn theo các mục sau:
               </p>
             </div>
           </div>
@@ -257,7 +257,7 @@ export default function IosShortcutsSection() {
           <div className="p-3 rounded-lg border border-border bg-card space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-semibold text-muted-foreground block">
-                3. Headers (Tiêu đề) &rarr; Nhấn <b>Add new field</b>:
+                3. Headers (Tiêu đề) &rarr; Bấm <b>Add new field</b>:
               </span>
               {hasKey && (
                 <button
@@ -297,8 +297,8 @@ export default function IosShortcutsSection() {
                   handleCopy(
                     JSON.stringify(
                       {
-                        sms: 'Shortcut Input (chọn Content)',
-                        note: 'Provided Input (Ghi chú)',
+                        sms: 'Text from Image (Biến chữ quét từ ảnh)',
+                        note: 'Provided Input (Biến ghi chú nhập tay)',
                       },
                       null,
                       2
@@ -316,21 +316,21 @@ export default function IosShortcutsSection() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
               <div className="p-2.5 rounded bg-muted/40 border border-border space-y-1">
                 <span className="text-[11px] font-bold text-foreground block">
-                  Trường 1 (Toàn văn biên lai email):
+                  Trường 1 (Chữ quét từ ảnh chụp màn hình):
                 </span>
                 <div className="font-mono text-[11px] text-muted-foreground">
                   • Key: <b className="text-foreground">sms</b> (Text)<br />
-                  • Value: Chọn biến <span className="text-primary font-semibold">Shortcut Input</span> &rarr; chạm vào đổi thành <span className="text-emerald-500 font-semibold">Content</span>
+                  • Value: Chọn biến <span className="text-primary font-semibold">Text from Image</span> (từ bước 2)
                 </div>
               </div>
 
               <div className="p-2.5 rounded bg-muted/40 border border-border space-y-1">
                 <span className="text-[11px] font-bold text-foreground block">
-                  Trường 2 (Ghi chú gõ thêm từ form):
+                  Trường 2 (Ghi chú nhập từ popup):
                 </span>
                 <div className="font-mono text-[11px] text-muted-foreground">
                   • Key: <b className="text-foreground">note</b> (Text)<br />
-                  • Value: Chọn biến <span className="text-primary font-semibold">Provided Input</span>
+                  • Value: Chọn biến <span className="text-primary font-semibold">Provided Input</span> (từ bước 4)
                 </div>
               </div>
             </div>
@@ -338,130 +338,219 @@ export default function IosShortcutsSection() {
         </div>
       </section>
 
-      {/* 4. HƯỚNG DẪN 2 PHẦN MẠCH LẠC, DỄ NHÌN */}
+      {/* 4. HƯỚNG DẪN CHI TIẾT 2 BƯỚC */}
       <section className="rounded-xl border border-border bg-card p-5 shadow-xs space-y-5">
         <div className="flex items-center justify-between border-b border-border pb-3">
           <div className="flex items-center gap-2">
-            <MailIcon className="size-4 text-primary" />
+            <ZapIcon className="size-4 text-primary" />
             <h3 className="text-sm font-bold text-foreground">
-              Hướng dẫn thiết lập trên iPhone
+              Hướng dẫn thiết lập 2 bước trên iPhone
             </h3>
           </div>
-          <span className="text-[11px] text-muted-foreground">Thời gian thiết lập: ~2 phút</span>
-        </div>
-
-        {/* Lưu ý Gmail */}
-        <div className="p-3 rounded-lg border border-blue-500/20 bg-blue-500/5 text-xs text-muted-foreground flex items-start gap-2.5">
-          <InfoIcon className="size-4 text-blue-500 shrink-0 mt-0.5" />
-          <p className="leading-relaxed">
-            <b>Về tài khoản Gmail:</b> Bạn <b>vẫn dùng app Gmail</b> đọc thư bình thường! Chỉ cần vào <i>Cài đặt iPhone &gt; Mail &gt; Tài khoản &gt; Thêm tài khoản Google</i> một lần duy nhất để iOS có quyền cấp nội dung thư cho Phím tắt khi email VCB vừa tới.
-          </p>
+          <span className="text-[11px] text-muted-foreground font-medium">Thời gian thiết lập: ~2 phút</span>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          {/* PHẦN A: TẠO PHÍM TẮT XỬ LÝ (TAB SHORTCUTS) */}
-          <div className="space-y-3 p-4 rounded-xl border border-border bg-muted/20">
+          {/* BƯỚC 1: TẠO PHÍM TẮT TRONG TAB SHORTCUTS */}
+          <div className="space-y-3.5 p-4 rounded-xl border border-border bg-muted/20">
             <div className="flex items-center gap-2">
               <span className="flex size-6 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-xs">
-                A
+                1
               </span>
               <h4 className="text-xs font-bold uppercase tracking-wider text-foreground">
-                Phần 1: Tạo kịch bản xử lý (Tab Shortcuts)
+                Bước 1: Tạo Phím tắt xử lý (Tab Shortcuts)
               </h4>
             </div>
 
-            <p className="text-[11px] text-muted-foreground">
-              Mở app <b>Shortcuts (Phím tắt)</b> &gt; Bấm dấu <b>+</b> góc trên phải &gt; Thêm lần lượt 3 tác vụ sau:
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              Mở app <b>Phím tắt (Shortcuts)</b> &gt; Bấm dấu <b>+</b> góc trên phải &gt; Thêm lần lượt 7 khối hành động chuẩn theo thứ tự sau:
             </p>
 
-            <div className="space-y-2.5 text-xs">
-              <div className="p-2.5 rounded-lg border border-border bg-card space-y-1">
-                <div className="flex items-center justify-between font-semibold text-foreground">
-                  <span>1. Tác vụ: Ask for Input</span>
-                  <span className="text-[10px] text-muted-foreground">Hỏi ghi chú</span>
+            <div className="space-y-2 text-xs">
+              {/* Hành động 1 */}
+              <div className="p-2.5 rounded-lg border border-border bg-card flex items-start gap-2.5">
+                <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-bold text-foreground mt-0.5">
+                  1
+                </span>
+                <div className="space-y-0.5 flex-1">
+                  <div className="font-semibold text-foreground flex items-center justify-between">
+                    <span>Take screenshot</span>
+                    <span className="text-[10px] text-muted-foreground">Chụp màn hình</span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    Tìm <code>Take screenshot</code> để chụp màn hình biên lai đang hiển thị.
+                  </p>
                 </div>
-                <p className="text-[11px] text-muted-foreground">
-                  Tìm <code>Ask for Input</code> &rarr; Lời nhắc: <i>&quot;Nhập ghi chú chi tiêu:&quot;</i> (Text).
-                </p>
               </div>
 
-              <div className="p-2.5 rounded-lg border border-border bg-card space-y-1">
-                <div className="flex items-center justify-between font-semibold text-foreground">
-                  <span>2. Tác vụ: Get Contents of URL</span>
-                  <span className="text-[10px] text-muted-foreground">Gửi về Money+</span>
+              {/* Hành động 2 */}
+              <div className="p-2.5 rounded-lg border border-border bg-card flex items-start gap-2.5">
+                <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-bold text-foreground mt-0.5">
+                  2
+                </span>
+                <div className="space-y-0.5 flex-1">
+                  <div className="font-semibold text-foreground flex items-center justify-between">
+                    <span>Extract text from Screenshot</span>
+                    <span className="text-[10px] text-muted-foreground">Quét chữ OCR</span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    Tìm <code>Extract text from Image</code> &rarr; Chọn đầu vào là <code>Screenshot</code>.
+                  </p>
                 </div>
-                <p className="text-[11px] text-muted-foreground">
-                  Tìm <code>Get Contents of URL</code> &rarr; Điền URL, Method POST, Header <code>x-api-key</code> và Body JSON theo đúng bảng thông số ở trên.
-                </p>
-                <p className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">
-                  ⚠️ Nhớ chạm vào biến <b>Shortcut Input</b> và đổi thành <b>Content</b>.
-                </p>
               </div>
 
-              <div className="p-2.5 rounded-lg border border-border bg-card space-y-1">
-                <div className="flex items-center justify-between font-semibold text-foreground">
-                  <span>3. Tác vụ: Show Notification</span>
-                  <span className="text-[10px] text-muted-foreground">Báo kết quả</span>
+              {/* Hành động 3 */}
+              <div className="p-2.5 rounded-lg border border-border bg-card flex items-start gap-2.5">
+                <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-bold text-foreground mt-0.5">
+                  3
+                </span>
+                <div className="space-y-0.5 flex-1">
+                  <div className="font-semibold text-foreground flex items-center justify-between">
+                    <span>Delete Screenshot</span>
+                    <span className="text-[10px] text-muted-foreground">Xóa ảnh đã quét</span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    Tìm <code>Delete Photos</code> &rarr; Chọn xóa biến <code>Screenshot</code> để không đầy bộ nhớ.
+                  </p>
+                  <p className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">
+                    💡 Mở rộng mũi tên ở khối Delete và <b>Tắt &quot;Confirm Before Deleting&quot;</b> để máy tự xóa ngầm không cần hỏi lại.
+                  </p>
                 </div>
-                <p className="text-[11px] text-muted-foreground">
-                  Tìm <code>Get Dictionary Value</code> lấy khóa <code>message</code> từ kết quả URL &rarr; Nối vào tác vụ <code>Show Notification</code> để iPhone hiện thông báo rung.
-                </p>
+              </div>
+
+              {/* Hành động 4 */}
+              <div className="p-2.5 rounded-lg border border-border bg-card flex items-start gap-2.5">
+                <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-bold text-foreground mt-0.5">
+                  4
+                </span>
+                <div className="space-y-0.5 flex-1">
+                  <div className="font-semibold text-foreground flex items-center justify-between">
+                    <span>Ask for Text with Nhập ghi chú</span>
+                    <span className="text-[10px] text-muted-foreground">Popup ghi chú</span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    Tìm <code>Ask for Input</code> &rarr; Kiểu <i>Text</i>, lời nhắc: <i>&quot;Nhập ghi chú&quot;</i>.
+                  </p>
+                </div>
+              </div>
+
+              {/* Hành động 5 */}
+              <div className="p-2.5 rounded-lg border border-border bg-card flex items-start gap-2.5">
+                <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-bold text-foreground mt-0.5">
+                  5
+                </span>
+                <div className="space-y-0.5 flex-1">
+                  <div className="font-semibold text-foreground flex items-center justify-between">
+                    <span>Get contents of URL</span>
+                    <span className="text-[10px] text-muted-foreground">Gửi về hệ thống</span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    Tìm <code>Get contents of URL</code> &rarr; Điền theo đúng bảng thông số bên trên (Method POST, Header <code>x-api-key</code>, Body JSON chứa <code>sms</code> và <code>note</code>).
+                  </p>
+                </div>
+              </div>
+
+              {/* Hành động 6 */}
+              <div className="p-2.5 rounded-lg border border-border bg-card flex items-start gap-2.5">
+                <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-bold text-foreground mt-0.5">
+                  6
+                </span>
+                <div className="space-y-0.5 flex-1">
+                  <div className="font-semibold text-foreground flex items-center justify-between">
+                    <span>Get Value for message in Contents of URL</span>
+                    <span className="text-[10px] text-muted-foreground">Bóc thông báo</span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    Tìm <code>Get Dictionary Value</code> &rarr; Lấy giá trị cho key <code>message</code> từ <code>Contents of URL</code>.
+                  </p>
+                </div>
+              </div>
+
+              {/* Hành động 7 */}
+              <div className="p-2.5 rounded-lg border border-border bg-card flex items-start gap-2.5">
+                <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-bold text-foreground mt-0.5">
+                  7
+                </span>
+                <div className="space-y-0.5 flex-1">
+                  <div className="font-semibold text-foreground flex items-center justify-between">
+                    <span>Show notification</span>
+                    <span className="text-[10px] text-muted-foreground">Báo kết quả</span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    Tìm <code>Show notification</code> &rarr; Gắn biến <code>Dictionary Value</code> để iPhone báo rung và hiển thị kết quả ghi chi tiêu.
+                  </p>
+                </div>
               </div>
             </div>
 
             <p className="text-[11px] text-muted-foreground pt-1">
-              &rarr; Bấm <b>Done</b> ở góc trên phải để lưu kịch bản.
+              &rarr; Đổi tên phím tắt (ví dụ: <b>Ghi chi tiêu</b>) rồi bấm <b>Xong (Done)</b> để lưu lại.
             </p>
           </div>
 
-          {/* PHẦN B: BẬT TỰ ĐỘNG HÓA KÍCH HOẠT (TAB AUTOMATION) */}
-          <div className="space-y-3 p-4 rounded-xl border border-border bg-muted/20">
-            <div className="flex items-center gap-2">
-              <span className="flex size-6 items-center justify-center rounded-lg bg-emerald-600 text-white font-bold text-xs">
-                B
-              </span>
-              <h4 className="text-xs font-bold uppercase tracking-wider text-foreground">
-                Phần 2: Bật Tự động kích hoạt (Tab Automation)
-              </h4>
+          {/* BƯỚC 2: GÁN VÀO CHẠM MẶT LƯNG (BACK TAP) */}
+          <div className="space-y-3.5 p-4 rounded-xl border border-border bg-muted/20 flex flex-col justify-between">
+            <div className="space-y-3.5">
+              <div className="flex items-center gap-2">
+                <span className="flex size-6 items-center justify-center rounded-lg bg-emerald-600 text-white font-bold text-xs">
+                  2
+                </span>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-foreground">
+                  Bước 2: Gán vào Gõ mặt lưng (Back Tap)
+                </h4>
+              </div>
+
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                Để kích hoạt phím tắt chỉ bằng 1 thao tác gõ sau lưng máy, bạn thiết lập trong Cài đặt iPhone như sau:
+              </p>
+
+              <div className="space-y-2.5 text-xs">
+                <div className="p-3 rounded-lg border border-border bg-card space-y-1">
+                  <div className="font-semibold text-foreground">
+                    1. Mở Cài đặt hệ thống (Settings)
+                  </div>
+                  <p className="text-[11px] text-muted-foreground font-mono">
+                    Cài đặt &gt; Trợ năng (Accessibility) &gt; Cảm ứng (Touch)
+                  </p>
+                </div>
+
+                <div className="p-3 rounded-lg border border-border bg-card space-y-1">
+                  <div className="font-semibold text-foreground">
+                    2. Chọn Chạm vào mặt sau (Back Tap)
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    Cuộn xuống dưới cùng của trang Cảm ứng, chọn mục <b>Chạm vào mặt sau (Back Tap)</b>.
+                  </p>
+                </div>
+
+                <div className="p-3 rounded-lg border border-border bg-card space-y-1">
+                  <div className="font-semibold text-foreground">
+                    3. Gán phím tắt vào Chạm hai lần (Double Tap)
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    Bấm vào <b>Chạm hai lần (Double Tap)</b> &rarr; Cuộn xuống nhóm danh sách <i>Phím tắt (Shortcuts)</i> và tích chọn đúng phím tắt bạn vừa tạo ở Bước 1!
+                  </p>
+                </div>
+              </div>
+
+              {/* Mẹo sử dụng thực tế */}
+              <div className="p-3 rounded-lg border border-blue-500/20 bg-blue-500/5 text-xs text-muted-foreground space-y-1.5">
+                <div className="flex items-center gap-1.5 font-semibold text-foreground">
+                  <LightbulbIcon className="size-4 text-blue-500 shrink-0" />
+                  <span>Cách sử dụng thực tế siêu nhanh:</span>
+                </div>
+                <ul className="text-[11px] leading-relaxed list-disc list-inside space-y-1">
+                  <li>Chuyển khoản xong trên app ngân hàng (màn hình đang hiện thông báo chuyển thành công).</li>
+                  <li>Dùng ngón tay gõ nhẹ <b>2 lần</b> vào mặt lưng iPhone.</li>
+                  <li>Nhập ghi chú vào popup nảy lên (VD: <i>&quot;tiền ăn trưa&quot;</i>, <i>&quot;cafe bạn bè&quot;</i>) và bấm Xong.</li>
+                  <li>Hệ thống AI sẽ tự đọc số tiền, phân loại danh mục và lưu ngay tức thì!</li>
+                </ul>
+              </div>
             </div>
 
-            <p className="text-[11px] text-muted-foreground">
-              Chuyển sang tab <b>Automation (Tự động hóa)</b> ở thanh dưới cùng &gt; Bấm dấu <b>+</b>:
-            </p>
-
-            <div className="space-y-2.5 text-xs">
-              <div className="p-2.5 rounded-lg border border-border bg-card space-y-1">
-                <div className="font-semibold text-foreground">
-                  1. Chọn sự kiện: Email (Thư)
-                </div>
-                <div className="text-[11px] text-muted-foreground space-y-0.5 font-mono">
-                  <div>• Sender: <code>VCBDigibank@info.vietcombank.com.vn</code></div>
-                  <div>• Subject Contains: <code>Biên lai chuyển tiền</code></div>
-                </div>
-              </div>
-
-              <div className="p-2.5 rounded-lg border border-border bg-card space-y-1">
-                <div className="font-semibold text-foreground">
-                  2. Cài đặt chế độ chạy
-                </div>
-                <p className="text-[11px] text-muted-foreground">
-                  Chọn <b>Run Immediately (Chạy ngay lập tức)</b> và tắt công tắc <i>&quot;Notify When Run&quot;</i> để máy chạy ngầm êm ái &rarr; Bấm <b>Next</b>.
-                </p>
-              </div>
-
-              <div className="p-2.5 rounded-lg border border-border bg-card space-y-1">
-                <div className="font-semibold text-foreground">
-                  3. Nối với phím tắt ở Phần A
-                </div>
-                <p className="text-[11px] text-muted-foreground">
-                  Tìm tác vụ <code>Run Shortcut (Chạy phím tắt)</code> &rarr; Chọn đúng phím tắt bạn vừa tạo ở <b>Phần A</b> &rarr; Bấm <b>Done (Xong)</b>!
-                </p>
-              </div>
-            </div>
-
-            <div className="p-2.5 rounded-lg border border-emerald-500/20 bg-emerald-500/5 text-[11px] text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 font-medium">
-              <CheckCircle2Icon className="size-3.5 shrink-0" />
-              <span>Hoàn tất! Từ bây giờ mỗi khi VCB gửi email, iPhone sẽ tự động ghi sổ!</span>
+            <div className="p-3 rounded-lg border border-emerald-500/20 bg-emerald-500/5 text-[11px] text-emerald-600 dark:text-emerald-400 flex items-center gap-2 font-medium mt-3">
+              <CheckCircle2Icon className="size-4 shrink-0" />
+              <span>Thiết lập hoàn tất! Bắt đầu trải nghiệm ghi chép chi tiêu 1-chạm cực kỳ tiện lợi!</span>
             </div>
           </div>
         </div>
