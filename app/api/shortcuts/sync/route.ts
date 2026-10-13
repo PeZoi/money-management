@@ -274,14 +274,9 @@ export async function POST(req: Request) {
       }
     }
 
-    // 9. Xác định ngày giờ giao dịch
-    let transactionDate = new Date().toISOString();
-    if (parsedData.transaction_date) {
-      const parsedDate = new Date(parsedData.transaction_date);
-      if (!isNaN(parsedDate.getTime())) {
-        transactionDate = parsedDate.toISOString();
-      }
-    }
+    // 9. Xác định ngày giờ giao dịch (Luôn lấy ngày giờ hiện tại tại thời điểm gọi API)
+    const transactionDate = new Date().toISOString();
+
 
     // 10. Lưu bản ghi vào bảng transactions
     // Luôn luôn là type: "expense" (Chi tiêu) theo đúng yêu cầu
